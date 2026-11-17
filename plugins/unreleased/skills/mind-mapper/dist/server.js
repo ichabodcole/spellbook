@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/mind-mapper/backend/server.ts
 import { existsSync as existsSync6, mkdirSync as mkdirSync2, readFileSync as readFileSync4 } from "fs";
@@ -836,10 +835,10 @@ class UnknownProjectError extends Error {
 }
 function resolveProject(home, id) {
   if (id === undefined) {
-    const dir2 = projectDir(home, DEFAULT_PROJECT_ID);
-    if (!existsSync3(dir2))
+    const dir = projectDir(home, DEFAULT_PROJECT_ID);
+    if (!existsSync3(dir))
       throw new NeedsProjectError;
-    return readMeta(dir2, DEFAULT_PROJECT_ID);
+    return readMeta(dir, DEFAULT_PROJECT_ID);
   }
   const dir = projectDir(home, id);
   if (!existsSync3(dir))
@@ -854,9 +853,9 @@ function listProjects(home) {
 }
 
 // src/mind-mapper/backend/marks.ts
-function docFileMtime(projectDir2, relPath) {
+function docFileMtime(projectDir, relPath) {
   try {
-    return Math.floor(statSync2(join3(projectDir2, relPath)).mtimeMs);
+    return Math.floor(statSync2(join3(projectDir, relPath)).mtimeMs);
   } catch {
     return null;
   }
@@ -872,7 +871,7 @@ function latestPerDoc(rows) {
     latest.set(row.doc_id, row);
   return latest;
 }
-function markDoc(db, bus, projectDir2, input) {
+function markDoc(db, bus, projectDir, input) {
   if (!SLUG_RE.test(input.docId))
     throw new Error(`invalid doc id: ${input.docId}`);
   const doc = db.query("SELECT path FROM docs WHERE id = ?").get(input.docId);
@@ -881,7 +880,7 @@ function markDoc(db, bus, projectDir2, input) {
   if (typeof input.status !== "string" || input.status.length === 0) {
     throw new Error("mark requires a non-empty status");
   }
-  const docMtime = docFileMtime(projectDir2, doc.path);
+  const docMtime = docFileMtime(projectDir, doc.path);
   const ts = Math.floor(Date.now() / 1000);
   db.run("INSERT INTO doc_marks (id, doc_id, author, note, status, doc_mtime, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", [
     crypto.randomUUID(),
@@ -1286,7 +1285,7 @@ class CitedError extends Error {
     this.citedBy = citedBy;
   }
 }
-function deleteDoc(db, bus, projectDir2, id, force) {
+function deleteDoc(db, bus, projectDir, id, force) {
   if (!SLUG_RE.test(id))
     return null;
   const row = db.query("SELECT path FROM docs WHERE id = ?").get(id);
@@ -1296,7 +1295,7 @@ function deleteDoc(db, bus, projectDir2, id, force) {
   const proposals = db.query("SELECT COUNT(*) as n FROM proposals WHERE evidence_doc_id = ? AND status = 'pending'").get(id).n;
   if (!force && (nodes > 0 || proposals > 0))
     throw new CitedError({ nodes, proposals });
-  const file = join4(projectDir2, row.path);
+  const file = join4(projectDir, row.path);
   if (existsSync4(file))
     unlinkSync2(file);
   db.run("DELETE FROM docs WHERE id = ?", [id]);
@@ -2385,11 +2384,11 @@ function openBrowser(url) {
     Bun.spawn([cmd, url], { stdout: "ignore", stderr: "ignore" });
   } catch {}
 }
-function sseResponse2(bus, since, hooks = {}, signal, inbound = false, heartbeatMs2 = SSE_HEARTBEAT_MS) {
+function sseResponse2(bus, since, hooks = {}, signal, inbound = false, heartbeatMs = SSE_HEARTBEAT_MS) {
   return sseResponse({
     log: bus,
     since,
-    heartbeatMs: heartbeatMs2,
+    heartbeatMs,
     signal,
     filter: inbound ? (frame) => isInboundEvent(frame) : undefined,
     openFrames: inbound ? () => [`data: ${JSON.stringify(inboundGrounding())}
@@ -2436,23 +2435,23 @@ async function main(argv) {
           if (refused)
             return refused;
         }
-        const url2 = new URL(req.url);
-        const path = url2.pathname;
-        const projectId = url2.searchParams.get("project") ?? undefined;
+        const url = new URL(req.url);
+        const path = url.pathname;
+        const projectId = url.searchParams.get("project") ?? undefined;
         try {
           if (path === "/events") {
             const entry = loadProject(projectId);
             if (req.headers.get("upgrade") === "websocket") {
-              const since2 = Number.parseInt(url2.searchParams.get("since") ?? "0", 10);
+              const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
               const ok = srv.upgrade(req, {
-                data: { since: Number.isFinite(since2) ? since2 : 0, projectId }
+                data: { since: Number.isFinite(since) ? since : 0, projectId }
               });
               if (ok)
                 return;
               return new Response("upgrade failed", { status: 500 });
             }
-            const since = Number.parseInt(url2.searchParams.get("since") ?? "0", 10);
-            const inbound = url2.searchParams.get("inbound") === "1";
+            const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
+            const inbound = url.searchParams.get("inbound") === "1";
             return sseResponse2(entry.bus, Number.isFinite(since) ? since : 0, {
               onOpen: () => adjustAgents(entry, 1),
               onClose: () => adjustAgents(entry, -1)
@@ -2462,7 +2461,7 @@ async function main(argv) {
             const entry = loadProject(projectId);
             const { db, bus, meta } = entry;
             const state = readState(db, meta, bus.cursor(), bus.epoch, projectDir(HOME, meta.id));
-            const zoneId = url2.searchParams.get("zone");
+            const zoneId = url.searchParams.get("zone");
             if (zoneId !== null) {
               if (!state.zones.some((z) => z.id === zoneId)) {
                 return new Response(JSON.stringify({ error: `unknown zone: ${zoneId}` }), {
@@ -2472,7 +2471,7 @@ async function main(argv) {
               }
               state.proposals = state.proposals.filter((p) => p.zoneId === zoneId);
             }
-            const batchId = url2.searchParams.get("batch");
+            const batchId = url.searchParams.get("batch");
             if (batchId !== null) {
               const members = state.proposals.filter((p) => p.batchId === batchId);
               if (members.length === 0) {
@@ -2482,7 +2481,7 @@ async function main(argv) {
               }
               state.proposals = members;
             }
-            const anchorId = url2.searchParams.get("anchor");
+            const anchorId = url.searchParams.get("anchor");
             if (anchorId !== null) {
               if (!state.nodes.some((n) => n.id === anchorId)) {
                 return new Response(JSON.stringify({ error: `unknown anchor node: ${anchorId}` }), {
@@ -2506,7 +2505,7 @@ async function main(argv) {
           }
           if (req.method === "GET" && path === "/changes") {
             const { db, meta } = loadProject(projectId);
-            const raw = url2.searchParams.get("since");
+            const raw = url.searchParams.get("since");
             try {
               if (raw === null)
                 throw new Error("missing ?since=<epochSeconds>");
@@ -2534,7 +2533,7 @@ async function main(argv) {
           if (req.method === "DELETE" && path.startsWith("/zones/")) {
             const { db, bus } = loadProject(projectId);
             const id = path.slice("/zones/".length);
-            const yes = url2.searchParams.has("yes");
+            const yes = url.searchParams.has("yes");
             try {
               const result = deleteZone(db, bus, id, yes);
               if (!result) {
@@ -2844,7 +2843,7 @@ async function main(argv) {
           }
           if (req.method === "GET" && path === "/search") {
             const { db } = loadProject(projectId);
-            const q = url2.searchParams.get("q") ?? "";
+            const q = url.searchParams.get("q") ?? "";
             return Response.json({ hits: search(db, q) });
           }
           if (req.method === "GET" && path.startsWith("/message/")) {
@@ -2869,7 +2868,7 @@ async function main(argv) {
           }
           if (req.method === "GET" && path.startsWith("/neighbors/")) {
             const { db } = loadProject(projectId);
-            const depth = Number.parseInt(url2.searchParams.get("depth") ?? "1", 10);
+            const depth = Number.parseInt(url.searchParams.get("depth") ?? "1", 10);
             const id = path.slice("/neighbors/".length);
             return Response.json({
               neighbors: neighbors(db, id, Number.isFinite(depth) && depth > 0 ? depth : 1)
@@ -2942,7 +2941,7 @@ async function main(argv) {
           if (req.method === "DELETE" && path.startsWith("/nodes/")) {
             const { db, bus } = loadProject(projectId);
             const id = path.slice("/nodes/".length);
-            const force = url2.searchParams.has("force");
+            const force = url.searchParams.has("force");
             try {
               const result = deleteNode(db, bus, id, force);
               if (!result) {
@@ -3065,7 +3064,7 @@ async function main(argv) {
           if (req.method === "DELETE" && path.startsWith("/doc/")) {
             const { db, bus, meta } = loadProject(projectId);
             const id = path.slice("/doc/".length);
-            const force = url2.searchParams.has("force");
+            const force = url.searchParams.has("force");
             try {
               const result = deleteDoc(db, bus, projectDir(HOME, meta.id), id, force);
               if (!result) {

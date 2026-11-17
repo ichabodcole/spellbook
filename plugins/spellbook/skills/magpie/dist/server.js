@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/magpie/backend/server.ts
 import { mkdirSync as mkdirSync2, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "fs";
@@ -1014,11 +1013,11 @@ async function main(argv) {
         break;
     }
   }
-  function eventsResponse(req, url2) {
+  function eventsResponse(req, url) {
     touch();
     return sseResponse({
       log,
-      since: Number.parseInt(url2.searchParams.get("since") ?? "-1", 10),
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
       heartbeatMs: SSE_HEARTBEAT_MS,
       clients: sseClients,
       signal: req.signal,
@@ -1044,8 +1043,8 @@ async function main(argv) {
           if (refused)
             return refused;
         }
-        const url2 = new URL(req.url);
-        const path = url2.pathname;
+        const url = new URL(req.url);
+        const path = url.pathname;
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded)
@@ -1053,14 +1052,14 @@ async function main(argv) {
           return new Response("upgrade required", { status: 426 });
         }
         if (req.method === "GET" && path === "/state") {
-          const lean = url2.searchParams.get("lean") === "1";
+          const lean = url.searchParams.get("lean") === "1";
           const payload = lean ? leanState(state) : state;
           return new Response(JSON.stringify({ state: payload, cursor: log.cursor() }), {
             headers: { "Content-Type": "application/json" }
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return eventsResponse(req, url2);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req.json().then((body) => {

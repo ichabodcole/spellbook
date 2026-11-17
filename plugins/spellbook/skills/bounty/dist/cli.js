@@ -507,8 +507,8 @@ ${spec.helpFooter}` : ""}`;
     }
     if (rootRow !== undefined) {
       if (first !== undefined && (byToken.has(first) || subsOf.has(first))) {
-        const r2 = resolve(first, argv.slice(1));
-        return runRow(r2.row, r2.token, r2.args);
+        const r = resolve(first, argv.slice(1));
+        return runRow(r.row, r.token, r.args);
       }
       return runRow(rootRow, "", argv);
     }
@@ -1008,10 +1008,10 @@ async function tailWithHandoff(tail, h) {
       },
       render: (ev, frame) => {
         refusals = 0;
-        const line2 = tail.render ? tail.render(ev, frame) : frame.data;
-        if (line2 !== null && isLogFrame(ev, frame))
+        const line = tail.render ? tail.render(ev, frame) : frame.data;
+        if (line !== null && isLogFrame(ev, frame))
           events += 1;
-        return line2;
+        return line;
       },
       terminal: (ev, frame, accepted) => {
         if (tail.terminal?.(ev, frame, accepted)) {
@@ -1034,7 +1034,7 @@ async function tailWithHandoff(tail, h) {
         return tail.onComment?.(text) ?? null;
       },
       onDisconnect: (info) => {
-        const line2 = tail.onDisconnect?.(info) ?? null;
+        const line = tail.onDisconnect?.(info) ?? null;
         if (info.cause === "connect-failed") {
           refusals += 1;
           if (endOnLost && refusals >= LOST_AFTER_REFUSALS)
@@ -1042,7 +1042,7 @@ async function tailWithHandoff(tail, h) {
         } else {
           refusals = 0;
         }
-        return line2;
+        return line;
       },
       onEnd: (s) => {
         cursor = s.cursor;
@@ -1656,8 +1656,8 @@ async function cmdOpen(flags) {
           signal: AbortSignal.timeout(DAEMON_ANSWER_TIMEOUT_MS)
         });
         if (r.ok) {
-          const holder2 = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
-          const lostRace = holder2 !== null && holder2.pid !== proc.pid;
+          const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+          const lostRace = holder !== null && holder.pid !== proc.pid;
           const lost = lostRace ? ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f])) : [];
           if (lost.length) {
             const named = lost.map((f) => `--${f}`).join(", ");
@@ -1851,8 +1851,8 @@ function cmdSessions() {
 }
 async function liveBoards(discovered, probe) {
   const probed = await Promise.all(discovered.map(async (s) => {
-    const probed2 = await probe(s);
-    return probed2 === null ? null : { session_id: s.session_id, title: s.title, url: s.url, tasks: probed2.tasks };
+    const probed = await probe(s);
+    return probed === null ? null : { session_id: s.session_id, title: s.title, url: s.url, tasks: probed.tasks };
   }));
   return probed.filter((b) => b !== null);
 }
@@ -2002,12 +2002,12 @@ async function cmdClaim(id, session, as) {
 async function cmdBlock(verb, id, flags, session, as) {
   if (typeof flags.on !== "string")
     die(`usage: ${verb} <id> --on <id>[,<id>...]`);
-  const on2 = flags.on.split(",").map((x) => x.trim()).filter(Boolean);
-  if (!on2.length)
+  const on = flags.on.split(",").map((x) => x.trim()).filter(Boolean);
+  if (!on.length)
     die(`${verb}: --on needs at least one task id`);
-  const res = await postCmd(session, { type: verb === "block" ? "task.block" : "task.unblock", id, on: on2 }, { as, quiet: true });
+  const res = await postCmd(session, { type: verb === "block" ? "task.block" : "task.unblock", id, on }, { as, quiet: true });
   if (res.applied) {
-    printJson2({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on: on2 });
+    printJson2({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on });
   } else {
     refuseFromDaemon(res, `could not ${verb} ${id}`);
   }
@@ -2056,10 +2056,10 @@ async function cmdInit(flags, session, as) {
 async function cmdClose(session, as, flags = {}) {
   const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true, timeoutMs: DAEMON_ANSWER_TIMEOUT_MS });
   if (!closeRes.applied && closeRes.kind === "conflict" && closeRes.snapshotSaveFailed) {
-    const failed2 = closeRes.snapshotSaveFailed;
-    const resolved2 = requireSession(session);
+    const failed = closeRes.snapshotSaveFailed;
+    const resolved = requireSession(session);
     die(closeRes.error ?? "board not closed: nowhere could take its snapshot", "conflict", {
-      hint: `the board is still running and holds the only copy of its ${failed2.taskCount} task(s). ${failed2.fix ?? `Make ${failed2.path} writable`}, or make ${BOUNTY_HOME} writable so the board can be dumped there, then run: ${commandLine(["close", "--session", resolved2.session_id])}`,
+      hint: `the board is still running and holds the only copy of its ${failed.taskCount} task(s). ${failed.fix ?? `Make ${failed.path} writable`}, or make ${BOUNTY_HOME} writable so the board can be dumped there, then run: ${commandLine(["close", "--session", resolved.session_id])}`,
       server: closeRes
     });
   }

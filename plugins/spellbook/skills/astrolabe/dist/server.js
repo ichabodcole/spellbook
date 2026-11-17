@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/astrolabe/backend/server.ts
 import { mkdirSync, unlinkSync as unlinkSync2 } from "fs";
@@ -721,13 +720,13 @@ async function main(argv) {
     }, PRESENCE_DEBOUNCE_MS);
     idleTimers.set(projectId, timer);
   }
-  function eventsResponse(req, url2) {
+  function eventsResponse(req, url) {
     touch();
-    const projectId = url2.searchParams.get("project") ?? undefined;
+    const projectId = url.searchParams.get("project") ?? undefined;
     const bind = projectId && state.projects.some((p) => p.id === projectId) ? projectId : undefined;
     return sseResponse({
       log,
-      since: Number.parseInt(url2.searchParams.get("since") ?? "-1", 10),
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
       heartbeatMs: SSE_HEARTBEAT_MS,
       clients: sseClients,
       signal: req.signal,
@@ -822,8 +821,8 @@ async function main(argv) {
           if (refused)
             return refused;
         }
-        const url2 = new URL(req.url);
-        const path = url2.pathname;
+        const url = new URL(req.url);
+        const path = url.pathname;
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded)
@@ -837,7 +836,7 @@ async function main(argv) {
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return eventsResponse(req, url2);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req.json().then((body) => {

@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/bounty/backend/server.ts
 import {
@@ -874,14 +873,14 @@ async function main(argv) {
     if (embedded !== null)
       port = embedded;
   }
-  const logDaemon = (reason2, extra) => {
+  const logDaemon = (reason, extra) => {
     try {
       mkdirSync2(BOUNTY_HOME, { recursive: true });
       const line = JSON.stringify({
         ts: new Date().toISOString(),
         session_id: sessionId,
         pid: process.pid,
-        reason: reason2,
+        reason,
         ...extra
       });
       appendFileSync(DAEMON_LOG, `${line}
@@ -889,12 +888,12 @@ async function main(argv) {
     } catch {}
   };
   let requestShutdown = null;
-  const onFatal = (signal, code2) => () => {
+  const onFatal = (signal, code) => () => {
     if (requestShutdown)
-      requestShutdown(code2, "signal", signal);
+      requestShutdown(code, "signal", signal);
     else {
       logDaemon("signal", { signal, phase: "pre-init" });
-      process.exit(code2);
+      process.exit(code);
     }
   };
   process.on("uncaughtException", (e) => {
@@ -977,8 +976,8 @@ async function main(argv) {
           });
           return;
         }
-        const reason2 = taskRejection(raw);
-        const task = reason2 === null ? validateTask(raw) : null;
+        const reason = taskRejection(raw);
+        const task = reason === null ? validateTask(raw) : null;
         if (task) {
           kept.push(task);
           firstAt.set(task.id, index);
@@ -986,7 +985,7 @@ async function main(argv) {
           dropped.push({
             index,
             id: typeof rawId === "string" ? rawId : null,
-            reason: reason2 ?? "rejected"
+            reason: reason ?? "rejected"
           });
         }
       });
@@ -1022,12 +1021,12 @@ async function main(argv) {
     unreadableKept = true;
     ownsSnapshot = true;
     keptSinceWrite = true;
-    const reason2 = `the snapshot could not be read as a board: ${why}; it is kept byte-for-byte before anything is written over it`;
-    backupsThisSession.push({ kind: "unreadable", path: backup, taskCount: null, reason: reason2 });
+    const reason = `the snapshot could not be read as a board: ${why}; it is kept byte-for-byte before anything is written over it`;
+    backupsThisSession.push({ kind: "unreadable", path: backup, taskCount: null, reason });
     logDaemon("snapshotBackedUp", { kind: "unreadable", backup, why });
     if (announce)
       emitEvent({ type: "snapshotBackedUp", kind: "unreadable", backup, by: "system" });
-    process.stderr.write(`bounty: ${reason2} \u2014 copied to ${backup}
+    process.stderr.write(`bounty: ${reason} \u2014 copied to ${backup}
 `);
   };
   const keepUnowned = (path, taskCount) => {
@@ -1039,11 +1038,11 @@ async function main(argv) {
     }
     ownsSnapshot = true;
     keptSinceWrite = true;
-    const reason2 = `${unownedWhy}; kept before the board was first written over it`;
-    backupsThisSession.push({ kind: "unread", path: backup, taskCount, reason: reason2 });
+    const reason = `${unownedWhy}; kept before the board was first written over it`;
+    backupsThisSession.push({ kind: "unread", path: backup, taskCount, reason });
     logDaemon("snapshotBackedUp", { kind: "unread", backup, why: unownedWhy });
     emitEvent({ type: "snapshotBackedUp", kind: "unread", backup, by: "system" });
-    process.stderr.write(`bounty: ${reason2} \u2014 copied to ${backup}
+    process.stderr.write(`bounty: ${reason} \u2014 copied to ${backup}
 `);
   };
   let snapshotSaveFailed = null;
@@ -1077,14 +1076,14 @@ async function main(argv) {
       fix: snapshotFix(path)
     };
     if (unsaved) {
-      const reason2 = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
+      const reason = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
       if (!unsavedRecord) {
-        unsavedRecord = { kind: "unsaved", path: unsaved, taskCount: 0, reason: reason2 };
+        unsavedRecord = { kind: "unsaved", path: unsaved, taskCount: 0, reason };
         backupsThisSession.push(unsavedRecord);
       }
       unsavedRecord.path = unsaved;
       unsavedRecord.taskCount = state.tasks.length;
-      unsavedRecord.reason = reason2;
+      unsavedRecord.reason = reason;
       delete unsavedRecord.superseded;
     }
     logDaemon("snapshotSaveFailed", { path, error, unsaved, tasks: state.tasks.length });
@@ -1183,16 +1182,16 @@ async function main(argv) {
     try {
       present = snapshotPresent(own);
     } catch {}
-    let parsed2;
+    let parsed;
     let readable = false;
     try {
-      parsed2 = JSON.parse(readFileSync4(own, "utf8"));
+      parsed = JSON.parse(readFileSync4(own, "utf8"));
       readable = true;
     } catch {}
-    if (!present || readable && boardHoldsSnapshot(state, parsed2)) {
+    if (!present || readable && boardHoldsSnapshot(state, parsed)) {
       ownsSnapshot = true;
     } else {
-      unownedWhy = restoreFailed ? `this board's restore failed (${restoreFailed.reason}), so it never read its own snapshot` : restoredFromElsewhere ? "this board was restored from another file and never read its own snapshot" : readOwn ? `this board restored its own snapshot but could not hold all of it (${describeUnheld(restoreDropped, readable ? snapshotDiff(state, parsed2) : null)})` : "this board started without reading its own snapshot";
+      unownedWhy = restoreFailed ? `this board's restore failed (${restoreFailed.reason}), so it never read its own snapshot` : restoredFromElsewhere ? "this board was restored from another file and never read its own snapshot" : readOwn ? `this board restored its own snapshot but could not hold all of it (${describeUnheld(restoreDropped, readable ? snapshotDiff(state, parsed) : null)})` : "this board started without reading its own snapshot";
       let why = null;
       try {
         why = present ? unreadableReason(own) : null;
@@ -1202,7 +1201,7 @@ async function main(argv) {
           keepUnreadable(own, why, false);
         } catch {}
       }
-      const ownTasks = readable ? parsed2.tasks : undefined;
+      const ownTasks = readable ? parsed.tasks : undefined;
       if (restoredFromElsewhere && !restoreFailed && Array.isArray(ownTasks)) {
         const restored = new Map(state.tasks.map((t) => [t.id, JSON.stringify(t)]));
         const lost = ownTasks.filter((t) => restored.get(t?.id ?? "") !== JSON.stringify(t)).length;
@@ -1212,15 +1211,15 @@ async function main(argv) {
           ownsSnapshot = true;
           keptSinceWrite = true;
           const held = lost > 0 ? `${lost} task(s) the restored board does not` : "a title (or another board field) the restored board does not";
-          const reason2 = `this board was restored from another file, and its own snapshot held ${held}; kept before the restored board is written over it`;
+          const reason = `this board was restored from another file, and its own snapshot held ${held}; kept before the restored board is written over it`;
           backupsThisSession.push({
             kind: "pre-restore",
             path: backup,
             taskCount: ownTasks.length,
-            reason: reason2
+            reason
           });
           logDaemon("snapshotBackedUp", { kind: "pre-restore", backup, lost });
-          process.stderr.write(`bounty: ${reason2} \u2014 copied to ${backup}
+          process.stderr.write(`bounty: ${reason} \u2014 copied to ${backup}
 `);
         } catch {}
       }
@@ -1231,19 +1230,19 @@ async function main(argv) {
           ownsSnapshot = true;
           keptSinceWrite = true;
           const ownTaskCount = Array.isArray(ownTasks) ? ownTasks.length : null;
-          const reason2 = `${unownedWhy}; kept byte-for-byte before the board is written over it`;
+          const reason = `${unownedWhy}; kept byte-for-byte before the board is written over it`;
           backupsThisSession.push({
             kind: "partial-restore",
             path: backup,
             taskCount: ownTaskCount,
-            reason: reason2
+            reason
           });
           logDaemon("snapshotBackedUp", {
             kind: "partial-restore",
             backup,
             dropped: restoreDropped.length
           });
-          process.stderr.write(`bounty: ${reason2} \u2014 copied to ${backup}
+          process.stderr.write(`bounty: ${reason} \u2014 copied to ${backup}
 `);
         } catch (e) {
           const error = e instanceof Error ? e.message : String(e);
@@ -1273,23 +1272,23 @@ async function main(argv) {
   let resolveDone;
   let settled = false;
   const done = new Promise((res) => {
-    resolveDone = (v2) => {
+    resolveDone = (v) => {
       if (settled)
         return;
       settled = true;
       shutdownWatchdog = setTimeout(() => {
         logDaemon("shutdownWatchdog", {
-          reason: v2.reason,
+          reason: v.reason,
           note: "teardown did not finish; forcing exit"
         });
-        process.exit(v2.code);
+        process.exit(v.code);
       }, SHUTDOWN_WATCHDOG_MS);
-      res(v2);
+      res(v);
     };
   });
-  requestShutdown = (code2, reason2, signal) => {
+  requestShutdown = (code, reason, signal) => {
     logDaemon("signal", { signal, subscribers: sockets.size + sseClients.size });
-    resolveDone({ code: code2, reason: reason2 });
+    resolveDone({ code, reason });
   };
   let lastActivity = performance.now();
   const touch = () => {
@@ -1316,9 +1315,9 @@ async function main(argv) {
     for (const c of [...sseClients])
       c.send(chunk);
   }
-  const eventsResponse = (req, url2) => sseResponse({
+  const eventsResponse = (req, url) => sseResponse({
     log,
-    since: Number.parseInt(url2.searchParams.get("since") ?? "-1", 10),
+    since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
     heartbeatMs: SSE_HEARTBEAT_MS,
     clients: sseClients,
     signal: req.signal,
@@ -1540,8 +1539,8 @@ async function main(argv) {
           if (refused)
             return refused;
         }
-        const url2 = new URL(req.url);
-        const path = url2.pathname;
+        const url = new URL(req.url);
+        const path = url.pathname;
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded)
@@ -1560,7 +1559,7 @@ async function main(argv) {
           }), { headers: { "Content-Type": "application/json" } });
         }
         if (req.method === "GET" && path === "/events") {
-          return eventsResponse(req, url2);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req.json().then((body) => {

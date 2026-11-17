@@ -1,6 +1,4 @@
 // @bun
-var __require = import.meta.require;
-
 // src/glamour/backend/server.ts
 import { existsSync as existsSync4, mkdirSync as mkdirSync3, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "fs";
 import { homedir, tmpdir } from "os";

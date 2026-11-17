@@ -500,8 +500,8 @@ ${spec.helpFooter}` : ""}`;
     }
     if (rootRow !== undefined) {
       if (first !== undefined && (byToken.has(first) || subsOf.has(first))) {
-        const r2 = resolve(first, argv.slice(1));
-        return runRow(r2.row, r2.token, r2.args);
+        const r = resolve(first, argv.slice(1));
+        return runRow(r.row, r.token, r.args);
       }
       return runRow(rootRow, "", argv);
     }
@@ -996,10 +996,10 @@ async function tailWithHandoff(tail, h) {
       },
       render: (ev, frame) => {
         refusals = 0;
-        const line2 = tail.render ? tail.render(ev, frame) : frame.data;
-        if (line2 !== null && isLogFrame(ev, frame))
+        const line = tail.render ? tail.render(ev, frame) : frame.data;
+        if (line !== null && isLogFrame(ev, frame))
           events += 1;
-        return line2;
+        return line;
       },
       terminal: (ev, frame, accepted) => {
         if (tail.terminal?.(ev, frame, accepted)) {
@@ -1022,7 +1022,7 @@ async function tailWithHandoff(tail, h) {
         return tail.onComment?.(text) ?? null;
       },
       onDisconnect: (info) => {
-        const line2 = tail.onDisconnect?.(info) ?? null;
+        const line = tail.onDisconnect?.(info) ?? null;
         if (info.cause === "connect-failed") {
           refusals += 1;
           if (endOnLost && refusals >= LOST_AFTER_REFUSALS)
@@ -1030,7 +1030,7 @@ async function tailWithHandoff(tail, h) {
         } else {
           refusals = 0;
         }
-        return line2;
+        return line;
       },
       onEnd: (s) => {
         cursor = s.cursor;
@@ -1306,10 +1306,10 @@ async function cmdTopic(name, text, from) {
     die2("usage: grapevine topic <channel> [<text>]");
   const port = await ensureDaemon();
   if (text === undefined) {
-    const { status: status2, data: data2 } = await api(port, "GET", `/channels/${name}/topic`);
-    if (status2 >= 400)
-      dieApi(data2, status2);
-    printJson2({ ok: true, channel: name, topic: data2?.topic });
+    const { status, data } = await api(port, "GET", `/channels/${name}/topic`);
+    if (status >= 400)
+      dieApi(data, status);
+    printJson2({ ok: true, channel: name, topic: data?.topic });
     return;
   }
   const ensure = await api(port, "POST", "/channels", { name });
@@ -1888,8 +1888,8 @@ async function cmdStart() {
 async function cmdRestart(opts) {
   const port = await readDaemonPort();
   if (!port) {
-    const fresh2 = await ensureDaemon();
-    printJson2({ ok: true, restarted: true, port: fresh2, previous_pid: null });
+    const fresh = await ensureDaemon();
+    printJson2({ ok: true, restarted: true, port: fresh, previous_pid: null });
     return;
   }
   const { total, channels } = await fetchActiveSubscribers(port);
@@ -1931,13 +1931,13 @@ async function probeVersion(port) {
 async function cmdRoll(opts) {
   const port = await readDaemonPort();
   if (!port) {
-    const fresh2 = await ensureDaemon();
+    const fresh = await ensureDaemon();
     printJson2({
       ok: true,
       rolled: true,
       previous_pid: null,
-      port: fresh2,
-      ...await probeVersion(fresh2)
+      port: fresh,
+      ...await probeVersion(fresh)
     });
     return;
   }
