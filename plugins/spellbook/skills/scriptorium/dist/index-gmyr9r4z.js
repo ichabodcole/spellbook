@@ -66538,26 +66538,35 @@ function textOffset(root, projection, node, offset) {
   return resolveRange(root, projection, probe)?.to ?? null;
 }
 function nearestTextOffset(root, projection, container, offset) {
-  const caret = document.createRange();
-  caret.setStart(container, offset);
-  caret.setEnd(container, offset);
-  let before = null;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n = walker.nextNode();n !== null; n = walker.nextNode()) {
-    if (n === container)
-      continue;
-    const t = n;
-    if (caret.comparePoint(t, t.data.length) <= 0) {
-      before = textOffset(root, projection, t, t.data.length) ?? before;
-      continue;
-    }
-    if (before !== null)
-      return before;
-    const after = textOffset(root, projection, t, 0);
-    if (after !== null)
-      return after;
+  let stop = container;
+  if (container.nodeType !== Node.TEXT_NODE) {
+    stop = container.childNodes[offset] ?? null;
+    for (let up = container;!stop && up && up !== root; up = up.parentNode)
+      stop = up.nextSibling;
   }
-  return before;
+  const before = [];
+  const after = [];
+  let past = false;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode();n !== null; n = walker.nextNode()) {
+    if (n === stop)
+      past = true;
+    if (n === container || n.nodeType !== Node.TEXT_NODE)
+      continue;
+    (past ? after : before).push(n);
+  }
+  for (let i = before.length - 1;i >= 0; i--) {
+    const t = before[i];
+    const at = textOffset(root, projection, t, t.data.length);
+    if (at !== null)
+      return at;
+  }
+  for (const t of after) {
+    const at = textOffset(root, projection, t, 0);
+    if (at !== null)
+      return at;
+  }
+  return null;
 }
 function MarkdownView({
   text: textIn,
