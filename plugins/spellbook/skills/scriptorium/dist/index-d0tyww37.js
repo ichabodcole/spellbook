@@ -56956,6 +56956,7 @@ function DocumentView({
           y: event.clientY,
           from: daemonOffset(textRef.current, from),
           to: daemonOffset(textRef.current, to),
+          point: pos,
           noteIds,
           ...from < to ? { seen: v.state.sliceDoc(from, to) } : {}
         }, { shiftKey: event.shiftKey });
@@ -66878,6 +66879,7 @@ function MarkdownView({
                 y: e.clientY,
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
+                point: caret?.from ?? null,
                 noteIds,
                 ...m && r ? { seen: r.seen } : {},
                 ...noteRefusal ? { noteRefusal } : {}
@@ -67789,8 +67791,9 @@ function DocumentPane({
       window.removeEventListener("contextmenu", spent);
     };
   }, []);
-  const openMenu = (via) => (at, how) => {
-    const open = { ...at, via };
+  const openMenu = (via) => ({ point, ...at }, how) => {
+    const away = point !== null && at.from < at.to && (point < at.from || point > at.to);
+    const open = away ? { x: at.x, y: at.y, from: point, to: point, noteIds: at.noteIds, via } : { ...at, via };
     if (how.shiftKey || nativeNext.current || !menuUsable(open)) {
       nativeNext.current = false;
       setNoteAt(null);
