@@ -175,3 +175,48 @@ describe("Scriptorium restores an earlier session converted", () => {
     );
   });
 });
+
+// The downgrade trap: the converted session, opened and written to by the
+// shipped Scriptorium (5.2.0) in its own shape, was refused by `open
+// --restore` (exit 6, "was not written by scriptorium"). The entries are the
+// shapes 5.2.0 wrote onto a converted manifest (`say`, `task`).
+describe("Scriptorium restores a converted session the shipped writer wrote to again", () => {
+  const T5 = 1_794_950_506_526;
+
+  beforeAll(async () => {
+    await closeById(id);
+    const m = JSON.parse(manifestText()) as {
+      chat: Record<string, unknown>[];
+      tasks: Record<string, unknown>[];
+    };
+    m.chat.push(
+      { id: "m-5a", who: "agent", text: "hello from five two", ts: T5 },
+      { id: "m-5b", who: "agent", text: "old task", ts: T5 + 15 },
+    );
+    m.tasks.push({
+      id: "t-5a",
+      text: "old task",
+      who: "agent",
+      createdAt: T5 + 15,
+      messageId: "m-5b",
+    });
+    writeFileSync(join(dir(), "manifest.json"), JSON.stringify(m, null, 2));
+  }, 60_000);
+
+  test("open --restore succeeds, and its lines read as the kit's", async () => {
+    const r = await run(migrateEnv, "open", "--no-open", "--restore", id);
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const st = json<PublicState>(await run(migrateEnv, "state", "--session", id));
+    expect(st.chat.map((m) => [m.from, m.type, m.text])).toContainEqual([
+      "agent",
+      "message",
+      "hello from five two",
+    ]);
+    expect(st.tasks.map((t) => [t.title, t.status])).toContainEqual(["old task", "open"]);
+    const said = st.chat.find((m) => m.text.includes("written to by the shipped Scriptorium"));
+    expect(said?.from).toBe("system");
+    expect(said?.text).toContain("3 entries");
+    expect(manifestText()).not.toContain('"who"');
+  }, 60_000);
+});
