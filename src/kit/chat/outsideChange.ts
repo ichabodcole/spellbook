@@ -26,21 +26,22 @@ export function outsideChangeToast(doc: DocView): { title: string; description: 
 export type OutsideWatch = {
   /**
    * A snapshot of the open document arrived. True when its flag has just gone up
-   * and not been raised for it yet; a flag that goes down and up again is news again.
+   * and not been raised for it yet; a flag that goes down and up again is news
+   * again, and so is a newer outside text while it stays up (`outsideHash`).
    */
   snapshot: (doc: DocView) => boolean;
 };
 
 export function createOutsideWatch(): OutsideWatch {
-  const raised = new Set<string>();
+  const raised = new Map<string, string | undefined>();
   return {
     snapshot: (doc) => {
       if (!doc.outsideChanged) {
         raised.delete(doc.slug);
         return false;
       }
-      if (raised.has(doc.slug)) return false;
-      raised.add(doc.slug);
+      if (raised.has(doc.slug) && raised.get(doc.slug) === doc.outsideHash) return false;
+      raised.set(doc.slug, doc.outsideHash);
       return true;
     },
   };

@@ -1134,6 +1134,35 @@ describe("reader mode, rendered with both columns out of the way", () => {
       expect(off(compareButton())).toBe(false);
     });
 
+    test("a newer change on disk while compared is compared again: the diff shows the newer text", async () => {
+      await openStory();
+      await edit();
+      await writeUntilSeen(
+        "the outside change",
+        () => writeFileSync(story, "Changed outside.\n"),
+        () => daemon.session.doc("story").outsideChanged,
+      );
+      await waitFor(() => doc()?.outsideChanged === true, "the outside change");
+      await click(compareButton());
+      await waitFor(
+        () => document.body.textContent?.includes("Changed outside.") === true,
+        "the comparison with the first outside text",
+      );
+      const first = daemon.session.doc("story").outsideHash;
+      expect(first).toBeDefined();
+      // A second outside change while the banner is up: the newer text is asked
+      // about, and the comparison follows it without the human asking again.
+      await writeUntilSeen(
+        "the second outside change",
+        () => writeFileSync(story, "Changed outside again.\n"),
+        () => daemon.session.doc("story").outsideHash !== first,
+      );
+      await waitFor(
+        () => document.body.textContent?.includes("Changed outside again.") === true,
+        "the comparison with the newer outside text",
+      );
+    });
+
     test("a second version enables Compare again", async () => {
       await openStory();
       expect(off(compareButton())).toBe(true);

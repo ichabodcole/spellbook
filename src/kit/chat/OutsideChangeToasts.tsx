@@ -50,6 +50,10 @@ export function OutsideChangeToasts({
       return;
     }
     if (!news) return;
+    // A newer outside text while the flag stays up: the toast for the older one
+    // gives way to this one's.
+    const older = raised.current.get(doc.slug);
+    if (older !== undefined) dismiss(older);
     const { title, description } = outsideChangeToast(doc);
     const slug = doc.slug;
     const letGo = () => {
