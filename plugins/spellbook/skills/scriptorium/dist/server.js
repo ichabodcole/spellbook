@@ -28257,31 +28257,49 @@ function humanWroteAt(n) {
   return last.by === "human" ? last.at : null;
 }
 function notesWaiting(docs, chat, now, opts = {}) {
-  let lastAgent = Number.NEGATIVE_INFINITY;
-  for (let i = chat.length - 1;i >= 0; i--) {
-    const m = chat[i];
-    if (m?.from !== "agent")
-      continue;
+  const answered = new Map;
+  const lastAsk = new Map;
+  chat.forEach((m, i) => {
+    const noteId = m.about?.noteId;
+    if (!noteId)
+      return;
+    if (m.from === "human" && m.via === "ask")
+      lastAsk.set(noteId, i);
+    if (m.from !== "agent")
+      return;
     const t = Date.parse(m.ts);
-    if (Number.isFinite(t)) {
-      lastAgent = t;
-      break;
-    }
-  }
+    if (Number.isFinite(t) && t > (answered.get(noteId) ?? Number.NEGATIVE_INFINITY))
+      answered.set(noteId, t);
+  });
   const out = [];
   for (const d of docs)
     for (const n of d.notes) {
       if (n.resolved)
         continue;
-      const since = humanWroteAt(n);
-      if (since === null || lastAgent > Date.parse(since))
+      const wrote = humanWroteAt(n);
+      const last = answered.get(n.id) ?? Number.NEGATIVE_INFINITY;
+      if (wrote === null || last > Date.parse(wrote))
         continue;
+      const since = askAnsweredAt(chat, lastAsk.get(n.id), Date.parse(wrote)) ?? wrote;
       out.push({
         w: { doc: d.slug, noteId: n.id, since, ...badgeFor(since, now, opts) },
         t: at(since, now)
       });
     }
   return out.sort((a, b) => a.t - b.t).map((o) => o.w);
+}
+function askAnsweredAt(chat, askAt, wroteAt) {
+  if (askAt === undefined)
+    return null;
+  const asked = Date.parse(chat[askAt]?.ts ?? "");
+  if (!Number.isFinite(asked) || Number.isFinite(wroteAt) && asked < wroteAt)
+    return null;
+  for (let i = askAt + 1;i < chat.length; i++) {
+    const m = chat[i];
+    if (m?.from === "agent" && Date.parse(m.ts) > asked)
+      return m.ts;
+  }
+  return null;
 }
 function askOutstanding(note, chat) {
   if (note.resolved)
