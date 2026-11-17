@@ -6,7 +6,7 @@ description:
   posted in another chat is missing under its note; Story Studio fixed it with a
   reply index across chats (f557c49b).
 status: draft
-lifecycle: backlog
+lifecycle: dropped
 id: 01a1eabe-f5ad-71ae-9f0f-d41813f8cfd1
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
@@ -39,3 +39,7 @@ in the same code, so port the two together.
       open. Tested with two chats.
 - [ ] Ported with, or after, note-reply-clears-every-waiting-note.
 - [ ] Posted on `kit-parity`.
+
+Dropped at triage, 2026-11-17: it only matters when a session has several chats,
+and the Story Studio port scan skipped several chats per session (Scriptorium
+sessions are short). Cole agreed.
