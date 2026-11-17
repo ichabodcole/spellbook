@@ -47,8 +47,34 @@ Two constraints:
   `loadNoteGuard`'s lazy import of the markdown parser), so a split mustn't pull
   heavy imports back into the start-up path.
 
+**Story Studio has already done this (Cole, 2026-11-17).** Its "Refactoring"
+cycle (closed 2026-11-08) split the same kit. `server.ts` went from 10,922 lines
+to 1,155, in nine steps (D1–D9). WorkspaceShell (W1–W5) and DocumentPane (P1–P6)
+dropped under a 1,200-line limit, with behaviour unchanged. `session.ts` is at
+2,201 lines, with its parts in `packages/kit/src/workspace/session/`.
+
+Their write-ups are in Story Studio's `docs/items/_archive/`:
+
+- `refactor-session-split`: what `session.ts` holds, the modules it becomes, and
+  the rule that keeps it split;
+- `refactor-large-files`.
+
+Their implementer playbook also gained lessons. Moving code broke tests that
+replaced or counted facade members, and names in a new module could resolve to
+DOM globals.
+
+So this research starts there, not from a blank page. Their split may not map
+one to one onto ours, but it should give us a taxonomy for decomposing, and a
+faster path: port a split rather than design one. Following their shape also
+answers the port-back constraint above.
+
 ## Definition of done
 
+- [ ] The write-up reads Story Studio's split (its two write-ups, the D, W and P
+      steps, and the resulting module tree) and records the taxonomy it used. It
+      says where our kit's modules match theirs and where they differ, so that
+      following their split is ported where it fits and adapted where it
+      doesn't.
 - [ ] A write-up maps `session.ts` and `server.ts` into proposed modules, each
       with what it owns, with the import graph and start-up path checked for
       every module.
