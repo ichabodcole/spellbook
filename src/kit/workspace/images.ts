@@ -227,60 +227,142 @@ const codeOf = (e: unknown): string | undefined =>
   e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : undefined;
 
 /**
- * Whether an image's bytes visibly stop short of its format's end marker. Null
- * when the format's end cannot be checked (AVIF, anything else): no verdict.
+ * Whether an image's bytes stop before its format's end. Null when the format's
+ * end cannot be checked (AVIF, anything else), or the bytes do not follow the
+ * format's structure: no verdict. Each check walks the format's own structure
+ * to its end, so anything after that end (a motion photo's video, a camera's
+ * trailer, zero padding) leaves a whole file whole, and an end marker inside
+ * the file (an EXIF thumbnail's own FF D9) is never taken for the file's end.
  *
- * - PNG ends in an IEND chunk (anything after it is ignored by readers).
- * - JPEG ends in FF D9, give or take a little padding after it.
- * - GIF ends in its 0x3B trailer, give or take padding.
- * - WebP's RIFF header says how long the file is.
+ * - PNG: chunks, each skipped by its length, to IEND.
+ * - JPEG: segments, each skipped by its length, then each scan's entropy-coded
+ *   data, to EOI (FF D9).
+ * - GIF: blocks and their length-prefixed sub-blocks, to the 0x3B trailer.
+ * - WebP: the RIFF header says how long the file is.
  */
 export function cutShort(bytes: Uint8Array): boolean | null {
-  const n = bytes.byteLength;
   const at = (i: number, ...want: number[]) => want.every((b, k) => bytes[i + k] === b);
-  /** The end, past trailing zero (and, for JPEG, 0xFF fill) padding, looking back at most 64 bytes. */
-  const lastReal = (fill: number[]) => {
-    let i = n - 1;
-    while (i >= 0 && n - i <= 64 && fill.includes(bytes[i] ?? -1)) i--;
-    return i;
-  };
-  if (at(0, 0x89, 0x50, 0x4e, 0x47)) {
-    // "IEND", searched from the end: a truncated file has none.
-    for (let i = n - 8; i >= 8; i--) if (at(i, 0x49, 0x45, 0x4e, 0x44)) return false;
-    return true;
-  }
-  if (at(0, 0xff, 0xd8)) {
-    // Entropy-coded data stuffs every FF, so FF D9 near the end is the real end
-    // marker, not an embedded thumbnail's (those sit near the start).
-    const end = lastReal([0x00, 0xff, 0x0a, 0x0d, 0x20]);
-    for (let i = end - 1; i >= 2 && end - i < 32; i--) if (at(i, 0xff, 0xd9)) return false;
-    return true;
-  }
-  if (at(0, 0x47, 0x49, 0x46, 0x38)) return bytes[lastReal([0x00])] !== 0x3b;
+  if (at(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return pngCutShort(bytes);
+  if (at(0, 0xff, 0xd8)) return jpegCutShort(bytes);
+  if (at(0, 0x47, 0x49, 0x46, 0x38)) return gifCutShort(bytes);
   if (at(0, 0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50)) {
-    const riff = new DataView(bytes.buffer, bytes.byteOffset, n).getUint32(4, true);
-    return n < riff + 8;
+    const riff = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(4, true);
+    return bytes.byteLength < riff + 8;
   }
   return null;
+}
+
+/** PNG chunks (length, type, data, CRC) from the signature to a whole IEND. */
+function pngCutShort(b: Uint8Array): boolean | null {
+  const n = b.byteLength;
+  let i = 8;
+  for (;;) {
+    if (i + 8 > n) return true;
+    const len =
+      ((b[i] as number) << 24) |
+      ((b[i + 1] as number) << 16) |
+      ((b[i + 2] as number) << 8) |
+      (b[i + 3] as number);
+    if (len < 0) return null; // over 2^31 - 1: not a PNG length
+    for (let k = 4; k < 8; k++) {
+      const c = (b[i + k] as number) | 0x20;
+      if (c < 0x61 || c > 0x7a) return null; // a chunk type is four letters
+    }
+    const next = i + 12 + len;
+    if (b[i + 4] === 0x49 && b[i + 5] === 0x45 && b[i + 6] === 0x4e && b[i + 7] === 0x44)
+      return next > n;
+    i = next;
+  }
+}
+
+/**
+ * JPEG segments from SOI. A marker with a length is skipped by it (an APP1's
+ * embedded thumbnail, EOI and all, goes with it). After SOS comes entropy-coded
+ * data, where FF 00 is a stuffed FF and FF D0-D7 a restart: data, not markers.
+ * Any other marker ends the scan; a progressive JPEG has several scans, with
+ * tables between them. EOI is the end.
+ */
+function jpegCutShort(b: Uint8Array): boolean | null {
+  const n = b.byteLength;
+  let i = 2;
+  for (;;) {
+    if (i >= n) return true;
+    if (b[i] !== 0xff) return null;
+    while (i < n && b[i] === 0xff) i++; // fill bytes before a marker
+    if (i >= n) return true;
+    const m = b[i] as number;
+    i++;
+    if (m === 0xd9) return false;
+    if (m === 0x00) return null;
+    if (m === 0x01 || (m >= 0xd0 && m <= 0xd7)) continue; // no length
+    if (i + 2 > n) return true;
+    const len = ((b[i] as number) << 8) | (b[i + 1] as number);
+    if (len < 2) return null;
+    i += len;
+    if (i > n) return true;
+    if (m !== 0xda) continue;
+    // Entropy-coded data, up to the next real marker.
+    for (;;) {
+      const ff = b.indexOf(0xff, i);
+      if (ff < 0 || ff + 1 >= n) return true;
+      const next = b[ff + 1] as number;
+      if (next === 0x00 || (next >= 0xd0 && next <= 0xd7)) i = ff + 2;
+      else if (next === 0xff) i = ff + 1;
+      else {
+        i = ff;
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * GIF blocks after the header, screen descriptor and global colour table:
+ * extensions (0x21) and images (0x2C, with any local colour table and an LZW
+ * code size), each followed by length-prefixed sub-blocks ending in a 0, until
+ * the 0x3B trailer.
+ */
+function gifCutShort(b: Uint8Array): boolean | null {
+  const n = b.byteLength;
+  if (n < 13) return true;
+  const table = (flags: number) => (flags & 0x80 ? 3 * (1 << ((flags & 7) + 1)) : 0);
+  let i = 13 + table(b[10] as number);
+  for (;;) {
+    if (i >= n) return true;
+    const block = b[i];
+    if (block === 0x3b) return false;
+    if (block === 0x21) i += 2;
+    else if (block === 0x2c) {
+      if (i + 10 > n) return true;
+      i += 10 + table(b[i + 9] as number) + 1;
+    } else return null;
+    // Sub-blocks: a length byte, that many bytes, until a length of 0.
+    for (;;) {
+      if (i >= n) return true;
+      const len = b[i] as number;
+      i += 1 + len;
+      if (len === 0) break;
+    }
+  }
 }
 
 /**
  * Whether bytes that sniff as an image may be written as one. A truncated
  * upload keeps its header (so the sniff and even the size read pass) and
- * loses its pixels. A file whose format's end marker is missing is refused,
- * whether or not it decodes (Bun 1.4.4 decodes a JPEG cut short). A failed
- * decode alone does not refuse: Bun cannot decode everything a browser shows
- * (a CMYK JPEG). A
- * format this machine has no decoder for (an AVIF without AV1), one whose end
+ * loses its pixels. A file that stops before its format's end (`cutShort`) is
+ * refused, whether or not it decodes (Bun 1.4.4 decodes a PNG, JPEG or GIF cut
+ * short); bytes after a whole file's end are not a cut. A failed decode alone
+ * does not refuse: Bun cannot decode everything a browser shows (a CMYK JPEG).
+ * A format this machine has no decoder for (an AVIF without AV1), one whose end
  * cannot be checked, and an image too large to decode all pass: the browser may
  * still read them.
  */
 export async function imageDecodes(bytes: Uint8Array): Promise<boolean> {
   try {
     await new Bun.Image(bytes, { maxPixels: IMAGE_MAX_PIXELS }).resize(1, 1).webp().bytes();
-    // A decode that succeeds is not proof of a whole file: from Bun 1.4.4 a
-    // JPEG cut short decodes, its missing rows filled in. So a missing end
-    // marker refuses even then.
+    // A decode that succeeds is not proof of a whole file: from Bun 1.4.4 an
+    // image cut short decodes, its missing rows filled in. So a missing end
+    // refuses even then.
     return cutShort(bytes) !== true;
   } catch (e) {
     const code = codeOf(e);

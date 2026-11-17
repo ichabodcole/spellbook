@@ -19,6 +19,8 @@ import { SVG_REFUSED } from "../lib/docFormat.ts";
 import {
   CMYK_JPEG,
   GIF_1PX,
+  GIF_2_FRAMES,
+  gifWithXmp,
   heicBytes,
   jpegBytes,
   pngBytes,
@@ -26,7 +28,7 @@ import {
 } from "../lib/testImages.ts";
 import { fixtureDaemon } from "./fixtures/app";
 import { cmd, collectEvents, FakeSurface, waitUntil, writeUntilSeen } from "./fixtures/harness";
-import { cutShort } from "./images";
+import { cutShort, imageDecodes } from "./images";
 import type { ContextNode } from "./protocol";
 import type { WorkspaceDaemon } from "./server";
 import { tempRoot } from "./testing";
@@ -457,6 +459,107 @@ describe("a dropped image", () => {
     expect(cutShort(webp)).toBe(false);
     expect(cutShort(webp.slice(0, webp.length - 4))).toBe(true);
     expect(cutShort(new Uint8Array([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70]))).toBeNull();
+  });
+
+  test("cutShort walks each format to its end: what follows the end is fine, an end inside is not the end", async () => {
+    const cat = (...parts: Uint8Array[]) => new Uint8Array(parts.flatMap((p) => [...p]));
+    const junk = new TextEncoder().encode("SEFHjunk after the end....SEFT");
+    const zeros = new Uint8Array(100);
+    // A motion photo: the video after the JPEG's end.
+    const mp4 = new Uint8Array(4096);
+    new TextEncoder().encodeInto("\0\0\0\x18ftypmp42", mp4);
+    for (let i = 16; i < mp4.length; i++) mp4[i] = (i * 31) & 0xff;
+    const whole = {
+      png: pngBytes(32, 32),
+      jpeg: await jpegBytes(32, 32),
+      progressive: new Uint8Array(
+        await new Bun.Image(pngBytes(32, 32)).jpeg({ progressive: true }).bytes(),
+      ),
+      gif: GIF_1PX,
+      gif2: GIF_2_FRAMES,
+      gifXmp: gifWithXmp(),
+      webp: await webpBytes(32, 32),
+    };
+    for (const [name, bytes] of Object.entries(whole)) {
+      for (const after of [new Uint8Array(0), junk, zeros, mp4])
+        expect([name, after.length, cutShort(cat(bytes, after))]).toEqual([
+          name,
+          after.length,
+          false,
+        ]);
+      // Every cut, from one byte to all but the first 12 (a signature and a RIFF header), is cut short.
+      for (let cut = 1; cut <= bytes.length - 12; cut++)
+        expect([name, cut, cutShort(bytes.slice(0, bytes.length - cut))]).toEqual([
+          name,
+          cut,
+          true,
+        ]);
+    }
+    // A JPEG whose APP1 carries a whole thumbnail, FF D9 and all: that end is
+    // not the file's, so the file cut short is still cut short.
+    const thumb = await jpegBytes(8, 8);
+    const payload = cat(new TextEncoder().encode("Exif\0\0"), thumb);
+    const app1 = cat(
+      new Uint8Array([0xff, 0xe1, (payload.length + 2) >> 8, (payload.length + 2) & 0xff]),
+      payload,
+    );
+    const withThumb = cat(whole.jpeg.subarray(0, 2), app1, whole.jpeg.subarray(2));
+    expect(cutShort(withThumb)).toBe(false);
+    expect(cutShort(cat(withThumb, mp4))).toBe(false);
+    expect(cutShort(withThumb.slice(0, withThumb.length - 2))).toBe(true);
+    expect(cutShort(withThumb.slice(0, withThumb.length - 300))).toBe(true);
+    // Bytes that only start like a format, then break its structure: no verdict.
+    expect(cutShort(cat(GIF_1PX.subarray(0, 19), new Uint8Array([0x99, 0, 0])))).toBeNull();
+    expect(cutShort(cat(whole.jpeg.subarray(0, 2), new Uint8Array([0x12, 0x34, 0, 0])))).toBeNull();
+  });
+
+  test("imageDecodes refuses an image cut short even when Bun decodes it, and takes one with bytes after its end", async () => {
+    const decodes = async (b: Uint8Array) => {
+      try {
+        await new Bun.Image(b).resize(1, 1).webp().bytes();
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const cat = (a: Uint8Array, b: Uint8Array) => new Uint8Array([...a, ...b]);
+    const junk = new TextEncoder().encode("junkjunk!!");
+    const zeros = new Uint8Array(100);
+    const png = pngBytes(64, 64);
+    const jpeg = await jpegBytes(64, 64);
+    const progressive = new Uint8Array(
+      await new Bun.Image(png).jpeg({ progressive: true }).bytes(),
+    );
+    const webp = await webpBytes(64, 64);
+    for (const [name, bytes] of Object.entries({
+      png,
+      jpeg,
+      progressive,
+      gif: GIF_1PX,
+      gif2: GIF_2_FRAMES,
+      webp,
+    })) {
+      expect([name, await imageDecodes(bytes)]).toEqual([name, true]);
+      expect([name, await imageDecodes(cat(bytes, junk))]).toEqual([name, true]);
+      expect([name, await imageDecodes(cat(bytes, zeros))]).toEqual([name, true]);
+      // Deep cut: half the file gone.
+      expect([name, await imageDecodes(bytes.slice(0, bytes.length >> 1))]).toEqual([name, false]);
+    }
+    // Cut short, and Bun still decodes them (it fills in what is missing): refused.
+    const stillDecoding: [string, Uint8Array][] = [
+      ["png", png.slice(0, png.length - 12)],
+      ["jpeg", jpeg.slice(0, jpeg.length - 2)],
+      ["progressive", progressive.slice(0, progressive.length - 2)],
+      ["gif", GIF_1PX.slice(0, GIF_1PX.length - 1)],
+      ["gif2", GIF_2_FRAMES.slice(0, GIF_2_FRAMES.length - 4)],
+    ];
+    for (const [name, cut] of stillDecoding) {
+      expect([name, await decodes(cut)]).toEqual([name, true]);
+      expect([name, await imageDecodes(cut)]).toEqual([name, false]);
+    }
+    // No WebP cut decodes in Bun 1.4.4, so the decode refuses it before cutShort does.
+    expect(await decodes(webp.slice(0, webp.length - 4))).toBe(false);
+    expect(await imageDecodes(webp.slice(0, webp.length - 4))).toBe(false);
   });
 
   test("a body shorter than its declared Content-Length is refused, never written truncated", async () => {

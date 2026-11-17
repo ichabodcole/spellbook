@@ -481,7 +481,8 @@ describe("tailEvents", () => {
         // response ended the read loop at once (`stream-end`). From 1.4.4 a
         // 204's body is null, so the `!res.body` guard runs (`no-body`). Both
         // are the B5 branch: an empty response must grow the backoff. The
-        // test asserts that property, and accepts either branch.
+        // test asserts that property, and accepts either branch; the test
+        // after it drives `stream-end` on purpose, whatever the Bun.
         return new Response(null, { status: 204 });
       },
     });
@@ -512,6 +513,50 @@ describe("tailEvents", () => {
     const last = gaps.at(-1) as number;
     const first = gaps[0] as number;
     expect(last).toBeGreaterThan(first * 2);
+  }, 15000);
+
+  test("a 200 whose body ends at once with no bytes grows the backoff too (stream-end)", async () => {
+    const at: number[] = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => {
+        at.push(Date.now());
+        // A body that is there, and closes before its first byte: the read
+        // loop's `done` arrives at once. No byte, so the backoff never resets.
+        return new Response(
+          new ReadableStream({
+            start(c) {
+              c.close();
+            },
+          }),
+          { headers: { "content-type": "text/event-stream" } },
+        );
+      },
+    });
+    cleanup.push(() => server.stop(true));
+    const ac = new AbortController();
+    const causes: string[] = [];
+    setTimeout(() => ac.abort(), 900);
+    await tailEvents({
+      resolve: () => `http://127.0.0.1:${server.port}`,
+      path: "/events",
+      since: 0,
+      retry: { initialMs: 40, maxMs: 5000 },
+      onDisconnect: ({ cause }) => {
+        causes.push(cause);
+        return null;
+      },
+      signal: ac.signal,
+      signals: false,
+      out: collector(),
+      err: collector(),
+    });
+    expect(causes.length).toBeGreaterThanOrEqual(3);
+    expect(causes.every((c) => c === "stream-end")).toBe(true);
+    expect(at.length).toBeGreaterThanOrEqual(4);
+    const gaps = at.slice(1).map((t, i) => t - (at[i] as number));
+    expect(gaps.at(-1) as number).toBeGreaterThan((gaps[0] as number) * 2);
   }, 15000);
 
   // ── the diagnostics sink ──────────────────────────────────────────────────

@@ -1817,15 +1817,15 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
     // --- images brought in from outside (the human's drop) ---------------------
     /**
-     * Bytes that sniff as an image, do not decode, and stop before their
-     * format's end marker (cut short in transit) are refused rather than
-     * written. What does not sniff as an image is left to the session's own
+     * Bytes that sniff as an image and stop before their format's end (cut
+     * short in transit) are refused rather than written, whether or not they
+     * decode. What does not sniff as an image is left to the session's own
      * check, which says so in its words.
      */
     const decodesOrDie = async (raw: string, bytes: Uint8Array): Promise<void> => {
       if (sniffImage(bytes.subarray(0, 32)) && !(await imageDecodes(bytes)))
         throw new SessionError(
-          `${raw} is cut short: it does not decode, and stops before its format's end: not brought in`,
+          `${raw} is cut short: it stops before its format's end (cut short in transit): not brought in`,
           400,
         );
     };
