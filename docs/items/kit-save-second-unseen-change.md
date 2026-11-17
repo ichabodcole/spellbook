@@ -7,7 +7,7 @@ description:
   Keep mine; if the file changes outside again, unseen, that second change is
   overwritten without the human ever seeing it in the diff.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a17585-b354-7751-9164-583e44a4659e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

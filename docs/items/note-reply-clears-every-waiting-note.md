@@ -6,7 +6,7 @@ description:
   note-reply to one note (or any say) stops every other note from showing as
   waiting, though nothing was said to them.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a1759b-4cb1-72ff-b1fd-f47246421e50
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

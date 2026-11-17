@@ -98,3 +98,5 @@ _Written at close._
 - fix/kit-right-click-away-from-selection (open)
 - fix/scriptorium-downgraded-session-refused (open)
 - fix/kit-cli-small-fixes (open)
+- fix/kit-save-second-unseen-change (open)
+- fix/note-reply-clears-every-waiting-note (open)
