@@ -527,8 +527,8 @@ describe("a session, end to end through the launchers", () => {
   });
 
   // Per-note waiting: a note the human leaves is owed an
-  // answer until it is resolved, the agent speaks after it, or the agent
-  // rewrites it. The agent hears nothing new about it.
+  // answer until it is resolved, the agent says something about it
+  // (`note-reply`), or the agent rewrites it. The agent hears nothing new about it.
   const owed = async () => (await state()).notesWaiting ?? [];
   const S = () => ["--session", sessionId];
 
@@ -543,7 +543,12 @@ describe("a session, end to end through the launchers", () => {
     // A system line is not an answer: the agent noting something posts one.
     expect((await cli("note", ...S(), "--doc", "a", "--quote", "# A", "narrated")).code).toBe(0);
     expect((await owed()).map((n) => n.noteId)).toEqual([String(first.note)]);
+    // Nor is a word in the chat about nothing: it answers the chat, not the note.
     expect((await cli("say", ...S(), "on it")).code).toBe(0);
+    expect((await owed()).map((n) => n.noteId)).toEqual([String(first.note)]);
+    expect((await cli("note-reply", ...S(), String(first.note), "--doc", "a", "done")).code).toBe(
+      0,
+    );
     expect(await owed()).toEqual([]);
 
     // A second note, closed by resolving it, with nothing said.
@@ -566,7 +571,9 @@ describe("a session, end to end through the launchers", () => {
     const again = await owed();
     expect(again.map((n) => n.noteId)).toEqual([String(second.note)]);
     expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(reopenedAfter);
-    expect((await cli("say", ...S(), "seen")).code).toBe(0);
+    expect((await cli("note-reply", ...S(), String(second.note), "--doc", "a", "seen")).code).toBe(
+      0,
+    );
     expect(await owed()).toEqual([]);
   });
 

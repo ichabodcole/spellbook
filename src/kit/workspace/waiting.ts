@@ -115,14 +115,18 @@ function badgeFor(
 // What answers a note, each part a fact the daemon already holds:
 //   - Resolved. Resolving is the act that closes a note, by either party, so a
 //     resolved note is owed nothing. It is the note's own stored state.
-//   - An agent message after it. The agent spoke to the human after the note
-//     was written, which is what the human is waiting for: the same reason one
-//     reply answers a run of messages. It claims "the agent has said something
-//     since", never "the agent dealt with this", so it clears the mark and
+//   - An agent message about it, after it: a `note-reply`, or a `say` that
+//     names the note (`about.noteId`). The agent answered this note, which is
+//     what the human is waiting for. It claims "the agent has said something
+//     about this", never "the agent dealt with this", so it clears the mark and
 //     leaves the note open: dealt with is `resolved`. Counting only `resolved`
 //     was the option not taken: an agent visibly working on a note would flip
 //     it to "may be stuck" whenever it forgot to resolve, and the whole premise
-//     of the wait is that it forgets.
+//     of the wait is that it forgets. An agent message about nothing, or about
+//     another note, answers nothing here: before `note-reply` named its note,
+//     any agent message cleared every note, so a reply to one marked all the
+//     others answered with nothing said to them. The same rule as Story
+//     Studio's kit (its `f557c49b`).
 //   - The agent rewriting (or reopening) this note: an act on this note, seen
 //     on this note.
 // A system line is still not a reply. The agent resolving note A is narrated
@@ -150,24 +154,29 @@ function humanWroteAt(n: NoteFacts): string | null {
   return last.by === "human" ? last.at : null;
 }
 
-/** Every note owed an answer, across the session's documents, oldest first. */
+/** What the note rule reads off a message: who, when, and which note it is about. */
+type NoteMsg = Msg & { about?: Pick<MessageAbout, "noteId"> };
+
+/**
+ * Every note owed an answer, across the session's documents, oldest first.
+ * Only an agent message about a note (`about.noteId`) answers it; a plain
+ * `say` answers the conversation's wait, never a note's.
+ */
 export function notesWaiting(
   docs: readonly { slug: string; notes: readonly NoteFacts[] }[],
-  chat: readonly Msg[],
+  chat: readonly NoteMsg[],
   now: number,
   opts: { stallMs?: number; acknowledgedUntil?: number } = {},
 ): NoteWaiting[] {
-  // The conversation is in order, so the newest agent message is the last one
-  // whose time parses; one that does not is passed over, not taken as the newest.
-  let lastAgent = Number.NEGATIVE_INFINITY;
-  for (let i = chat.length - 1; i >= 0; i--) {
-    const m = chat[i];
-    if (m?.from !== "agent") continue;
+  // The newest agent message about each note, among those whose time parses;
+  // one that does not is passed over, not taken as the newest.
+  const answered = new Map<string, number>();
+  for (const m of chat) {
+    const noteId = m.about?.noteId;
+    if (m.from !== "agent" || !noteId) continue;
     const t = Date.parse(m.ts);
-    if (Number.isFinite(t)) {
-      lastAgent = t;
-      break;
-    }
+    if (Number.isFinite(t) && t > (answered.get(noteId) ?? Number.NEGATIVE_INFINITY))
+      answered.set(noteId, t);
   }
   const out: { w: NoteWaiting; t: number }[] = [];
   for (const d of docs)
@@ -175,7 +184,8 @@ export function notesWaiting(
       if (n.resolved) continue;
       const since = humanWroteAt(n);
       // Strictly after: a reply in the same millisecond cannot have read it.
-      if (since === null || lastAgent > Date.parse(since)) continue;
+      const last = answered.get(n.id) ?? Number.NEGATIVE_INFINITY;
+      if (since === null || last > Date.parse(since)) continue;
       out.push({
         w: { doc: d.slug, noteId: n.id, since, ...badgeFor(since, now, opts) },
         t: at(since, now),
@@ -194,10 +204,15 @@ export function notesWaiting(
 // ask, whatever its `via` says. (The mark was `about.ask: true` until Story
 // Studio's bbc54fd made the gesture the mark; that field is gone.)
 //
-// The ask is owed by the note's own rule (`notesWaiting`), timed from the ask:
-// it is answered when the note is resolved, when the agent says anything after
-// it, or when the agent rewrites or reopens the note. A human rewrite or reopen
-// after it re-arms too: the note is a new question, and may be asked about.
+// The ask is owed much as the note is (`notesWaiting`), timed from the ask: it
+// is answered when the note is resolved, when the agent says anything after it,
+// or when the agent rewrites or reopens the note. Anything the agent says, not
+// only what it says about the note: the ask is a chat message too, and a plain
+// reply in the chat answers it as it answers any message there; holding the
+// button until a `note-reply` would only make the human type what the button
+// was for. The note's own mark keeps the stricter rule (Story Studio's kit made
+// the same split). A human rewrite or reopen after it re-arms too: the note is
+// a new question, and may be asked about.
 // Derived from the stored note and the stored conversation, so it survives a
 // restore with them; nothing is flagged.
 

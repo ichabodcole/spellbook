@@ -332,7 +332,9 @@ describe("a note that may be stuck offers Ask the agent", () => {
     await waitFor(() => askOn("first question") !== null, "the act", 4000);
     await click(askOn("first question"));
     await waitFor(() => asksHeard().length === 1, "the first ask");
-    await post({ op: "say", text: "Looking at it." });
+    // The answer about the note: only that clears its mark (a plain `say`
+    // settles the ask, not the note).
+    await post({ op: "note.reply", doc: slug, id, body: "Looking at it." });
     await waitFor(() => markOn("first question") === null, "the mark to clear");
 
     await settle(() => {

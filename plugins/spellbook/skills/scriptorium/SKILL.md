@@ -291,16 +291,18 @@ honest replies:
 You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
 
-**A note of theirs shows the same thing** — a pulse on the note until you say
-something in the app (a `note-reply` is the answer that sits with the note), or
-resolve it, then "may be stuck" after 30 seconds. `working` covers notes too.
-There is no nudge for a note. When one looks stuck, they have an **Ask the
-agent** button on it, and it arrives as a `message` with `via: "ask"` and the
-note's id in `about.noteId`. **`about.doc` there is the document they have OPEN,
-which may not be the note's:** the note's document is the `--doc` in the event's
-`hint`, which names the exact `notes`, `note-reply` and `note-resolve` commands
-(or find the id with `notes`). The note then shows it is with you until you
-reply or resolve it. If they rewrite it, it is owed again.
+**A note of theirs shows the same thing** — a pulse on the note until you reply
+with `note-reply <id>` (a message about that note, which sits with it) or
+resolve it, then "may be stuck" after 30 seconds. A plain `say` answers the
+conversation, not a note, and a reply to one note leaves the others waiting.
+`working` covers notes too. There is no nudge for a note. When one looks stuck,
+they have an **Ask the agent** button on it, and it arrives as a `message` with
+`via: "ask"` and the note's id in `about.noteId`. **`about.doc` there is the
+document they have OPEN, which may not be the note's:** the note's document is
+the `--doc` in the event's `hint`, which names the exact `notes`, `note-reply`
+and `note-resolve` commands (or find the id with `notes`). The note then shows
+it is with you until you reply or resolve it. If they rewrite it, it is owed
+again.
 
 ## The words that mean something specific
 
