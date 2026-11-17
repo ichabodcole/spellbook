@@ -93,14 +93,84 @@ function pointOffset(
     }
   }
   if (!range || !root.contains(range.startContainer)) return null;
-  // A caret is a POINT; `resolveRange` refuses an empty range, so widen it by one
-  // character and take the start of what comes back.
-  const probe = document.createRange();
-  probe.setStart(range.startContainer, range.startOffset);
   const node = range.startContainer;
-  const len = node.nodeType === Node.TEXT_NODE ? (node as Text).data.length : 0;
-  probe.setEnd(node, Math.min(range.startOffset + 1, len));
-  return resolveRange(root, projection, probe)?.from ?? null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    const at = textOffset(root, projection, node as Text, range.startOffset);
+    if (at !== null) return at;
+  }
+  // Between blocks, or beside them (the browser's caret is in an element, or in
+  // the whitespace that separates two blocks): the nearest text position, the
+  // end of the text before it or, with none before, the start of the text after.
+  return nearestTextOffset(root, projection, node, range.startOffset);
+}
+
+/**
+ * The source offset of a caret at `offset` in text node `node`; null when the
+ * node is not text the projection knows (whitespace between blocks). A caret is
+ * a POINT, and `resolveRange` refuses an empty range, so the probe is one
+ * character wide: the one after the caret, taking its start, or, at the end of
+ * the node (a right-click past a line's last word), the one before it, taking
+ * its end.
+ */
+function textOffset(
+  root: HTMLElement,
+  projection: ReturnType<typeof project>,
+  node: Text,
+  offset: number,
+): number | null {
+  const len = node.data.length;
+  if (len === 0) return null;
+  const probe = document.createRange();
+  if (offset < len) {
+    probe.setStart(node, offset);
+    probe.setEnd(node, offset + 1);
+    return resolveRange(root, projection, probe)?.from ?? null;
+  }
+  probe.setStart(node, len - 1);
+  probe.setEnd(node, len);
+  return resolveRange(root, projection, probe)?.to ?? null;
+}
+
+/** The source offset of the text position nearest a caret at `offset` in `container`, outside any text. */
+function nearestTextOffset(
+  root: HTMLElement,
+  projection: ReturnType<typeof project>,
+  container: Node,
+  offset: number,
+): number | null {
+  // The first node at or after the caret, in document order: the child it sits
+  // before, else whatever follows the container (null: the caret ends the page).
+  // A text container is itself the boundary; it is no candidate.
+  let stop: Node | null = container;
+  if (container.nodeType !== Node.TEXT_NODE) {
+    stop = container.childNodes[offset] ?? null;
+    for (let up: Node | null = container; !stop && up && up !== root; up = up.parentNode)
+      stop = up.nextSibling;
+  }
+  // One walk splits the text nodes at the caret, by position in the tree alone
+  // (no range comparisons, each of which can cost a walk of its own), and only
+  // then the source: `textOffset` aligns the whole page, so it is asked of the
+  // nearest candidates alone, never of every node before the caret.
+  const before: Text[] = [];
+  const after: Text[] = [];
+  let past = false;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+    if (n === stop) past = true;
+    if (n === container || n.nodeType !== Node.TEXT_NODE) continue;
+    (past ? after : before).push(n as Text);
+  }
+  // The last text before the caret that has a place, at its end; else the first after, at its start.
+  for (let i = before.length - 1; i >= 0; i--) {
+    const t = before[i] as Text;
+    const at = textOffset(root, projection, t, t.data.length);
+    if (at !== null) return at;
+  }
+  for (const t of after) {
+    const at = textOffset(root, projection, t, 0);
+    if (at !== null) return at;
+  }
+  return null;
 }
 
 export function MarkdownView({
@@ -677,6 +747,7 @@ export function MarkdownView({
                 y: e.clientY,
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
+                point: caret?.from ?? null,
                 noteIds,
                 ...(m && r ? { seen: r.seen } : {}),
                 ...(noteRefusal ? { noteRefusal } : {}),

@@ -234,10 +234,21 @@ async function follow(label: string, name: string) {
   await waitFor(() => openName() === name, `${name} open from "${label}"`);
 }
 
+/**
+ * happy-dom lays nothing out, so the editor cannot say what is under the
+ * pointer: put it on the selection, where a right-click on what is selected
+ * lands (a right-click away from it is a caret there, #146).
+ */
+function pointerOnSelection() {
+  const v = view();
+  (v as unknown as { posAtCoords: () => number }).posAtCoords = () => v.state.selection.main.from;
+}
+
 describe("Add link on a selection", () => {
   test("the right-click menu offers Add link; the selection becomes a link that follows", async () => {
     const m = await start();
     await select("the bakery");
+    pointerOnSelection();
     await settle(() => {
       view().contentDOM.dispatchEvent(
         new window.MouseEvent("contextmenu", {
@@ -277,6 +288,7 @@ describe("Add link on a selection", () => {
     for (const e of daemon.session.context) daemon.session.rescan(e.id);
     const m = await start("crlf.md");
     await select("the bakery");
+    pointerOnSelection();
     await settle(() => {
       view().contentDOM.dispatchEvent(
         new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true }),

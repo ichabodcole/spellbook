@@ -954,8 +954,17 @@ export function DocumentPane({
   }, []);
   const openMenu =
     (via: "raw" | "rendered") =>
-    (at: At, how: { shiftKey: boolean }): boolean => {
-      const open = { ...at, via };
+    ({ point, ...at }: At & { point: number | null }, how: { shiftKey: boolean }): boolean => {
+      // A right-click away from a selection is a caret at the point, as a
+      // browser takes it (#146): the menu acts there (Insert a link, Paste) and
+      // offers nothing on the distant passage (no Cut, Copy or Add note). The
+      // selection itself is left as it is, so closing the menu loses nothing.
+      // Chromium can keep a selection on such a click (after Cmd+Z, say), and
+      // the rendered view has no caret to move, so both views ask the same.
+      const away = point !== null && at.from < at.to && (point < at.from || point > at.to);
+      const open = away
+        ? { x: at.x, y: at.y, from: point, to: point, noteIds: at.noteIds, via }
+        : { ...at, via };
       // A menu with nothing usable in it (an ended session, a caret only) is
       // no menu: the browser's own is more use than an empty one.
       if (how.shiftKey || nativeNext.current || !menuUsable(open)) {

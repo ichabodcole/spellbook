@@ -56956,6 +56956,7 @@ function DocumentView({
           y: event.clientY,
           from: daemonOffset(textRef.current, from),
           to: daemonOffset(textRef.current, to),
+          point: pos,
           noteIds,
           ...from < to ? { seen: v.state.sliceDoc(from, to) } : {}
         }, { shiftKey: event.shiftKey });
@@ -66514,12 +66515,58 @@ function pointOffset(root, projection, x, y) {
   }
   if (!range || !root.contains(range.startContainer))
     return null;
-  const probe = document.createRange();
-  probe.setStart(range.startContainer, range.startOffset);
   const node = range.startContainer;
-  const len = node.nodeType === Node.TEXT_NODE ? node.data.length : 0;
-  probe.setEnd(node, Math.min(range.startOffset + 1, len));
-  return resolveRange(root, projection, probe)?.from ?? null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    const at = textOffset(root, projection, node, range.startOffset);
+    if (at !== null)
+      return at;
+  }
+  return nearestTextOffset(root, projection, node, range.startOffset);
+}
+function textOffset(root, projection, node, offset) {
+  const len = node.data.length;
+  if (len === 0)
+    return null;
+  const probe = document.createRange();
+  if (offset < len) {
+    probe.setStart(node, offset);
+    probe.setEnd(node, offset + 1);
+    return resolveRange(root, projection, probe)?.from ?? null;
+  }
+  probe.setStart(node, len - 1);
+  probe.setEnd(node, len);
+  return resolveRange(root, projection, probe)?.to ?? null;
+}
+function nearestTextOffset(root, projection, container, offset) {
+  let stop = container;
+  if (container.nodeType !== Node.TEXT_NODE) {
+    stop = container.childNodes[offset] ?? null;
+    for (let up = container;!stop && up && up !== root; up = up.parentNode)
+      stop = up.nextSibling;
+  }
+  const before = [];
+  const after = [];
+  let past = false;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode();n !== null; n = walker.nextNode()) {
+    if (n === stop)
+      past = true;
+    if (n === container || n.nodeType !== Node.TEXT_NODE)
+      continue;
+    (past ? after : before).push(n);
+  }
+  for (let i = before.length - 1;i >= 0; i--) {
+    const t = before[i];
+    const at = textOffset(root, projection, t, t.data.length);
+    if (at !== null)
+      return at;
+  }
+  for (const t of after) {
+    const at = textOffset(root, projection, t, 0);
+    if (at !== null)
+      return at;
+  }
+  return null;
 }
 function MarkdownView({
   text: textIn,
@@ -66878,6 +66925,7 @@ function MarkdownView({
                 y: e.clientY,
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
+                point: caret?.from ?? null,
                 noteIds,
                 ...m && r ? { seen: r.seen } : {},
                 ...noteRefusal ? { noteRefusal } : {}
@@ -67789,8 +67837,9 @@ function DocumentPane({
       window.removeEventListener("contextmenu", spent);
     };
   }, []);
-  const openMenu = (via) => (at, how) => {
-    const open = { ...at, via };
+  const openMenu = (via) => ({ point, ...at }, how) => {
+    const away = point !== null && at.from < at.to && (point < at.from || point > at.to);
+    const open = away ? { x: at.x, y: at.y, from: point, to: point, noteIds: at.noteIds, via } : { ...at, via };
     if (how.shiftKey || nativeNext.current || !menuUsable(open)) {
       nativeNext.current = false;
       setNoteAt(null);

@@ -57,6 +57,8 @@ let reported: HeldSelection[];
 let startMode: ViewMode = "split";
 /** What the page's clipboard holds, and whether it lets the page read it. */
 let clipboard: { text: string; readable: boolean; writable: boolean };
+/** Where a right-click in the raw editor lands, in its text; null, on the selection. */
+let rawPointer: number | null = null;
 
 const A = "# A\n\nsee the bakery here\n";
 const C = "# C\n\nPlain [link to b](./part/b.md) after\n";
@@ -83,6 +85,7 @@ beforeEach(async () => {
   announced = [];
   reported = [];
   startMode = "split";
+  rawPointer = null;
   clipboard = { text: "", readable: true, writable: true };
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -196,6 +199,14 @@ async function key(el: Element | null, k: string) {
  */
 async function rightClick(el: Element | null, init: MouseEventInit = {}): Promise<boolean> {
   if (!el) throw new Error("nothing to right-click");
+  // happy-dom lays nothing out, so the editor cannot say what is under the
+  // pointer: unless a test placed it (`pointerAtRaw`), it is on the selection
+  // (or the caret), where a right-click on what is selected lands.
+  if (el.closest(".cm-editor")) {
+    const v = view();
+    (v as unknown as { posAtCoords: () => number }).posAtCoords = () =>
+      rawPointer ?? v.state.selection.main.from;
+  }
   let cancelled = false;
   await settle(() => {
     el.dispatchEvent(
@@ -392,6 +403,208 @@ describe("in the rendered view alone", () => {
       );
     } finally {
       delete doc.caretRangeFromPoint;
+    }
+    await m.unmount();
+  });
+});
+
+/** The raw editor's position under the pointer, for the right-clicks that follow (see `rightClick`). */
+function pointerAtRaw(pos: number) {
+  rawPointer = pos;
+}
+/** The text node in the rendered view holding `word`, and where in it the word starts. */
+function renderedWord(word: string): { node: Text; at: number } {
+  const prose = q(".md-prose") as HTMLElement;
+  const walker = document.createTreeWalker(prose, 4);
+  let node: Node | null = walker.nextNode();
+  while (node && !(node.textContent ?? "").includes(word)) node = walker.nextNode();
+  if (!node) throw new Error(`no "${word}" in the rendered view`);
+  const t = node as Text;
+  return { node: t, at: t.data.indexOf(word) };
+}
+/** The rendered view's point under the pointer: the start of `word` (happy-dom has no hit-testing). */
+function pointerAtRendered(word: string) {
+  const { node, at } = renderedWord(word);
+  caretInRendered(node, at);
+}
+/** The rendered view's caret under the pointer, where the browser would put it: `offset` in `node`. */
+function caretInRendered(node: Node, offset: number) {
+  (document as unknown as Record<string, unknown>).caretRangeFromPoint = () => {
+    const r = document.createRange();
+    r.setStart(node, offset);
+    r.setEnd(node, offset);
+    return r;
+  };
+}
+/** The browser's selection over `word` in the rendered view, kept through the right-click. */
+function selectRendered(word: string) {
+  const { node, at } = renderedWord(word);
+  const r = document.createRange();
+  r.setStart(node, at);
+  r.setEnd(node, at + word.length);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(r);
+}
+const raw = () => view().state.selection.main;
+
+// #146: a right-click away from a selection is a caret at the point clicked.
+// Chromium may keep the selection on such a click (after Cmd+Z, say), and the
+// menu used to act on it: Paste replaced the distant word.
+describe("away from the selection", () => {
+  test("raw: the menu is the caret's, and Paste goes in at the point, leaving the selected word alone", async () => {
+    const m = await start();
+    clipboard.text = "fresh ";
+    await select("bakery");
+    const selected = { from: raw().from, to: raw().to };
+    pointerAtRaw(text().indexOf("here"));
+    expect(await rightClick(view().contentDOM)).toBe(true);
+    // No Cut, Copy or Add note on the distant passage.
+    expect(items()).toEqual(["Add noteselect text first", "Insert a link", "Paste"]);
+    expect(item("Add note")?.disabled).toBe(true);
+    // The selection is not collapsed: dismissing the menu loses nothing.
+    expect({ from: raw().from, to: raw().to }).toEqual(selected);
+    await click(item("Paste"));
+    await waitFor(() => text().includes("fresh here"), "the paste");
+    expect(text()).toBe("# A\n\nsee the bakery fresh here\n");
+    await m.unmount();
+  });
+
+  test("raw: Insert a link writes at the point, not over the selection", async () => {
+    const m = await start();
+    await select("bakery");
+    pointerAtRaw(text().indexOf("here"));
+    await rightClick(view().contentDOM);
+    await click(item("Insert a link"));
+    await waitFor(() => picker() !== null && options().length > 0, "the picker's documents");
+    // A caret's picker: it asks for the link's text, as there is no selection to be it.
+    expect(labelField() !== null).toBe(true);
+    await typeInto(labelField() as HTMLInputElement, "the far side");
+    await typeInto(docField() as HTMLInputElement, "b");
+    await key(labelField(), "Enter");
+    expect(text()).toBe("# A\n\nsee the bakery [the far side](./part/b.md)here\n");
+    await m.unmount();
+  });
+
+  test("raw: inside the selection, or at its edge, the menu is as before", async () => {
+    const m = await start();
+    await select("bakery");
+    const at = text().indexOf("bakery");
+    for (const pos of [at + 2, at, at + "bakery".length]) {
+      pointerAtRaw(pos);
+      expect(await rightClick(view().contentDOM)).toBe(true);
+      expect(items()).toEqual(["Add note", "Add link", "Cut", "Copy", "Paste"]);
+      await settle(() => {
+        window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape" }));
+      });
+      expect(menu() === null).toBe(true);
+    }
+    clipboard.text = "loaf";
+    pointerAtRaw(at + 2);
+    await rightClick(view().contentDOM);
+    await click(item("Paste"));
+    await waitFor(() => text().includes("loaf"), "the paste");
+    expect(text()).toBe("# A\n\nsee the loaf here\n");
+    await m.unmount();
+  });
+
+  test("rendered: the menu is the caret's, and Insert a link writes at the point; the selected word stays", async () => {
+    startMode = "rendered";
+    const m = await start();
+    try {
+      selectRendered("bakery");
+      pointerAtRendered("here");
+      expect(await rightClick(q(".md-prose"))).toBe(true);
+      // No Copy or Add note on the distant passage.
+      expect(items()).toEqual(["Add noteselect text first", "Insert a link"]);
+      // The browser's selection is left as it was.
+      expect(window.getSelection()?.toString()).toBe("bakery");
+      await click(item("Insert a link"));
+      await waitFor(() => picker() !== null && options().length > 0, "the picker's documents");
+      expect(labelField() !== null).toBe(true);
+      await typeInto(labelField() as HTMLInputElement, "over there");
+      await typeInto(docField() as HTMLInputElement, "b");
+      await key(docField(), "Enter");
+      await waitFor(
+        () => (q(".md-prose")?.textContent ?? "").includes("over there"),
+        "the link written",
+      );
+      const slug = client?.state?.openDoc ?? "";
+      const d = daemon.session.doc(slug);
+      expect(daemon.session.readVersion(slug, d.active).text).toBe(
+        "# A\n\nsee the bakery [over there](./part/b.md)here\n",
+      );
+    } finally {
+      window.getSelection()?.removeAllRanges();
+      delete (document as unknown as Record<string, unknown>).caretRangeFromPoint;
+    }
+    await m.unmount();
+  });
+
+  // A right-click past a line's last word, or in the space beside a short
+  // line, puts the browser's caret at the END of a text node, or in an element
+  // between blocks: neither is a character to probe, and the point was lost.
+  for (const [where, caret] of [
+    [
+      "past the last word of a line",
+      () => {
+        const { node } = renderedWord("here");
+        caretInRendered(node, node.data.length);
+      },
+    ],
+    [
+      "between blocks, after the line",
+      () => {
+        const p = renderedWord("here").node.parentElement as HTMLElement;
+        const parent = p.parentElement as HTMLElement;
+        caretInRendered(parent, [...parent.childNodes].indexOf(p) + 1);
+      },
+    ],
+  ] as const) {
+    test(`rendered: ${where}, the menu is the caret's at the line's end`, async () => {
+      startMode = "rendered";
+      const m = await start();
+      try {
+        selectRendered("bakery");
+        caret();
+        expect(await rightClick(q(".md-prose"))).toBe(true);
+        expect(items()).toEqual(["Add noteselect text first", "Insert a link"]);
+        expect(window.getSelection()?.toString()).toBe("bakery");
+        await click(item("Insert a link"));
+        await waitFor(() => picker() !== null && options().length > 0, "the picker's documents");
+        await typeInto(labelField() as HTMLInputElement, "over there");
+        await typeInto(docField() as HTMLInputElement, "b");
+        await key(docField(), "Enter");
+        await waitFor(
+          () => (q(".md-prose")?.textContent ?? "").includes("over there"),
+          "the link written",
+        );
+        const slug = client?.state?.openDoc ?? "";
+        const d = daemon.session.doc(slug);
+        expect(daemon.session.readVersion(slug, d.active).text).toBe(
+          "# A\n\nsee the bakery here[over there](./part/b.md)\n",
+        );
+      } finally {
+        window.getSelection()?.removeAllRanges();
+        delete (document as unknown as Record<string, unknown>).caretRangeFromPoint;
+      }
+      await m.unmount();
+    });
+  }
+
+  test("rendered: inside the selection, the menu is as before", async () => {
+    startMode = "rendered";
+    const m = await start();
+    try {
+      selectRendered("bakery");
+      pointerAtRendered("akery");
+      expect(await rightClick(q(".md-prose"))).toBe(true);
+      expect(items()).toEqual(["Add note", "Add link", "Copy"]);
+      expect(item("Add note")?.disabled).toBe(false);
+      await click(item("Copy"));
+      await waitFor(() => clipboard.text === "bakery", "the copy");
+    } finally {
+      window.getSelection()?.removeAllRanges();
+      delete (document as unknown as Record<string, unknown>).caretRangeFromPoint;
     }
     await m.unmount();
   });
