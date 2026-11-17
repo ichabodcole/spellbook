@@ -66,7 +66,7 @@ Approved by Cole on 2026-11-17. In order:
 **3. Small fixes with a fix ready** (one branch: `verbs.ts` and the CLI
 registry):
 
-10. **[item/kit-task-done-takes-no-body-file](../items/kit-task-done-takes-no-body-file.md)**
+10. **[item/kit-task-done-takes-no-body-file](../items/kit-task-done-takes-no-body-file/item.md)**
     (#145)
 11. **[item/kit-cli-epipe-stack](../items/kit-cli-epipe-stack.md)**: Image
     Farm's `exitOnBrokenPipe`
@@ -97,6 +97,6 @@ _Written at close._
 - fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (landed 2026-11-17)
 - fix/scriptorium-downgraded-session-refused (landed 2026-11-17)
-- fix/kit-cli-small-fixes (open)
+- fix/kit-cli-small-fixes (landed 2026-11-17)
 - fix/kit-save-second-unseen-change (open)
 - fix/note-reply-clears-every-waiting-note (open)
