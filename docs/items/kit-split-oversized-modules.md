@@ -5,7 +5,7 @@ description:
   src/kit/workspace/session.ts is 9,040 lines and server.ts 5,357; find the
   seams, propose a split that keeps port-back with Story Studio workable, and
   list the other files worth splitting.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a17a8e-259e-77a4-b704-af6c786e9732
 kind: research
