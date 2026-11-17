@@ -738,6 +738,25 @@ describe("a converted session the shipped writer wrote to again", () => {
     expect(stored("back").chat).toEqual((JSON.parse(again) as M).chat);
   });
 
+  test("a task 5.2.0 made reads its status word as a step, as the first conversion does", () => {
+    const m = convertedToday("steps") as M;
+    m.tasks.push(
+      { id: "t-5d", text: "said done", who: "agent", createdAt: T5, status: "done" },
+      { id: "t-5c", text: "said cancelled", who: "agent", createdAt: T5, status: "cancelled" },
+    );
+    writeFileSync(join(sessions, "steps", "manifest.json"), JSON.stringify(m));
+    const tasks = restore("steps").tasks();
+    expect(tasks.find((t) => t.id === "t-5d")).toMatchObject({
+      title: "said done",
+      status: "running",
+      detail: "done",
+    });
+    expect(tasks.find((t) => t.id === "t-5c")).toMatchObject({
+      status: "running",
+      detail: "cancelled",
+    });
+  });
+
   test("an untouched converted manifest is not its business", () => {
     const m = convertedToday("still");
     const text = readFileSync(join(sessions, "still", "manifest.json"), "utf8");

@@ -511,8 +511,12 @@ function writtenBackTask(t: Obj, at: string): Obj {
   const { text, who, doneAt: done, ...rest } = t;
   const createdAt = kitTime(t.createdAt, `${at}.createdAt`);
   const doneAt = optKitTime(done, `${at}.doneAt`);
-  const state = KIT_TASK_STATUSES.includes(t.status) ? (t.status as string) : undefined;
   // The shipped `status` is the step being done (E50); the kit's is a state.
+  // A task 5.2.0 made (it has `text`) has only steps, whatever the word, as
+  // the first conversion reads them (`task`); a kit task it re-stepped with a
+  // kit state's word cannot be told apart, and keeps it.
+  const state =
+    !("text" in t) && KIT_TASK_STATUSES.includes(t.status) ? (t.status as string) : undefined;
   const step =
     state === undefined && typeof t.status === "string" && t.status !== "" ? t.status : undefined;
   return present({
