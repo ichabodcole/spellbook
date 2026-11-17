@@ -89,3 +89,5 @@ research:
 _Written at close._
 
 ## Sessions
+
+- docs/story-studio-document-ux-port (landed 2026-11-17)

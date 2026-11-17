@@ -95,6 +95,14 @@ commits that would fix it.
 > "checked N of M files" rather than a bare green, or it becomes a new instance
 > of the same defect: a check that passes because it did not look.
 
+## Story Studio gates it (2026-11-17)
+
+The [Story Studio port scan](story-studio-document-ux-port/write-up.md) found
+that Story Studio's `check` and CI both run `turbo run typecheck` and
+`tsc --noEmit`. It is evidence the gate can be held once it is green, not an
+answer to the choice above. Re-measure before choosing: the 436 is from
+2026-08-10.
+
 ## What this item is NOT asking for
 
 No recommendation between the three. This is the measurement and the framing;

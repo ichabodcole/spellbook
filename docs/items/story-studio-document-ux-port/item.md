@@ -6,7 +6,7 @@ description:
   this finds the document-UX features among them, such as the inbox and the icon
   tabs in the right column, that Scriptorium should port.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-11-17 }

@@ -105,6 +105,15 @@ minted by something we did not attribute), not fixture leaks.
 - [ ] **The 1,686 pointers + bounty's 7,745 top-level dirs are a one-time
       sweep**, separate from the fix. Do not conflate the scar with the wound.
 
+**Story Studio's fix (2026-11-17).** The
+[Story Studio port scan](story-studio-document-ux-port/write-up.md) found a
+pattern worth comparing with magpie's: a test preload, `tests/preload.ts`, gives
+each test file its own `TMPDIR` and deletes it afterwards, and sets
+`KIT_FIXTURE_OWNER_PID` so fixture daemons die with the run (`31adf7bb`). Its
+shared temp folder had grown to 45,682 entries and slowed daemon boot scans.
+Spellbook's `scratchHome.ts` preload gives each process a scratch `HOME`, not a
+scratch `TMPDIR`.
+
 ## ⚠ Not ours: anthill's 9,026
 
 **Real, but smaller than our own** — 9,026 against spellbook's 15,623, so it is
