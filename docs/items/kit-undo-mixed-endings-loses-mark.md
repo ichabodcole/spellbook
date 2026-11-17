@@ -10,7 +10,6 @@ id: 01a17a85-0b9e-734c-9c78-77a6fe2dc015
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 parent: feature/workspace-kit-follow-ups
-cycle: 2026-10-bugs-after-6
 ---
 
 # Undo in a mixed-endings file changes a line's ending

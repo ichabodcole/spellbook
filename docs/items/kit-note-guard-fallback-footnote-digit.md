@@ -14,7 +14,6 @@ kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-lone-cr-line-endings.md
-cycle: 2026-10-bugs-after-6
 ---
 
 # The note guard's fallback refuses an honest selection holding a real digit that matches a footnote number

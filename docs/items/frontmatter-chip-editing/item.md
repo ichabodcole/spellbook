@@ -13,6 +13,7 @@ kind: research
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [scriptorium, kit, frontmatter, profiles]
 parent: feature/workspace-kit-follow-ups
+cycle: 2026-11-research-and-safety
 ---
 
 # Can a frontmatter chip be changed from the rendered view?

@@ -4,7 +4,7 @@ title: A flag before a group's sub-command is reported as the wrong problem
 description:
   "`<cli> <group> --nope` is refused as 'expected a sub-command', never naming
   the flag; Image Farm's fix names it and hints to put the sub-command first."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-f6bc-7056-9707-821f7cca248b
 kind: bug
@@ -12,6 +12,7 @@ generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, cli]
 parent: feature/workspace-kit-follow-ups
 priority: low
+cycle: 2026-11-research-and-safety
 ---
 
 # A flag before a group's sub-command is reported as the wrong problem

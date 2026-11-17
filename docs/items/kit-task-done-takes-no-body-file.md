@@ -4,7 +4,7 @@ title: task-done doesn't take --stdin or --body-file
 description:
   "GitHub #145: task-done takes its outcome only as positionals, so a multi-line
   result with backticks can't go through a file, as the SKILL asks of prose."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-f419-7485-9225-8ff80903f526
 kind: bug
@@ -13,6 +13,7 @@ tags: [kit, scriptorium, cli]
 parent: feature/workspace-kit-follow-ups
 source: "#145"
 priority: medium
+cycle: 2026-11-research-and-safety
 ---
 
 # task-done doesn't take --stdin or --body-file

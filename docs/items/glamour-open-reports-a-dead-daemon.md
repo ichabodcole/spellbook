@@ -9,7 +9,6 @@ lifecycle: backlog
 id: 019fd5fa-fe81-7f76-b8d3-96cb292e7096
 kind: task
 generated: { by: unknown, at: 2026-08-06 }
-cycle: 2026-10-bugs-after-6
 ---
 
 # Glamour: `open` prints a URL and port for a daemon that is already gone

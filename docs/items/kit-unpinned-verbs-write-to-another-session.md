@@ -5,7 +5,7 @@ description:
   "GitHub #137: a verb without --session targets the newest session, so once a
   second session opens, an agent's writes land in another project and return ok:
   true. A data-safety bug."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-efdc-746b-95b1-9e7900a7e0eb
 kind: bug
@@ -14,6 +14,7 @@ tags: [kit, scriptorium, sessions, cli]
 parent: feature/workspace-kit-follow-ups
 source: "#137"
 priority: urgent
+cycle: 2026-11-research-and-safety
 ---
 
 # Verbs without --session silently write to another live session

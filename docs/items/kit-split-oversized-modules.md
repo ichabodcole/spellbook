@@ -11,7 +11,7 @@ id: 01a17a8e-259e-77a4-b704-af6c786e9732
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 parent: feature/workspace-kit-follow-ups
-cycle: 2026-10-bugs-after-6
+cycle: 2026-11-research-and-safety
 ---
 
 # Split the kit's oversized modules, starting with session.ts

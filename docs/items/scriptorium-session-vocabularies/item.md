@@ -14,6 +14,7 @@ kind: research
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [scriptorium, kit, profiles, relations, story-studio]
 parent: feature/workspace-kit-follow-ups
+cycle: 2026-11-research-and-safety
 ---
 
 # How should short-lived Scriptorium sessions get their profiles and relations?

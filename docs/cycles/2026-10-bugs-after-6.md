@@ -7,7 +7,7 @@ description:
   modules meanwhile.
 tags: [kit, scriptorium, grapevine, bugs]
 status: draft
-lifecycle: active
+lifecycle: abandoned
 started: 2026-10-26
 appetite:
   "Bugs only: no new features (tick-tock, Cole 2026-10-26). Stop when every item
@@ -15,6 +15,7 @@ appetite:
   release."
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
+closed: 2026-11-17
 ---
 
 # Bugs after 6.0.0
@@ -115,7 +116,30 @@ abandoned the same day.
 
 ## Outcome
 
-_Written at close._
+Abandoned on 2026-11-17 without starting. Nothing in it shipped: none of its 23
+items was begun in the three weeks after it opened. Cole rescoped it into
+[Research first, and the bugs that bite](2026-11-research-and-safety.md). That
+cycle runs the research that could reshape other items first, mainly what to
+take from Story Studio, and keeps only the bugs that can lose work or have a fix
+ready to port.
+
+Four items moved to the new cycle:
+
+- `scriptorium-downgraded-session-refused`
+- `kit-save-second-unseen-change`
+- `note-reply-clears-every-waiting-note`
+- `kit-split-oversized-modules`
+
+The other 19 went back to the ready pool with no cycle:
+
+- the raw editor and note guard;
+- sets, links and the tree;
+- the grapevine and glamour daemons;
+- the save-refusal wording;
+- the symlink policy item.
+
+The lesson: a bug cycle planned before the research that could reshape it waits
+on that research. Run the research first.
 
 ## Sessions
 

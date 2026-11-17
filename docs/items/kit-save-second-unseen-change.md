@@ -14,7 +14,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-save-overwrites-unseen-change.md
 priority: high
-cycle: 2026-10-bugs-after-6
+cycle: 2026-11-research-and-safety
 ---
 
 # A second missed outside change after the banner is overwritten without asking

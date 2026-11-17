@@ -11,7 +11,6 @@ id: 01a17a85-0c21-754e-aaf1-b0fb7779c958
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 parent: feature/workspace-kit-follow-ups
-cycle: 2026-10-bugs-after-6
 ---
 
 # A raw selection made during the write pause is counted against stale text

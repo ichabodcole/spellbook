@@ -14,7 +14,7 @@ tags: [scriptorium, kit]
 from: items/_archive/release-6-breaking-marker.md
 priority: high
 parent: feature/workspace-kit-follow-ups
-cycle: 2026-10-bugs-after-6
+cycle: 2026-11-research-and-safety
 ---
 
 # A converted session that 5.2.0 wrote to is refused by 6.0.0

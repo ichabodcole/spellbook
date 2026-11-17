@@ -12,7 +12,6 @@ kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/scriptorium-chat-and-toast-nits.md
-cycle: 2026-10-bugs-after-6
 ---
 
 # A set cut short at the scan cap doesn't say so

@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [scriptorium, kit, story-studio, ux]
 parent: feature/workspace-kit-follow-ups
 from: 01a131ec-fb0f-71a4-b587-d155e3d4f56d
+cycle: 2026-11-research-and-safety
 ---
 
 # Which of Story Studio's new document UX should Scriptorium take?

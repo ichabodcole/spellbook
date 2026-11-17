@@ -12,7 +12,6 @@ id: 01a176ad-1a0d-7549-8367-6ceb7b8419f5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
-cycle: 2026-10-bugs-after-6
 ---
 
 # A grapevine hold can't be ended early, and tails it stops leave no handoff

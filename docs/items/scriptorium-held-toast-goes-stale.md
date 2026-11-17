@@ -13,7 +13,6 @@ generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [kit, chat]
 from: items/_archive/scriptorium-chat-and-toast-nits.md
 parent: feature/workspace-kit-follow-ups
-cycle: 2026-10-bugs-after-6
 ---
 
 # A held version toast shown on another document goes stale

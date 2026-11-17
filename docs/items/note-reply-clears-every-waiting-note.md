@@ -13,7 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/note-reply-cannot-overwrite.md
 priority: high
-cycle: 2026-10-bugs-after-6
+cycle: 2026-11-research-and-safety
 ---
 
 # A reply to one note clears the waiting mark on every note

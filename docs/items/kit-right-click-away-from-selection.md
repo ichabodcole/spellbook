@@ -4,7 +4,7 @@ title: A right-click away from a selection still acts on that selection
 description:
   "GitHub #146: the document menu takes the editor's selection whatever the
   pointer's position, so Paste can replace text the user isn't looking at."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-f49f-74c5-b302-64b76d6b2854
 kind: bug
@@ -13,6 +13,7 @@ tags: [kit, scriptorium, editor]
 parent: feature/workspace-kit-follow-ups
 source: "#146"
 priority: high
+cycle: 2026-11-research-and-safety
 ---
 
 # A right-click away from a selection still acts on that selection
