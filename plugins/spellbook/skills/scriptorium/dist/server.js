@@ -32133,7 +32133,7 @@ function writtenBackTask(t, at) {
   const { text, who, doneAt: done, ...rest } = t;
   const createdAt = kitTime(t.createdAt, `${at}.createdAt`);
   const doneAt = optKitTime(done, `${at}.doneAt`);
-  const state = KIT_TASK_STATUSES.includes(t.status) ? t.status : undefined;
+  const state = !("text" in t) && KIT_TASK_STATUSES.includes(t.status) ? t.status : undefined;
   const step = state === undefined && typeof t.status === "string" && t.status !== "" ? t.status : undefined;
   return present({
     ...rest,
