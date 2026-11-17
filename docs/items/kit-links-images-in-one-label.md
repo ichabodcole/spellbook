@@ -28,6 +28,14 @@ suggested fix: sort a run's members once, then binary-search the members that
 strictly hold an edge. Story Studio filed it as `kit-links-images-in-one-label`;
 whichever kit fixes it first posts the commit.
 
+**Story Studio fixed it first** (`7bc03393`, reported on `kit-parity`, message
+64). Their fix sorts a line's links once and builds a nesting tree. `holders(x)`
+binary-searches the links that hold an edge, then walks up the nesting. Links
+that overlap without nesting fall back to a scan. `contextOf` replays the old
+found-order logic, so the output doesn't change: 200k fuzzed contexts came out
+identical. Their adversarial test runs the shape at 50k and 200k characters; it
+took 6.5 s before the fix. Port it from there.
+
 ## Definition of done
 
 - [ ] The shape runs in linear or near-linear time. A test holds it to a time
