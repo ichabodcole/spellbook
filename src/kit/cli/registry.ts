@@ -661,7 +661,16 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
       const own = byToken.get(cand);
       if (own !== undefined) return { row: own, token: cand, args: rest };
       const extra = { choices: [...subs], hint: `run \`${cliName} help\` for usage` };
-      if (sub === undefined) die(`${cand}: expected a sub-command`, "usage", extra);
+      if (sub === undefined) {
+        // A flag in the way is the refused token (acc A3), without its `=value`.
+        const flag = rest.find((a) => a.startsWith("-") && a !== "--" && a.length > 1);
+        if (flag === undefined) die(`${cand}: expected a sub-command`, "usage", extra);
+        const name = flag.split("=")[0] as string;
+        die(`${cand}: expected a sub-command before any flag, got ${name}`, "usage", {
+          choices: extra.choices,
+          hint: `put the sub-command first: ${cliName} ${cand} <sub-command> ${name}`,
+        });
+      }
       die(`unknown ${cand} sub-command: "${sub}"`, "usage", extra);
     }
     const row = byToken.get(cand);

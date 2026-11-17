@@ -1075,7 +1075,23 @@ describe("nesting", () => {
   test("an adjacent group does not look past a flag for its sub-verb", async () => {
     const { cli } = fakeCli();
     const env = envelope(await capture(() => cli.main(["node", "--project", "P", "edit", "N1"])));
-    expect(env.error.message).toBe("node: expected a sub-command");
+    expect(env.error.message).toContain("--project");
+    expect(env.error.choices).toEqual(["edit", "move"]);
+  });
+
+  test("a flag before a group's sub-verb is named in the rejection", async () => {
+    const { cli } = fakeCli();
+    const bareRun = await capture(() => cli.main(["node", "--bogus"]));
+    expect(bareRun.code).toBe(2);
+    const bare = envelope(bareRun);
+    expect(bare.error.message).toBe("node: expected a sub-command before any flag, got --bogus");
+    expect(bare.error.hint).toContain("node <sub-command> --bogus");
+    expect(bare.error.choices).toEqual(["edit", "move"]);
+    const valued = envelope(await capture(() => cli.main(["node", "--project=P", "edit"])));
+    expect(valued.error.message).toContain("--project");
+    expect(valued.error.message).not.toContain("=P");
+    const plain = envelope(await capture(() => cli.main(["node"])));
+    expect(plain.error.message).toBe("node: expected a sub-command");
   });
 
   test("first-positional: the sub-verb is found after flags (mind-mapper's doc)", async () => {
