@@ -50,7 +50,7 @@ Approved by Cole on 2026-11-17. In order:
 
 **2. Bugs that can lose work:**
 
-5. **[item/kit-unpinned-verbs-write-to-another-session](../items/kit-unpinned-verbs-write-to-another-session.md)**
+5. **[item/kit-unpinned-verbs-write-to-another-session](../items/kit-unpinned-verbs-write-to-another-session/item.md)**
    (#137): with two live sessions, a write without `--session` is refused.
 6. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused.md)**:
    6.0.0 restores a session 5.2.0 has written to, or refuses it and says how to
@@ -94,6 +94,6 @@ _Written at close._
 - chore/bun-1.4.4 (landed 2026-11-17)
 - docs/scriptorium-session-vocabularies (open)
 - docs/kit-split-oversized-modules (open)
-- fix/kit-unpinned-verbs-write-to-another-session (open)
+- fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (open)
 - fix/scriptorium-downgraded-session-refused (open)

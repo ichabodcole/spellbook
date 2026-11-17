@@ -52,6 +52,9 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
     // The shipped verbs, with the shipped words: the kit path keeps the hidden
     // lists in its app slot (`./hide.ts`), not on the kit's entries.
     options: WIKI_OPTIONS,
+    // The app's verbs that only read: they stay lenient with no --session while
+    // several sessions are live; every other one of its ops is a write (#137).
+    readOps: ["scriptorium.meta", "scriptorium.find", "scriptorium.move.plan"],
     commands: (h) => [
       ...scriptoriumKitCommands(h),
       ...scriptoriumWikiCommands(h),

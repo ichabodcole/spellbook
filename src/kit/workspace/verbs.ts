@@ -58,6 +58,7 @@ import { startDaemon } from "../wire/detach";
 import {
   type DiscoveryOptions,
   LAST_OPENED,
+  livePointers,
   pidAlive,
   readLastOpened,
   readPointer,
@@ -438,6 +439,46 @@ function pruneLogs(logDir: string): void {
   }
 }
 
+/**
+ * The `/cmd` ops that only read a session (#137). Everything else writes: the
+ * chat, a task, a version, a note, the files, the human's view (`show`,
+ * `reveal`), their pulse (`working`), or the session's life (`close`). An op not
+ * listed here, nor in the app's own `readOps`, is a write, so a new verb is safe
+ * before anyone classifies it. `state` and `workspace` with no folder read over GET and
+ * `tail` streams; none of them goes through here, and all of them read.
+ *
+ * ⛔ A read with no `--session` stays lenient: it goes to the newest session as
+ * it always has, whatever else is live. A write is refused while several are
+ * live (`refuseAmbiguousWrite`): a read of the wrong session misleads the agent,
+ * a write to it puts the agent's words in another human's project.
+ */
+const READ_OPS: ReadonlySet<string> = new Set([
+  "diff",
+  "notes",
+  "search",
+  "backlinks",
+  "link.check",
+  "graph",
+  "profiles",
+  "profile",
+  "profile.check",
+  "relations",
+  "doctor",
+]);
+
+/**
+ * Whether a `/cmd` writes to its session. `image.settings` with nothing to set
+ * prints them. `appReads` is the app's own read ops (`WorkspaceCliOptions.readOps`).
+ */
+export function writesSession(
+  msg: { op: string; [key: string]: unknown },
+  appReads: readonly string[] = [],
+): boolean {
+  if (msg.op === "image.settings")
+    return ["format", "quality", "maxSide"].some((k) => msg[k] !== undefined);
+  return !READ_OPS.has(msg.op) && !appReads.includes(msg.op);
+}
+
 /** A daemon's refusal, mapped to the house taxonomy. */
 function daemonRefused(what: string, status: number, data: unknown): never {
   const kind: ErrKind =
@@ -508,6 +549,12 @@ export type WorkspaceCliOptions = {
   options?: OptionsTable;
   /** The app's own verbs; they share the table, the failure contract and `--session`. */
   commands?: (h: CliHelpers) => readonly CommandSpec<string>[];
+  /**
+   * The app's own `/cmd` ops that only read the session. Any op not listed (and
+   * not one of the kit's reads) is a write: refused with no `--session` while
+   * several sessions are live, and its reply names the session (#137).
+   */
+  readOps?: readonly string[];
   /** How `open` starts a daemon. */
   daemon: DaemonLauncher;
   /** Where sessions live (the same folder the daemon is given). Lazy, so `help` reads no environment. */
@@ -742,12 +789,74 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     return { status: res.status, data };
   }
 
+  /**
+   * The folders a saved session shows (its context entries' roots), read from
+   * its manifest: what tells two live sessions apart for the agent choosing.
+   * Best-effort: a manifest that cannot be read shows none.
+   */
+  function foldersOf(id: string): string[] {
+    try {
+      const m = JSON.parse(
+        readFileSync(join(opts.sessionsRoot(), id, "manifest.json"), "utf8"),
+      ) as { context?: { root?: unknown }[] };
+      return (m.context ?? []).flatMap((e) => (typeof e.root === "string" ? [e.root] : []));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * #137: a write with no `--session` while more than one session of this app is
+   * live is refused, never sent to the newest. The newest is whichever session
+   * a daemon last started, so a second session opened for another project
+   * silently became the target of an agent that never named one, and every
+   * write answered `ok: true`.
+   *
+   * Live is the pointer's daemon answering to `pidAlive` (a dead pointer is a
+   * crash and does not count), among the sessions saved in this home: another
+   * home's sessions are never the newest here, so they cannot be reached by
+   * mistake. One live session, or none, and the verb goes on as before.
+   *
+   * `usage` (exit 2): the caller fixes it by changing the command, adding
+   * `--session`; nothing about the sessions is wrong. `token` is
+   * `ambiguous_session`, the stable name to route on.
+   */
+  function refuseAmbiguousWrite(): void {
+    const root = opts.sessionsRoot();
+    const live = livePointers(app, opts.discovery).filter((p) =>
+      existsSync(join(root, p.session_id, "manifest.json")),
+    );
+    if (live.length < 2) return;
+    const ids = live.map((p) => p.session_id);
+    const which = ids
+      .map((id) => {
+        const folders = foldersOf(id);
+        return `${id} (${folders.length > 0 ? folders.join(", ") : "no folders"})`;
+      })
+      .join("; ");
+    die(
+      `${live.length} ${app} sessions are running, so a write with no --session could land in another one: name yours`,
+      "usage",
+      {
+        token: "ambiguous_session",
+        hint: `pass --session <id> with your session's id (the session_id \`open\` printed, and your tail's grounding line), on every write. Live, newest first: ${which}`,
+        choices: ids,
+      },
+    );
+  }
+
   async function postCmd(
     session: string | undefined,
     msg: { op: string; [key: string]: unknown },
     o: { presence?: boolean } = {},
   ): Promise<Record<string, unknown>> {
+    const writes = writesSession(msg, opts.readOps);
+    if (session === undefined && writes) refuseAmbiguousWrite();
     const s = requireSession(session);
+    // A write's reply names the session it went to: the agent can see where its
+    // words landed, pinned or not.
+    const named = (data: Record<string, unknown>): Record<string, unknown> =>
+      writes ? { ...data, session: s.session_id } : data;
     let status: number;
     let data: unknown;
     try {
@@ -764,11 +873,13 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       const message = err instanceof Error ? err.message : String(err);
       const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
       if (msg.op === "close" && (code === "ECONNRESET" || message.includes("ECONNRESET")))
-        return { ok: true };
+        return named({ ok: true });
       throw err;
     }
     if (status !== 200) daemonRefused(msg.op, status, data);
-    return data as Record<string, unknown>;
+    return data !== null && typeof data === "object" && !Array.isArray(data)
+      ? named(data as Record<string, unknown>)
+      : (data as Record<string, unknown>);
   }
 
   // ── prose ───────────────────────────────────────────────────────────────
@@ -1964,14 +2075,17 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       positionals: [],
       describe: "shut the session down (the manifest stays, for open --restore)",
       run: async (_pos, _flags, session) => {
-        await postCmd(session, { op: "close" });
-        printJson({ ok: true, sent: "close" });
+        const r = await postCmd(session, { op: "close" });
+        printJson({ ok: true, sent: "close", session: r.session });
       },
     },
   ];
 
   /** `help <verb>`'s line for the flag every session verb takes. */
-  const SESSION_HELP = { session: "the session to talk to (default: the most recent)" };
+  const SESSION_HELP = {
+    session:
+      "the session to talk to (default: the most recent; a write is refused without it while several sessions are running)",
+  };
   const kitCommands = ROWS.map(
     (r) =>
       ({

@@ -433,6 +433,18 @@ restored), and only to it: never past it to an older one that happens to still
 be running. If the newest has ended or crashed, the refusal says so by name;
 pass `--session` for the one you meant.
 
+**Pass `--session <your id>` on every write whenever more than one session may
+be running** (the id is `open`'s `session_id`, and your tail's `grounding`
+line). The human can open another session, for another project and another
+agent, at any time, and it becomes the newest. While two or more are running, a
+verb that changes a session (`say`, `working`, `task*`, `version-*`, `note*`,
+`add`, `close`, and the rest) with no `--session` is refused with `kind: usage`
+and `token: ambiguous_session`; `choices` lists the running ids and `hint` says
+which folders each shows. Pick yours and run it again with `--session`. Reads
+(`state`, `notes`, `diff`, `search`, `graph`, `doctor`, `link-check`, …) still
+go to the newest. Every write's reply carries the `session` it went to: check
+it.
+
 Every flag goes to the LEFT of a bare `--`; after it, a flag is text. (`help`
 and the version are verbs of their own, not flags.)
 

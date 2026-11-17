@@ -7847,15 +7847,15 @@ function ownedByMe(path) {
     return false;
   }
 }
-function newestLivePointer(spell, opts) {
+function livePointers(spell, opts = {}) {
   const dir = opts.tmp ?? tmpdir();
   let names;
   try {
     names = readdirSync2(dir);
   } catch {
-    return null;
+    return [];
   }
-  let best = null;
+  const found = [];
   for (const name of names) {
     if (!name.startsWith(`${spell}.`) || !name.endsWith(".json"))
       continue;
@@ -7868,12 +7868,13 @@ function newestLivePointer(spell, opts) {
         continue;
       if (!ownedByMe(path) || !pidAlive(parsed.pid))
         continue;
-      const at = statSync(path).mtimeMs;
-      if (!best || at > best.at)
-        best = { pointer: parsed, at };
+      found.push({ pointer: parsed, at: statSync(path).mtimeMs });
     } catch {}
   }
-  return best?.pointer ?? null;
+  return found.sort((a, b) => b.at - a.at).map((f) => f.pointer);
+}
+function newestLivePointer(spell, opts) {
+  return livePointers(spell, opts)[0] ?? null;
 }
 function isPointerShape(v) {
   if (typeof v !== "object" || v === null)
@@ -8775,6 +8776,24 @@ function pruneLogs(logDir) {
     } catch {}
   }
 }
+var READ_OPS = new Set([
+  "diff",
+  "notes",
+  "search",
+  "backlinks",
+  "link.check",
+  "graph",
+  "profiles",
+  "profile",
+  "profile.check",
+  "relations",
+  "doctor"
+]);
+function writesSession(msg, appReads = []) {
+  if (msg.op === "image.settings")
+    return ["format", "quality", "maxSide"].some((k) => msg[k] !== undefined);
+  return !READ_OPS.has(msg.op) && !appReads.includes(msg.op);
+}
 function daemonRefused(what, status, data) {
   const kind = status === 400 ? "usage" : status === 404 ? "not_found" : status === 409 ? "conflict" : "internal";
   const body = data ?? {};
@@ -8894,8 +8913,36 @@ function createWorkspaceCli(opts) {
     } catch {}
     return { status: res.status, data };
   }
+  function foldersOf(id) {
+    try {
+      const m = JSON.parse(readFileSync4(join4(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
+      return (m.context ?? []).flatMap((e) => typeof e.root === "string" ? [e.root] : []);
+    } catch {
+      return [];
+    }
+  }
+  function refuseAmbiguousWrite() {
+    const root = opts.sessionsRoot();
+    const live = livePointers(app, opts.discovery).filter((p) => existsSync2(join4(root, p.session_id, "manifest.json")));
+    if (live.length < 2)
+      return;
+    const ids = live.map((p) => p.session_id);
+    const which = ids.map((id) => {
+      const folders = foldersOf(id);
+      return `${id} (${folders.length > 0 ? folders.join(", ") : "no folders"})`;
+    }).join("; ");
+    die(`${live.length} ${app} sessions are running, so a write with no --session could land in another one: name yours`, "usage", {
+      token: "ambiguous_session",
+      hint: `pass --session <id> with your session's id (the session_id \`open\` printed, and your tail's grounding line), on every write. Live, newest first: ${which}`,
+      choices: ids
+    });
+  }
   async function postCmd(session, msg, o = {}) {
+    const writes = writesSession(msg, opts.readOps);
+    if (session === undefined && writes)
+      refuseAmbiguousWrite();
     const s = requireSession(session);
+    const named = (data) => writes ? { ...data, session: s.session_id } : data;
     let status;
     let data;
     try {
@@ -8904,12 +8951,12 @@ function createWorkspaceCli(opts) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
       if (msg.op === "close" && (code === "ECONNRESET" || message.includes("ECONNRESET")))
-        return { ok: true };
+        return named({ ok: true });
       throw err;
     }
     if (status !== 200)
       daemonRefused(msg.op, status, data);
-    return data;
+    return data !== null && typeof data === "object" && !Array.isArray(data) ? named(data) : data;
   }
   async function readBody(pos, flags, verb) {
     const sources = [
@@ -9788,12 +9835,14 @@ function createWorkspaceCli(opts) {
       positionals: [],
       describe: "shut the session down (the manifest stays, for open --restore)",
       run: async (_pos, _flags, session) => {
-        await postCmd(session, { op: "close" });
-        printJson({ ok: true, sent: "close" });
+        const r = await postCmd(session, { op: "close" });
+        printJson({ ok: true, sent: "close", session: r.session });
       }
     }
   ];
-  const SESSION_HELP = { session: "the session to talk to (default: the most recent)" };
+  const SESSION_HELP = {
+    session: "the session to talk to (default: the most recent; a write is refused without it while several sessions are running)"
+  };
   const kitCommands = ROWS.map((r) => ({
     ...r,
     run: on(r.run),
@@ -10091,6 +10140,7 @@ function scriptoriumKitCli(deps) {
     appHome: () => scriptoriumHome(),
     version: deps.version,
     options: WIKI_OPTIONS,
+    readOps: ["scriptorium.meta", "scriptorium.find", "scriptorium.move.plan"],
     commands: (h) => [
       ...scriptoriumKitCommands(h),
       ...scriptoriumWikiCommands(h),
