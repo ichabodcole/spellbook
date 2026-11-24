@@ -8,7 +8,7 @@ description:
   agent recreating them each time, and whether to adopt Story Studio's single
   project folder in place of _meta.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a1eadc-5c28-7746-9b8c-5bb7a428ab80
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
@@ -52,15 +52,15 @@ values. It also absorbs the location question in
 
 ## Definition of done
 
-- [ ] The write-up describes today's lookup in our kit, and Story Studio's
+- [x] The write-up describes today's lookup in our kit, and Story Studio's
       `@studio` model, citing code.
-- [ ] It compares the candidate sources against real Scriptorium use: OKF docs
+- [x] It compares the candidate sources against real Scriptorium use: OKF docs
       in a repo such as this one's `docs/`, loose notes, and a world folder. The
       candidates are built-in packs, a user library chosen when a session opens,
       the repo's own folder up to the git root, and the folder's own, or a mix
       layered nearest-wins.
-- [ ] It makes a call on the layering, on whether the lookup may go above the
+- [x] It makes a call on the layering, on whether the lookup may go above the
       opened entry, on the folder's name, and on how a pack is attached. It
       notes what the call means for kit parity with Story Studio.
-- [ ] Cole has ruled on the open decisions, and the build work is filed as items
+- [x] Cole has ruled on the open decisions, and the build work is filed as items
       with `--from item/scriptorium-session-vocabularies`.
