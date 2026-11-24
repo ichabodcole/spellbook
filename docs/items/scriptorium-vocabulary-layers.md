@@ -50,7 +50,10 @@ The pack holds the pdocs kinds (`item`, `feature`, `cycle`, `write-up`, `plan`,
       `.project-docs.json` up to the git root, gets no pack profile.
 - [ ] A file in `~/.scriptorium/profiles/` applies in every session, and loses
       to a repo's `@scriptorium/profiles/`.
-- [ ] No profile above the git root is read.
+- [ ] No profile above the git root is read, and for an entry outside any git
+      repo none above the entry root.
+- [ ] The pack covers the pdocs kinds above only; a repo's `lint.types` extras
+      (here `release`, `memory`, `lesson`) get no pack profile.
 - [ ] A ward test fails when the pack's kinds or enums drift from
       `scripts/pdocs/lint/registry.ts` and `rules.ts`.
 - [ ] SKILL.md says where vocabulary files go and what the layers are, and

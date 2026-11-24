@@ -58,8 +58,8 @@ was folded into.
   definition wins per relation, not per file (lines 27–32).
 - **Where the root comes from.** The session hands the walk `entry.root`
   directly: `lookup.match(dirname(path), entry.root, facts.type)`
-  (`src/kit/workspace/session.ts:7111`), and
-  `lookup.at(dirname(path), entry.root)` (`session.ts:6508`). For a single file,
+  (`src/kit/workspace/session.ts:7143`), and
+  `lookup.at(dirname(path), entry.root)` (`session.ts:6540`). For a single file,
   `entryForPath` makes a `listed` entry whose root is **the file's own folder**:
   `root: dirname(abs)` (`src/kit/workspace/tree.ts:645–646`). Only a folder
   added as a set gets its own path as the root (`tree.ts:622–623`).
@@ -70,12 +70,12 @@ was folded into.
 
 - **No profiles of its own.** It registers none, and its skill never says where
   a profile file goes. `plugins/spellbook/skills/scriptorium/SKILL.md` mentions
-  only the `profile` verbs and the doctor's `profiles.*` findings (lines 205,
-  239, 256).
+  only the `profile` verbs and the doctor's `profiles.*` findings (lines 174,
+  208, 242, 259).
 - **The UI gets profiles for free.** `DocumentPane` passes the daemon's answer
-  to the header (`src/kit/document/DocumentPane.tsx:2269`). The daemon answers
+  to the header (`src/kit/document/DocumentPane.tsx:2280`). The daemon answers
   the `profile` op from `session.documentProfile`
-  (`src/kit/workspace/server.ts:4086–4087`, `session.ts:7292`).
+  (`src/kit/workspace/server.ts:4086–4087`, `session.ts:7324`).
   `FrontmatterHeader` then labels the `type` chip and adds the warning chip
   (`src/kit/document/FrontmatterHeader.tsx:254–257`; `profileHeader.ts:19–25`).
   So the moment a profile resolves, Scriptorium's header uses it. Today none
@@ -263,12 +263,15 @@ kit, and Cole picked one name "everywhere, as in Operator". The name of the
 folder matters less once the built-in and user layers carry the common case. Few
 people will ever write one.
 
+_Cole ruled the other way on 2026-11-24: the folder is `@scriptorium/`, since
+`@studio` is Story Studio's own name. See Decided._
+
 What Scriptorium should **not** take is the project half: `project.md`, the
 pinned bundle and the project surface. Scriptorium has no project to describe.
 
 ### 7. Profiles express values, not transitions (High)
 
-A profile's `enum` gives the chip dropdown its values (`profiles.ts:317–321`).
+A profile's `enum` gives the chip dropdown its values (`profiles.ts:317–322`).
 There is no way to say "`review` follows `active`". Order and transition rules
 stay with `pdocs set`.
 
@@ -348,11 +351,9 @@ Layers 1 and 2 are one walk with a higher stopping point.
      one that fits a session over files.
 3. **The folder's name: `@studio/profiles/`** _(overridden: Cole chose
    `@scriptorium/profiles/`, see Decided)_, read in place of `_meta/profiles/`.
-   There is nothing to migrate. It matches Story Studio's kit and worlds, and
-   makes every later port of the two readers a clean pick. Take the vocabulary
-   folder only, not `project.md` or the project bundle. Reading
-   `_meta/profiles/` as a fallback for one release is cheap if Cole wants it,
-   but no real file needs it.
+   Take the vocabulary folder only, not `project.md` or the project bundle.
+   Reading `_meta/profiles/` as a fallback for one release is cheap if Cole
+   wants it, but no real file needs it.
 4. **How a pack is attached: automatically, by a marker file. No `open` flag and
    no verb.**
    - The first pack is `project-docs`, attached when `.project-docs.json` is
@@ -369,8 +370,9 @@ Layers 1 and 2 are one walk with a higher stopping point.
 **What it means for kit parity.**
 
 - The reader files (`profiles.ts`, `relations.ts`) converge with Story Studio's
-  on the folder name and on the `conventionRoot` hook. That removes two
-  differences.
+  on the `conventionRoot` hook. The folder name stays different on purpose
+  (`@scriptorium` against `@studio`), so the kit takes it from the app and the
+  readers stay one shared copy.
 - The new parts (the global layer and marker-attached packs) are a list of extra
   fallback folders the kit takes from the app, consulted after the walk. Story
   Studio could use the same hook for an app-level vocabulary, as `hidden.ts`
@@ -384,7 +386,6 @@ Layers 1 and 2 are one walk with a higher stopping point.
   matters less.
 - If Cole's notes outside repos grow their own conventions, a second marker (say
   `.scriptorium.json`) could attach a user pack by folder.
-- If Story Studio renames `@studio` again, follow it or pick our own name then.
 
 ## Decided
 
@@ -467,9 +468,10 @@ _Ruled on 2026-11-24; see [Decided](#decided)._
 2. **Above the opened entry.** May the lookup go above the entry the human
    opened, as far as the git root and never further? _Recommended: yes, through
    a `conventionRoot` hook like Story Studio's._
-3. **Folder name.** Should the kit read `@studio/profiles/` in place of
-   `_meta/profiles/`? _Recommended: yes, the vocabulary folder only; no
-   `project.md` or project bundle in Scriptorium._
+3. **Folder name.** _(Overridden: `@scriptorium/profiles/`.)_ Should the kit
+   read `@studio/profiles/` in place of `_meta/profiles/`? _Recommended: yes,
+   the vocabulary folder only; no `project.md` or project bundle in
+   Scriptorium._
 4. **Attaching a pack.** Should a pack attach automatically by its marker file
    (`.project-docs.json` for the `project-docs` pack), with no `open --profile`
    flag or verb? _Recommended: yes._

@@ -36,8 +36,9 @@ The kit part, shared with Story Studio:
   an optional scope (a folder a document must be under for it to apply);
 - the folder's name taken from the app, not hard-coded.
 
-Blocked by the kit split, which moves the two readers out of `session.ts` (its
-step S5).
+Blocked by the kit split, which moves the two readers out of `session.ts` (the
+read-side step of the split's plan; see
+[kit-split-oversized-modules](./kit-split-oversized-modules.md)).
 
 ## Definition of done
 
