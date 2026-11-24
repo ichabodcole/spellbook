@@ -92,7 +92,7 @@ _Written at close._
 
 - docs/story-studio-document-ux-port (landed 2026-11-17)
 - chore/bun-1.4.4 (landed 2026-11-17)
-- docs/scriptorium-session-vocabularies (open)
+- docs/scriptorium-session-vocabularies (landed 2026-11-24)
 - docs/kit-split-oversized-modules (open)
 - fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (landed 2026-11-17)
