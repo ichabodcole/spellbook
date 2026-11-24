@@ -5,7 +5,7 @@ description:
   Port Story Studio's split of the kit's oversized modules, step by step with
   behaviour unchanged, so later kit work and ports land on small files.
 tags: [kit, refactor]
-status: draft
+status: stable
 lifecycle: planned
 started: 2026-11-24
 appetite:
@@ -29,7 +29,7 @@ theirs.
 
 ## Scope
 
-Draft, not yet approved by Cole. The plan is
+Approved by Cole on 2026-11-24, the optional fixes included. The plan is
 [the kit-split write-up](../items/kit-split-oversized-modules/write-up.md); its
 steps are filed under [feature/kit-split](../features/kit-split/feature.md),
 each blocked by the one before in its chain.
@@ -53,7 +53,7 @@ each blocked by the one before in its chain.
 Two lanes at most (Cole's call 8). Each step lands with behaviour unchanged and
 no test's expectations changed.
 
-**Fixes alongside, if Cole wants them** (none touches a file the split moves):
+**Fixes alongside** (none touches a file the split moves):
 
 - [grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out.md),
   [grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone.md),
