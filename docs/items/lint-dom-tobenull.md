@@ -4,7 +4,7 @@ title: Refuse toBeNull on DOM queries
 description:
   A Biome rule and a kit expectNull helper, because Bun's toBeNull can pass on a
   live element and dumps the DOM when it fails.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-572b-777b-80c9-d4caef836306
 kind: chore

@@ -4,7 +4,7 @@ title: A background --once tail stays quiet
 description:
   Check whether the kit's tail --once prints keepalives and reconnect pairs
   while it waits, and if it does, make it print only its closing line.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5476-7266-857f-40758b283d00
 kind: task

@@ -4,7 +4,7 @@ title: CI logs the runner's memory
 description:
   The gate job prints free memory every 30 seconds, so a runner shut down for
   memory leaves evidence; sharding waits until that happens.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-58ce-704a-acf5-c719b37dacc4
 kind: chore

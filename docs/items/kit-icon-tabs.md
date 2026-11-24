@@ -4,7 +4,7 @@ title: Icon tabs in the right column
 description:
   The right column's tabs become icons with tooltips, carrying their counts,
   spinner and waiting dot, so a fourth tab fits.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-535e-7289-8ced-013de404e3c7
 kind: task

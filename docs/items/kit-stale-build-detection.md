@@ -4,7 +4,7 @@ title: A daemon says when it is running old code
 description:
   After an upgrade, a daemon still running the old build says so on its page and
   in tail, with the act that restarts it.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5614-77d5-a591-2ce127ec3cea
 kind: task

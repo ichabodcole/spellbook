@@ -5,7 +5,7 @@ description:
   Several counters split on \n only, so a file with old-Mac \r endings misreads
   frontmatter, headings, line numbers, code masking, diffs and link context;
   Story Studio moved them onto shared lineBreaks helpers.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-f634-704d-8baa-9fd7d70abc22
 kind: bug

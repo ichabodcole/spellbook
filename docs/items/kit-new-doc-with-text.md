@@ -4,7 +4,7 @@ title: new-doc can hold the agent's text
 description:
   The new-doc verb takes --body-file or --stdin, so an agent's draft arrives as
   a document with no empty first version to activate.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-53e8-76e1-ac55-b1c03e02fc02
 kind: task

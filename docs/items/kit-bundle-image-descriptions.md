@@ -5,7 +5,7 @@ description:
   "GitHub #150: sidecarDocOf finds descriptions only for images in the tree, and
   a bundle's inner files are not tree rows, so an image copied into a bundle
   can't be described."
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eabe-f7ca-7464-95bc-ab2e9f748e9d
 kind: bug

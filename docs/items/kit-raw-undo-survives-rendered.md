@@ -3,7 +3,7 @@ type: item
 title: Raw undo survives a trip to the rendered view
 description:
   Switching from raw to rendered and back keeps the raw editor's undo history.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5247-7533-a08f-0a1329a9c378
 kind: bug

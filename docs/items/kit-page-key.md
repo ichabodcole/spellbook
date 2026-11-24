@@ -4,7 +4,7 @@ title: Only the page can act as the human
 description:
   The page's socket and the human's routes require a key the page fetches, so a
   plain local call such as an agent's curl cannot act as the human.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-558a-7708-a1eb-96e1bcb40c04
 kind: task

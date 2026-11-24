@@ -4,7 +4,7 @@ title: "Scriptorium: the map's draw cap and unbounded physics"
 description:
   "GitHub #135: the map's draw cap kept documents in path order, and the physics
   layout lets unlinked documents drift off the canvas."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-eed5-748e-8244-51395d72fe05
 kind: bug

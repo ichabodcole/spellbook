@@ -7,7 +7,7 @@ description:
   that colour and the page header, so several open sessions can be told apart at
   a glance.
 tags: [scriptorium, sessions, ux]
-status: draft
+status: stable
 lifecycle: backlog
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 ---

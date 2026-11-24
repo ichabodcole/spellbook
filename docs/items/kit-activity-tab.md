@@ -5,7 +5,7 @@ description:
   "File made, moved, renamed, version activated: the daemon's records go to
   their own Activity list in the right column, so chat holds only the human and
   the agent."
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-52d2-74d4-9a58-7f22f32d65cf
 kind: task

@@ -4,7 +4,7 @@ title: Scriptorium tests the one-way symmetric link hint end to end
 description:
   The one-way symmetric hint (#142) is tested only in the kit; nothing drives it
   from Scriptorium or in a browser.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eac9-922a-75e5-a979-4a2142ecda61
 kind: chore

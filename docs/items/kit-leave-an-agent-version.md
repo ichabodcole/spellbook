@@ -4,7 +4,7 @@ title: Leave an agent version without taking it
 description:
   "Let the human leave an agent's version: it stays in history and stops waiting
   on them, without being activated or deleted."
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5014-7393-9326-850d71951419
 kind: task

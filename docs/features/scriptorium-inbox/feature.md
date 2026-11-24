@@ -6,7 +6,7 @@ description:
   the agent: agent versions, notes, relinks and the message waiting, each with
   its act."
 tags: [scriptorium, kit, inbox]
-status: draft
+status: stable
 lifecycle: backlog
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 ---

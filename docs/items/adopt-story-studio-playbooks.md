@@ -4,7 +4,7 @@ title: Adopt Story Studio's branch, cycle and test-speed lessons
 description:
   Bring Story Studio's implementing-a-branch, running-a-cycle and release
   playbooks, and its test-speed notes, into Spellbook's playbooks.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5844-71d0-b2c8-a7d09df1b6a3
 kind: chore

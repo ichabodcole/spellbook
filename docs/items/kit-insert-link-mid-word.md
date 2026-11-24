@@ -4,7 +4,7 @@ title: Insert a link at a point lands mid-word and unspaced
 description:
   "GitHub #147: a link inserted at a point goes exactly there, so in the
   rendered view it can split a word, and after a word it gets no space."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1eabe-f525-7750-8c5a-624d7549f123
 kind: bug

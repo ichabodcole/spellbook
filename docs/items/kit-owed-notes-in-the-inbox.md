@@ -4,7 +4,7 @@ title: Owed notes go to the inbox
 description:
   The Notes panel and its dot speak only for the open document; an unanswered
   note elsewhere is an inbox row, and the notes-elsewhere box goes.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-512b-72a6-b0d3-c95f34612dfc
 kind: task

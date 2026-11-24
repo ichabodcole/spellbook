@@ -4,7 +4,7 @@ title: Back and Forward through what you opened
 description:
   Arrows and keys step back and forward through the documents opened in a
   session, and Back returns to the place you were reading.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-51ba-704a-9d0b-3eaa00bb214a
 kind: task

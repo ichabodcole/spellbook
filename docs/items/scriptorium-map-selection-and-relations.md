@@ -5,7 +5,7 @@ description:
   "GitHub #136: Story Studio reshaped the ported map; the move to the centre
   column has landed, while selection as chat context, relation colours, a
   neighbourhood view and an offered map have not."
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eabe-ef5a-76cf-bdeb-adb8a943c22b
 kind: task

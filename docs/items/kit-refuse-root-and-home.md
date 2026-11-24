@@ -4,7 +4,7 @@ title: Refuse the disk root and HOME as a set
 description:
   Opening the disk root or the home folder as a set is refused, as Story Studio
   refuses them as a project.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-57ba-711b-8823-5c3e4ae68558
 kind: bug

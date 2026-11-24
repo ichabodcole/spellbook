@@ -5,7 +5,7 @@ description:
   A top-bar button and popover in the kit, opt-in per spell, listing what waits
   on the human and on the agent, each row opening its thing with its acts;
   Scriptorium first.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-509f-7179-a982-87bd52c9499a
 kind: task

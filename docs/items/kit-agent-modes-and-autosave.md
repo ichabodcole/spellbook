@@ -4,7 +4,7 @@ title: Ask and Auto modes, consent and autosave for the kit
 description:
   How Story Studio's working modes, progressive consent and autosave would work
   in Spellbook's kit, with global settings and short-lived sessions.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-5501-74c8-b80c-d7280c6f7fba
 kind: research

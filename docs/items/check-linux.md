@@ -4,7 +4,7 @@ title: Run CI's Linux check locally
 description:
   A check:linux script runs the same steps as CI inside a pinned Linux
   container, so a red CI run can be reproduced before pushing.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a1eb00-56a0-75ea-ac09-a88785e22ef1
 kind: chore
