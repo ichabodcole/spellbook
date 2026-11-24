@@ -7,7 +7,7 @@ description:
   fix, before the next feature cycle.
 tags: [scriptorium, kit, research, bugs]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-11-17
 appetite:
   Stop when each research item has Cole's call and its follow-up items are
@@ -86,7 +86,21 @@ research:
 
 ## Outcome
 
-_Written at close._
+Closed 2026-11-24 by Cole's call.
+
+- **Research:** three of the four items reached Cole's call, with their
+  follow-up items filed: the Story Studio UX port (17 items and the
+  `scriptorium-inbox` feature), session vocabularies (two build items) and the
+  kit split (the `kit-split` feature, 37 items, and the next cycle,
+  [Split the kit](2026-12-kit-split.md)). The fourth,
+  [frontmatter-chip-editing](../items/frontmatter-chip-editing/item.md), is
+  researched but awaits Cole's review. Cole left it for later, so it leaves the
+  cycle (`ready`), and its write-up waits on the unmerged branch
+  `docs/frontmatter-chip-editing`.
+- **Bugs:** all eight landed with independent review, and #137, #145 and #146
+  close on release. Bun 1.4.4 was pinned along the way.
+- **Not reached at close:** two green CI runs and the patch release, which are
+  Cole's (push and release).
 
 ## Sessions
 
@@ -100,3 +114,5 @@ _Written at close._
 - fix/kit-cli-small-fixes (landed 2026-11-17)
 - fix/kit-save-second-unseen-change (landed 2026-11-17)
 - fix/note-reply-clears-every-waiting-note (landed 2026-11-17)
+- docs/frontmatter-chip-editing (paused 2026-11-24, unmerged; awaits Cole's
+  review)
