@@ -5,16 +5,16 @@ description:
   Where profiles and relation vocabularies come from for Scriptorium's
   short-lived sessions. Recommends four layers, nearest winning (the folder's
   own, the repo's up to the git root, a global user folder, and built-in packs
-  attached by a marker file), the @studio name, and a kit hook shared with Story
-  Studio.
+  attached by a marker file), and a kit hook shared with Story Studio. Cole
+  ruled on 2026-11-24: as recommended, but the folder is @scriptorium.
 tags: [scriptorium, profiles, relations]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 ---
 
 # Vocabularies for short-lived sessions
 
-**Outcome:** Recommendation made; awaiting Cole's call.
+**Outcome:** Decided, 2026-11-24. See [Decided](#decided).
 
 ---
 
@@ -286,8 +286,8 @@ through `?rel=` links. So a built-in project-docs pack has kinds but no
 
 Relation words Cole uses across sessions belong in the user layer
 (`~/.scriptorium/profiles/_relations.json`). A world's own relation words come
-from its folder (`@studio/profiles/_relations.json`). The per-relation merge
-(`relations.ts:27–32`) already layers them.
+from its folder (`@scriptorium/profiles/_relations.json`). The per-relation
+merge (`relations.ts:27–32`) already layers them.
 
 ## Options
 
@@ -321,12 +321,12 @@ How a pack is attached:
 **Layer four sources, nearest winning per kind and per relation, as the kit
 already does within one walk.** Confidence: medium-high.
 
-| Order (nearest first) | Source                                                              | Bounded by                                                            |
-| --------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1                     | The folder's own `@studio/profiles/`, from the document's folder up | The convention root (below)                                           |
-| 2                     | The same walk, continued above the entry root                       | The git root, when the entry is inside one; else the entry root       |
-| 3                     | The user's global folder, `$SCRIPTORIUM_HOME/profiles/`             | One folder, always in force                                           |
-| 4                     | Built-in packs, each attached by its marker file                    | Only where the marker is found, between the document and the git root |
+| Order (nearest first) | Source                                                        | Bounded by                                                            |
+| --------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1                     | The folder's own `@scriptorium/profiles/`, from the folder up | The convention root (below)                                           |
+| 2                     | The same walk, continued above the entry root                 | The git root, when the entry is inside one; else the entry root       |
+| 3                     | The user's global folder, `$SCRIPTORIUM_HOME/profiles/`       | One folder, always in force                                           |
+| 4                     | Built-in packs, each attached by its marker file              | Only where the marker is found, between the document and the git root |
 
 Layers 1 and 2 are one walk with a higher stopping point.
 
@@ -346,10 +346,11 @@ Layers 1 and 2 are one walk with a higher stopping point.
    - `$ref` keeps its rule against the same lifted root.
    - The guard against leaking from outside stays. Only its boundary moves, to
      one that fits a session over files.
-3. **The folder's name: `@studio/profiles/`**, read in place of
-   `_meta/profiles/`. There is nothing to migrate. It matches Story Studio's kit
-   and worlds, and makes every later port of the two readers a clean pick. Take
-   the vocabulary folder only, not `project.md` or the project bundle. Reading
+3. **The folder's name: `@studio/profiles/`** _(overridden: Cole chose
+   `@scriptorium/profiles/`, see Decided)_, read in place of `_meta/profiles/`.
+   There is nothing to migrate. It matches Story Studio's kit and worlds, and
+   makes every later port of the two readers a clean pick. Take the vocabulary
+   folder only, not `project.md` or the project bundle. Reading
    `_meta/profiles/` as a fallback for one release is cheap if Cole wants it,
    but no real file needs it.
 4. **How a pack is attached: automatically, by a marker file. No `open` flag and
@@ -385,22 +386,41 @@ Layers 1 and 2 are one walk with a higher stopping point.
   `.scriptorium.json`) could attach a user pack by folder.
 - If Story Studio renames `@studio` again, follow it or pick our own name then.
 
+## Decided
+
+Cole, 2026-11-24, on the five decisions below:
+
+1. **Layering: as recommended.** Four layers, nearest winning.
+2. **Above the opened entry: as recommended.** Up to the git root, through a
+   `conventionRoot` hook.
+3. **Folder name: `@scriptorium/profiles/`**, not `@studio/profiles/`. `@studio`
+   is tied to Story Studio's name, as its app folder. What it costs, knowingly:
+   a session over a Story Studio world does not see that world's
+   `@studio/profiles/`, and each port of `profiles.ts` or `relations.ts` carries
+   the rename. The kit should take the folder name from the app, so the two apps
+   share the reader and differ only in the name they pass.
+4. **Attaching a pack: by marker file, as recommended, also reading
+   `docsRoot`.** The `project-docs` pack attaches when `.project-docs.json` is
+   found between the document and the git root. Scriptorium only reads that
+   file; it never creates or writes it. The file's `docsRoot` (default `docs`)
+   bounds the pack to documents under that folder, so a `type: item` file
+   elsewhere in the repo gets nothing from it. `lint.types` is not read for now.
+   Anything Scriptorium owns lives under `@scriptorium/` or `~/.scriptorium/`.
+5. **Global layer: build it now**, at `$SCRIPTORIUM_HOME/profiles/`.
+
 ## Next Steps
 
-1. Cole rules on the decisions below.
-2. File the build items with `--from item/scriptorium-session-vocabularies`:
-   - **kit**: a `conventionRoot` hook and an extra-layers list in the profile
-     and relation passes, with the reader folder renamed to `@studio/profiles/`;
-   - **Scriptorium**: supply the git-root lift, the
-     `$SCRIPTORIUM_HOME/profiles/` layer and marker-attached built-in packs;
-   - **pack**: the `project-docs` pack and its ward test against the vendored
-     pdocs registry;
-   - **SKILL.md**: say where the files go and what the layers are (this was
-     [scriptorium-skill-relations-file-location](../scriptorium-skill-relations-file-location.md)'s
-     DoD).
-3. Mark [frontmatter-chip-editing](../frontmatter-chip-editing/item.md)'s build
-   items as blocked by the kit and pack items. Its values come from
-   `documentProfile`, whatever layer resolved it.
+1. ~~Cole rules on the decisions below.~~ Done, see Decided.
+2. ~~File the build items.~~ Done, 2026-11-24, both `--from` this item:
+   - [kit-profile-layers](../kit-profile-layers.md): the `conventionRoot` hook,
+     the extra layers and the app-named folder. Blocked by the kit split, which
+     moves the two readers.
+   - [scriptorium-vocabulary-layers](../scriptorium-vocabulary-layers.md): the
+     git-root lift, the global layer, the `project-docs` pack bounded by
+     `docsRoot` with its ward test, and the SKILL. Blocked by the kit item.
+3. [frontmatter-chip-editing](../frontmatter-chip-editing/item.md) can now be
+   researched. Its values come from `documentProfile`, whatever layer resolved
+   it; its build items, when filed, are blocked by the two above.
 
 ## Open Questions
 
@@ -438,6 +458,8 @@ Layers 1 and 2 are one walk with a higher stopping point.
   `~/Projects` for profile folders.
 
 ## Decisions for Cole
+
+_Ruled on 2026-11-24; see [Decided](#decided)._
 
 1. **Layering.** Should vocabularies come from four layers, nearest winning: the
    folder's own, then the repo's up to the git root, then a global
