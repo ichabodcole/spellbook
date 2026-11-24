@@ -10,7 +10,7 @@ id: 01a1eb00-535e-7289-8ced-013de404e3c7
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 blocked_by:
-  [01a17a8e-259e-77a4-b704-af6c786e9732, 01a1eb00-512b-72a6-b0d3-c95f34612dfc]
+  [01a20f86-9b81-7503-b97e-cc9b8355b1e3, 01a1eb00-512b-72a6-b0d3-c95f34612dfc]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
@@ -33,7 +33,7 @@ Land it on one branch with the Activity tab, and with or after
 [kit-owed-notes-in-the-inbox](kit-owed-notes-in-the-inbox.md): our Notes dot
 covers owed notes in every document, and only the inbox replaces that cue.
 Blocked by both that item and
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

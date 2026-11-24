@@ -9,7 +9,8 @@ lifecycle: backlog
 id: 01a1eb00-51ba-704a-9d0b-3eaa00bb214a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by:
+  [01a20f86-9926-72ec-8e93-934381ff98cf, 01a20f86-9a59-7302-ba4d-9aed91799269]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
@@ -39,7 +40,7 @@ session's port dies with it, so links don't outlive the session.
 
 `navHistory.ts` and `navKeys.ts` port cleanly; the controller and the top bar
 need the kit split, so this is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

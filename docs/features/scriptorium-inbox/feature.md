@@ -57,7 +57,7 @@ Story Studio's entries are a pure function of the snapshot
 (`packages/kit/src/shell/inbox.ts`), which ports almost verbatim once the kinds
 are trimmed. The popover and its hook need rework into our shell. The daemon
 halves land in `session.ts` and `server.ts`, so the feature follows
-[the kit split](../../items/kit-split-oversized-modules.md).
+[the kit split](../../items/kit-split-oversized-modules/item.md).
 
 ---
 

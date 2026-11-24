@@ -43,7 +43,7 @@ Approved by Cole on 2026-11-17. In order:
    to adopt `@studio`. It takes in what item 1 finds.
 3. **[item/frontmatter-chip-editing](../items/frontmatter-chip-editing/item.md)**:
    after item 2, from which it takes its values.
-4. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules.md)**,
+4. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules/item.md)**,
    starting from Story Studio's refactoring cycle (closed 2026-11-08): how to
    split `session.ts` and the other large modules. Its call shapes every later
    kit change.
@@ -93,7 +93,7 @@ _Written at close._
 - docs/story-studio-document-ux-port (landed 2026-11-17)
 - chore/bun-1.4.4 (landed 2026-11-17)
 - docs/scriptorium-session-vocabularies (landed 2026-11-24)
-- docs/kit-split-oversized-modules (open)
+- docs/kit-split-oversized-modules (landed 2026-11-24)
 - fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (landed 2026-11-17)
 - fix/scriptorium-downgraded-session-refused (landed 2026-11-17)

@@ -9,7 +9,7 @@ lifecycle: backlog
 id: 01a1eb00-558a-7708-a1eb-96e1bcb40c04
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by: [01a20f86-95ae-7357-8026-a46b53bb5192]
 priority: high
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
@@ -26,9 +26,8 @@ Story Studio closed it in `1d7b4d29`: the page fetches a per-daemon key, and the
 page's socket and the human's `/fs` routes require it
 (`packages/kit/src/workspace/daemon/http.ts`, `context/daemonClient.ts`).
 
-It touches `server.ts` and the daemon client throughout, so it is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md); the split's build
-items will replace that as the real blocker.
+It touches `server.ts` and the daemon client throughout, so it waits on the
+split's [D9](kit-split-d9.md), which creates `daemon/http.ts`.
 
 ## Definition of done
 

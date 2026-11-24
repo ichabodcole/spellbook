@@ -85,7 +85,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 
 **7. Research for the next cycle** (touches no code):
 
-22. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules.md)**:
+22. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules/item.md)**:
     a proposed split of `session.ts` (9,040 lines) and `server.ts` (5,357),
     agreed with Story Studio. The build opens the next cycle, before session
     identity and cleanup, which live in `session.ts`.

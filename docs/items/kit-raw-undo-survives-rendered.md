@@ -8,7 +8,7 @@ lifecycle: backlog
 id: 01a1eb00-5247-7533-a08f-0a1329a9c378
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by: [01a20f86-8efa-774d-b516-2ff089d69144]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
@@ -23,7 +23,7 @@ Story Studio fixed this in `92e657ed`: its `DocumentView.tsx` keeps CodeMirror's
 `historyField` across the flip, with a change in `workspace/session.ts`. Nothing
 in our `src/kit/document/DocumentView.tsx` does this. Our `DocumentView` has
 drifted a long way from theirs, so this is a rewrite, not a copy; blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

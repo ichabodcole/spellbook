@@ -9,7 +9,7 @@ lifecycle: backlog
 id: 01a1eb00-5614-77d5-a591-2ce127ec3cea
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by: [01a20f86-9259-7734-ab81-7e643acba754]
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
 
@@ -25,7 +25,7 @@ Spellbook has no single service, so this is per daemon: compare the build stamp
 the daemon started with against the one on disk, and say so on the page and in
 `tail`, with the act that restarts it.
 
-Blocked by [kit-split-oversized-modules](kit-split-oversized-modules.md).
+Blocked by [kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

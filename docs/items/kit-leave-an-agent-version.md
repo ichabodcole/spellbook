@@ -9,7 +9,8 @@ lifecycle: backlog
 id: 01a1eb00-5014-7393-9326-850d71951419
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by:
+  [01a20f86-8efa-774d-b516-2ff089d69144, 01a20f86-95ae-7357-8026-a46b53bb5192]
 parent: feature/scriptorium-inbox
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
@@ -35,9 +36,9 @@ and
 [scriptorium-eager-or-lazy-versioning](scriptorium-eager-or-lazy-versioning.md):
 decide the three together.
 
-The daemon half lands in `session.ts` and `server.ts`, so it is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md); the split's build
-items will replace that as the real blocker once they are filed.
+The daemon half lands in `session.ts` and `server.ts`, so it waits on the
+split's steps that move them: [S7](kit-split-s7.md) (documents) and
+[D9](kit-split-d9.md) (the dispatchers).
 
 ## Definition of done
 
