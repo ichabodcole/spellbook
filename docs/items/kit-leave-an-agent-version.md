@@ -36,9 +36,9 @@ and
 [scriptorium-eager-or-lazy-versioning](scriptorium-eager-or-lazy-versioning.md):
 decide the three together.
 
-The daemon half lands in `session.ts` and `server.ts`, so it is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules/item.md); the split's
-build items will replace that as the real blocker once they are filed.
+The daemon half lands in `session.ts` and `server.ts`, so it waits on the
+split's steps that move them: [S7](kit-split-s7.md) (documents) and
+[D9](kit-split-d9.md) (the dispatchers).
 
 ## Definition of done
 

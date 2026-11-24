@@ -26,9 +26,8 @@ Story Studio closed it in `1d7b4d29`: the page fetches a per-daemon key, and the
 page's socket and the human's `/fs` routes require it
 (`packages/kit/src/workspace/daemon/http.ts`, `context/daemonClient.ts`).
 
-It touches `server.ts` and the daemon client throughout, so it is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules/item.md); the split's
-build items will replace that as the real blocker.
+It touches `server.ts` and the daemon client throughout, so it waits on the
+split's [D9](kit-split-d9.md), which creates `daemon/http.ts`.
 
 ## Definition of done
 

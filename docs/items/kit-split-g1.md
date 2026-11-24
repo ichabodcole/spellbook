@@ -41,7 +41,8 @@ Detail, the override counts and the start-path test: the write-up's
 
 ## Definition of done
 
-- [ ] The limit is on, with the 15 overrides at the counts in the write-up.
+- [ ] The limit is on, with the 15 overrides frozen at Biome's counts
+      re-measured at G1 (the write-up's counts are a 2026-11-17 baseline).
 - [ ] Growing a listed file by one line fails the lint (tried, then reverted).
 - [ ] `session-tiers.test.ts` exists and passes with an empty table.
 - [ ] The start-path test passes today: the CLI entry loads no
