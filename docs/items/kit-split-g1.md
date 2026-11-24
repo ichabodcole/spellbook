@@ -29,6 +29,12 @@ replaces `noteGuard.lazy.test.ts`'s first test; the ownership rule and the
 lessons as a playbook; Story Studio's `workspace-session.md` architecture page,
 ported; one line in `AGENTS.md`.
 
+Copy `tests/architecture/session-tiers.test.ts` and
+`docs/architecture/workspace-session.md` from Story Studio's current develop,
+not from the write-ups; they agreed to a near-verbatim port (kit-parity 73). Our
+page records the parts we have and they don't, since their table lists only
+theirs.
+
 Detail, the override counts and the start-path test: the write-up's
 [step table](./kit-split-oversized-modules/write-up.md#the-build-steps) and the
 "guard, in detail" paragraphs under it.

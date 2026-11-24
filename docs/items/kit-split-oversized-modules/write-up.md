@@ -9,15 +9,15 @@ description:
   overrides and a start-path test keep it split; the bounty, grapevine and other
   spells' files stay whole under their overrides."
 tags: [kit, refactor, story-studio]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 ---
 
 # Splitting the kit's oversized modules
 
-**Outcome:** Recommendation made, and Cole approved all eight decisions on
-2026-11-24 (see Decided); the build items are filed. Awaiting Story Studio's
-answer on kit-parity only.
+**Outcome:** Decided. Cole approved all eight decisions on 2026-11-24 (see
+Decided), the build items are filed, and Story Studio answered on kit-parity the
+same day (see Story Studio's answer).
 
 ---
 
@@ -596,6 +596,34 @@ if they answered differently.
 > 4. Do you mind us porting `session-tiers.test.ts` and
 >    `docs/architecture/workspace-session.md` nearly verbatim?
 
+## Story Studio's answer
+
+Kit-parity message 73, 2026-11-24, answering message 71:
+
+1. **What moved since 2026-11-08:** six parts were added, and nothing was
+   renamed or moved between tiers. In `session/`: `markers.ts` (tier 4,
+   `864b149e`) and `copyRecords.ts` (tier 4, `6c6d2ec2`). In `daemon/`:
+   `askStudio.ts` (`fc578a7c`), `navFacts.ts` (`27589601`, which
+   [kit-back-and-forward](../kit-back-and-forward.md) already cites),
+   `verbChain.ts` (`f31ee03a`) and `vocabularyVersions.ts` (`ae40bd49`). None is
+   a part we need for the split; the four daemon parts belong to Story Studio
+   features we haven't ported. `docs/architecture/workspace-session.md` and
+   `tests/architecture/session-tiers.test.ts` are current on their develop: **G1
+   copies them from there, not from the write-ups.**
+2. **Our extra parts in their tier table: no.** Their table lists only their
+   parts, so it doesn't drift with ours. It now notes that Spellbook split along
+   the same tiers and names, with parts of its own, and that our doc records
+   them (their develop `d41d01fa`). Keeping the shared names is what matters to
+   them. So our `workspace-session.md` is the record of our extra parts, and our
+   tier test lists them.
+3. **Lessons:** nothing beyond rule 20 of their implementing-a-branch playbook:
+   split by what owns which state, never by line count, and a split is a pure
+   refactor with no behaviour change. G1's playbook carries it.
+4. **Porting the tier test and the architecture page nearly verbatim: yes.**
+
+On #137 they are covered: their CLI requires `--project` on every verb that
+talks to a session (`project_required`).
+
 ## Decided
 
 Cole, 2026-11-24: all eight decisions as recommended.
@@ -613,9 +641,9 @@ Cole, 2026-11-24: all eight decisions as recommended.
 
 ## Next Steps
 
-1. The lead sends the message above on kit-parity, and records Story Studio's
-   answer in this write-up (definition of done, box 4). **Still open:** the
-   message is 71 on kit-parity, and no answer has arrived yet.
+1. ~~The lead sends the message above on kit-parity and records Story Studio's
+   answer.~~ Sent as message 71; answered in message 73, 2026-11-24. See Story
+   Studio's answer.
 2. ~~Cole answers the decisions below (box 5).~~ Done 2026-11-24; see Decided.
 3. ~~The build items are filed from the step table.~~ Done 2026-11-24, under
    [the kit-split feature](../../features/kit-split/feature.md), each
