@@ -10,7 +10,8 @@ lifecycle: backlog
 id: 01a1eb00-52d2-74d4-9a58-7f22f32d65cf
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by:
+  [01a20f86-9b81-7503-b97e-cc9b8355b1e3, 01a20f86-9259-7734-ab81-7e643acba754]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---

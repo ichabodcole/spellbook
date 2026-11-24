@@ -14,7 +14,7 @@ id: 01a20f78-ff9d-7399-80c2-627d1dd81705
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
 tags: [kit, profiles, relations]
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by: [01a20f86-8ddd-7780-8233-0ec66f9dbc98]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eadc-5c28-7746-9b8c-5bb7a428ab80
 ---
@@ -36,9 +36,9 @@ The kit part, shared with Story Studio:
   an optional scope (a folder a document must be under for it to apply);
 - the folder's name taken from the app, not hard-coded.
 
-Blocked by the kit split, which moves the two readers out of `session.ts` (the
-read-side step of the split's plan; see
-[kit-split-oversized-modules](./kit-split-oversized-modules.md)).
+Blocked by the kit split, which moves the two readers out of `session.ts` in its
+read-side step, [S5](./kit-split-s5.md) (see
+[the split's write-up](./kit-split-oversized-modules/write-up.md)).
 
 ## Definition of done
 

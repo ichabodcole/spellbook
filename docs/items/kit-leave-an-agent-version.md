@@ -9,7 +9,8 @@ lifecycle: backlog
 id: 01a1eb00-5014-7393-9326-850d71951419
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
-blocked_by: [01a17a8e-259e-77a4-b704-af6c786e9732]
+blocked_by:
+  [01a20f86-8efa-774d-b516-2ff089d69144, 01a20f86-95ae-7357-8026-a46b53bb5192]
 parent: feature/scriptorium-inbox
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---

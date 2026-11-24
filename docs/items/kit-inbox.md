@@ -13,7 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-11-17 }
 parent: feature/scriptorium-inbox
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 blocked_by:
-  [01a17a8e-259e-77a4-b704-af6c786e9732, 01a1eb00-5014-7393-9326-850d71951419]
+  [01a20f86-9926-72ec-8e93-934381ff98cf, 01a1eb00-5014-7393-9326-850d71951419]
 ---
 
 # An inbox for what still needs the human

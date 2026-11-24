@@ -15,8 +15,9 @@ generated: { by: claude-opus-5-5, at: 2026-11-17 }
 
 # Splitting the kit's oversized modules
 
-**Outcome:** Recommendation made; awaiting Cole's call and Story Studio's
-answer.
+**Outcome:** Recommendation made, and Cole approved all eight decisions on
+2026-11-24 (see Decided); the build items are filed. Awaiting Story Studio's
+answer on kit-parity only.
 
 ---
 
@@ -595,19 +596,51 @@ if they answered differently.
 > 4. Do you mind us porting `session-tiers.test.ts` and
 >    `docs/architecture/workspace-session.md` nearly verbatim?
 
+## Decided
+
+Cole, 2026-11-24: all eight decisions as recommended.
+
+1. Build option C, Story Studio's split adapted, as the next cycle opens.
+2. Keep Story Studio's names, even where the noun doesn't fit us.
+3. The limit is 1,200 lines as Biome counts them, tests left out, with 15 frozen
+   overrides.
+4. Biome to 2.5.x and a kit typecheck in the gate come first, as G0.
+5. The end state is public parts, callers moved, delegates retired.
+6. `yaml` comes off the CLI's start path, as its own small item.
+7. The bounty, grapevine, mind-mapper and imago files stay whole under frozen
+   overrides.
+8. Two lanes at most, with S3, S9, D2 and D4 alone.
+
 ## Next Steps
 
 1. The lead sends the message above on kit-parity, and records Story Studio's
-   answer in this write-up (definition of done, box 4).
-2. Cole answers the decisions below (box 5).
-3. The build items are filed from the step table: G0, G1, S2 to S11 (S4 may fold
-   into S6), D1 to D9, R1, V1 to V4, W1 to W5, P1 to P6, each `blocked_by` the
-   one before in its chain, in the next cycle. The eight items above swap their
-   `blocked_by` from this research item to the named step.
+   answer in this write-up (definition of done, box 4). **Still open:** the
+   message is 71 on kit-parity, and no answer has arrived yet.
+2. ~~Cole answers the decisions below (box 5).~~ Done 2026-11-24; see Decided.
+3. ~~The build items are filed from the step table.~~ Done 2026-11-24, under
+   [the kit-split feature](../../features/kit-split/feature.md), each
+   `blocked_by` the one before in its chain: [G0](../kit-split-g0.md),
+   [G1](../kit-split-g1.md); the session [S2](../kit-split-s2.md),
+   [S3](../kit-split-s3.md), [S4](../kit-split-s4.md), [S5](../kit-split-s5.md),
+   [S6](../kit-split-s6.md), [S7](../kit-split-s7.md), [S8](../kit-split-s8.md),
+   [S9](../kit-split-s9.md), [S10](../kit-split-s10.md),
+   [S11](../kit-split-s11.md); the daemon [D1](../kit-split-d1.md),
+   [D2](../kit-split-d2.md) (after S11 and D1), [D3](../kit-split-d3.md),
+   [D4](../kit-split-d4.md), [D5](../kit-split-d5.md), [D6](../kit-split-d6.md),
+   [D7](../kit-split-d7.md), [D9](../kit-split-d9.md); [R1](../kit-split-r1.md);
+   [V1](../kit-split-v1.md) to [V4](../kit-split-v4.md);
+   [W1](../kit-split-w1.md) to [W5](../kit-split-w5.md);
+   [P1](../kit-split-p1.md) to [P6](../kit-split-p6.md); and
+   [cli-yaml-off-start-path](../cli-yaml-off-start-path.md) for decision 6. D1,
+   R1, V1, W1, P1 and the yaml item wait only on G1. The eight items above, and
+   [kit-profile-layers](../kit-profile-layers.md) (S5), now wait on their steps
+   instead of this research item.
 4. After that, mark this item done:
    `bun scripts/pdocs/cli.ts set item/kit-split-oversized-modules --lifecycle done`.
 
 ## Decisions for Cole
+
+_Ruled 2026-11-24; see Decided._
 
 1. **Build Story Studio's split, adapted, as the next cycle opens?**
    Recommended: yes, option C, with the steps above. You've ruled the timing;

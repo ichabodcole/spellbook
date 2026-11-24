@@ -10,7 +10,7 @@ id: 01a1eb00-535e-7289-8ced-013de404e3c7
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 blocked_by:
-  [01a17a8e-259e-77a4-b704-af6c786e9732, 01a1eb00-512b-72a6-b0d3-c95f34612dfc]
+  [01a20f86-9b81-7503-b97e-cc9b8355b1e3, 01a1eb00-512b-72a6-b0d3-c95f34612dfc]
 parent: feature/workspace-kit-follow-ups
 from: 01a1eabb-ee28-7737-826d-38ba3dd5b5bf
 ---
