@@ -6,7 +6,7 @@ description:
   seams, propose a split that keeps port-back with Story Studio workable, and
   list the other files worth splitting.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a17a8e-259e-77a4-b704-af6c786e9732
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
@@ -75,17 +75,17 @@ items should include it.
 
 ## Definition of done
 
-- [ ] The write-up reads Story Studio's split (its two write-ups, the D, W and P
+- [x] The write-up reads Story Studio's split (its two write-ups, the D, W and P
       steps, and the resulting module tree) and records the taxonomy it used. It
       says where our kit's modules match theirs and where they differ, so that
       following their split is ported where it fits and adapted where it
       doesn't.
-- [ ] A write-up maps `session.ts` and `server.ts` into proposed modules, each
+- [x] A write-up maps `session.ts` and `server.ts` into proposed modules, each
       with what it owns, with the import graph and start-up path checked for
       every module.
-- [ ] Each other file in the table is either recommended for a split, with
+- [x] Each other file in the table is either recommended for a split, with
       proposed seams, or marked to leave alone, with the reason.
-- [ ] The split has been offered to Story Studio on kit-parity, and their answer
+- [x] The split has been offered to Story Studio on kit-parity, and their answer
       is recorded.
-- [ ] Cole has decided whether to build it and when, and the build items are
+- [x] Cole has decided whether to build it and when, and the build items are
       filed.
