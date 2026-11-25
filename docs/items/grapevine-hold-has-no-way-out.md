@@ -7,7 +7,7 @@ description:
   it, and live tails exit 6 with no tail.* line naming the next act; only stop
   --hold 1 shortens a hold, and nothing says so.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a176ad-1a0d-7549-8367-6ceb7b8419f5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
