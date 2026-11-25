@@ -12763,7 +12763,7 @@ var __iconNode80 = [
 ];
 var X = createLucideIcon("x", __iconNode80);
 // src/scriptorium/surface/Frame.tsx
-var import_react60 = __toESM(require_react(), 1);
+var import_react62 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
 var React8 = __toESM(require_react(), 1);
@@ -68902,7 +68902,7 @@ function DocumentPane({
 }
 
 // src/kit/shell/WorkspaceShell.tsx
-var import_react56 = __toESM(require_react(), 1);
+var import_react58 = __toESM(require_react(), 1);
 var import_react_dom6 = __toESM(require_react_dom(), 1);
 
 // src/kit/chat/ChatMessageView.tsx
@@ -77505,8 +77505,134 @@ function TopBar({
   });
 }
 
-// src/kit/shell/usePaneKeys.ts
+// src/kit/shell/useHeldSelection.ts
 var import_react54 = __toESM(require_react(), 1);
+function useHeldSelection({
+  daemon,
+  state,
+  send
+}) {
+  const openDoc = import_react54.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
+  const openImage = state.openImage ?? null;
+  const [rawMain, setRawMain] = import_react54.useState(null);
+  const openOriginal = openDoc?.original ?? null;
+  const rawRef = import_react54.useRef(rawMain);
+  rawRef.current = rawMain;
+  import_react54.useEffect(() => {
+    if (rawRef.current !== null && openOriginal !== rawRef.current)
+      setRawMain(null);
+  }, [openOriginal]);
+  const [selection, setSelection] = import_react54.useState(null);
+  const [clearSeq, setClearSeq] = import_react54.useState(0);
+  const [reveal, setReveal] = import_react54.useState(null);
+  const revealSeq = import_react54.useRef(0);
+  const selectionRef = import_react54.useRef(selection);
+  selectionRef.current = selection;
+  const onSelectionEvent = import_react54.useCallback((event) => {
+    const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
+    selectionRef.current = held;
+    setSelection(held);
+    if (clearPaint)
+      setClearSeq((n) => n + 1);
+    if (event.type === "shown")
+      setReveal((r) => revealAfter(r, event));
+    else
+      setReveal((r) => revealAfter(r, { type: "selection" }));
+  }, []);
+  const shownDoc = openDoc?.slug ?? null;
+  const shownVersion = openDoc?.active ?? null;
+  import_react54.useEffect(() => {
+    onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
+  }, [shownDoc, shownVersion, onSelectionEvent]);
+  const [pointedAt, setPointedAt] = import_react54.useState(null);
+  const focusedNote = pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion ? pointedAt.id : null;
+  const pickedState = focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
+  import_react54.useEffect(() => {
+    if (!pointedAt || pickedState === undefined)
+      return;
+    if (pickedState && !pointedAt.resolved)
+      setPointedAt(null);
+    else if (!pickedState && pointedAt.resolved)
+      setPointedAt({ ...pointedAt, resolved: false });
+  }, [pickedState, pointedAt]);
+  const [showResolvedNotes, setShowResolvedNotes] = import_react54.useState(false);
+  const connected = daemon.connection === "open";
+  const docsRef = import_react54.useRef(state.docs);
+  docsRef.current = state.docs;
+  import_react54.useEffect(() => {
+    if (!connected)
+      return;
+    if (!selection) {
+      send({ op: "select", selection: null });
+      return;
+    }
+    const doc = docsRef.current.find((d) => d.slug === selection.doc);
+    const path = doc?.versions.find((v) => v.n === selection.version)?.path;
+    if (!path)
+      return;
+    send({
+      op: "select",
+      selection: {
+        doc: selection.doc,
+        version: selection.version,
+        path,
+        fromLine: selection.fromLine,
+        toLine: selection.toLine,
+        text: selection.text
+      }
+    });
+  }, [selection, send, connected]);
+  const [pointedDocs, setPointedDocs] = import_react54.useState(null);
+  const reportSelection = import_react54.useCallback((s) => {
+    if (s.from !== s.to)
+      setPointedDocs(null);
+    onSelectionEvent({ type: "report", selection: s });
+  }, [onSelectionEvent]);
+  const dropSelection = import_react54.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
+  const pointDocs = import_react54.useCallback((p) => {
+    const next = p && (p.docs.length > 0 || p.label) ? p : null;
+    if (next && selectionRef.current)
+      onSelectionEvent({ type: "drop" });
+    setPointedDocs(next);
+  }, [onSelectionEvent]);
+  const [treeSelected, setTreeSelected] = import_react54.useState([]);
+  const [addedRefs, setAddedRefs] = import_react54.useState([]);
+  const addRef = import_react54.useCallback((ref) => setAddedRefs((rs) => rs.some((r) => r.path === ref.path) ? rs : [...rs, ref]), []);
+  const removeRef = import_react54.useCallback((path) => setAddedRefs((rs) => rs.filter((r) => r.path !== path)), []);
+  const clearRefs = import_react54.useCallback(() => setAddedRefs([]), []);
+  const requestReveal = import_react54.useCallback((target) => {
+    setReveal({ ...target, seq: ++revealSeq.current });
+  }, []);
+  const revealApplied = import_react54.useCallback((seq) => setReveal((r) => revealAfter(r, { type: "applied", seq })), []);
+  return {
+    openDoc,
+    openImage,
+    rawMain,
+    setRawMain,
+    selection,
+    clearSeq,
+    reveal,
+    setPointedAt,
+    focusedNote,
+    showResolvedNotes,
+    setShowResolvedNotes,
+    pointedDocs,
+    reportSelection,
+    dropSelection,
+    pointDocs,
+    treeSelected,
+    setTreeSelected,
+    addedRefs,
+    addRef,
+    removeRef,
+    clearRefs,
+    requestReveal,
+    revealApplied
+  };
+}
+
+// src/kit/shell/usePaneKeys.ts
+var import_react55 = __toESM(require_react(), 1);
 function usePaneKeys({
   collapsed,
   collapse,
@@ -77515,15 +77641,15 @@ function usePaneKeys({
   floating,
   floatClosed
 }) {
-  const focusPane = import_react54.useCallback((pane) => {
+  const focusPane = import_react55.useCallback((pane) => {
     if (pane === "context" && collapsed.context)
       expand("context");
     if (pane === "chat" && collapsed.chat)
       expand("chat");
     requestAnimationFrame(() => document.querySelector(`[data-pane="${pane}"]`)?.focus());
   }, [collapsed.context, collapsed.chat, expand]);
-  const showChatTab = import_react54.useRef(() => {});
-  const focusComposer = import_react54.useCallback(() => {
+  const showChatTab = import_react55.useRef(() => {});
+  const focusComposer = import_react55.useCallback(() => {
     if (floating) {
       requestAnimationFrame(() => document.querySelector(FLOAT_INPUT)?.focus());
       return;
@@ -77533,8 +77659,8 @@ function usePaneKeys({
     showChatTab.current();
     requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('[data-pane="chat"] [data-slot="composer-input"]')?.focus()));
   }, [collapsed.chat, expand, floating]);
-  const rootRef = import_react54.useRef(null);
-  import_react54.useEffect(() => {
+  const rootRef = import_react55.useRef(null);
+  import_react55.useEffect(() => {
     const onKey = (e) => {
       const root = rootRef.current;
       if (!root)
@@ -77582,8 +77708,77 @@ function usePaneKeys({
   return { focusPane, showChatTab, focusComposer, rootRef };
 }
 
+// src/kit/shell/useReveal.ts
+var import_react56 = __toESM(require_react(), 1);
+function useReveal({
+  daemon,
+  toasts,
+  send,
+  openDoc,
+  requestReveal
+}) {
+  const [pendingShow, setPendingShow] = import_react56.useState(null);
+  const openAt = import_react56.useCallback((path, at) => {
+    if (openDoc && openDoc.original === path) {
+      setPendingShow(null);
+      if (at)
+        requestReveal({ doc: openDoc.slug, version: openDoc.active, from: at.from, to: at.to });
+      return;
+    }
+    setPendingShow(at ? { path, from: at.from, to: at.to, since: openDoc?.original ?? null } : null);
+    send({ op: "open", path });
+  }, [send, requestReveal, openDoc]);
+  const openResult = import_react56.useCallback((r) => {
+    if (r.image) {
+      setPendingShow(null);
+      send({ op: "open", path: r.image });
+      return;
+    }
+    openAt(r.path, r.kind === "text" && r.from !== undefined && r.to !== undefined ? { from: r.from, to: r.to } : undefined);
+  }, [openAt, send]);
+  import_react56.useEffect(() => {
+    if (!pendingShow)
+      return;
+    if (openDoc?.original !== pendingShow.path) {
+      if ((openDoc?.original ?? null) !== pendingShow.since)
+        setPendingShow(null);
+      return;
+    }
+    setPendingShow(null);
+    requestReveal({
+      doc: openDoc.slug,
+      version: openDoc.active,
+      from: pendingShow.from,
+      to: pendingShow.to,
+      ...pendingShow.heading ? { heading: pendingShow.heading } : {}
+    });
+  }, [pendingShow, openDoc, requestReveal]);
+  const openDocRef = import_react56.useRef(openDoc);
+  openDocRef.current = openDoc;
+  const { onFrame: onDaemonFrame } = daemon;
+  const { announce: announceToast } = toasts;
+  import_react56.useEffect(() => onDaemonFrame((frame) => {
+    if (frame.op !== "link.target")
+      return;
+    const f = frame;
+    if (f.state !== "in-context" || !f.heading || f.refused)
+      return;
+    const { found, anchor } = f.heading;
+    if (!found)
+      announceToast("Heading not found", `No heading “${anchor}” in ${baseName(f.path)}; opened at the top.`);
+    setPendingShow({
+      path: f.path,
+      from: found?.from ?? 0,
+      to: found?.from ?? 0,
+      ...found ? { heading: { from: found.from, to: found.to } } : {},
+      since: openDocRef.current?.original ?? null
+    });
+  }), [onDaemonFrame, announceToast]);
+  return { setPendingShow, openAt, openResult };
+}
+
 // src/kit/shell/useShellColumns.ts
-var import_react55 = __toESM(require_react(), 1);
+var import_react57 = __toESM(require_react(), 1);
 var PANES = ["context", "centre", "chat"];
 var HANDLE_REACH = 6;
 function useShellColumns({
@@ -77591,25 +77786,25 @@ function useShellColumns({
   storageKey,
   state
 }) {
-  const storage = import_react55.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layoutStorage = import_react55.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const storage = import_react57.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
+  const layoutStorage = import_react57.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
   const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
-  const [collapsed, setCollapsed] = import_react55.useState(() => collapsedSides(layout.defaultLayout));
-  const collapsedRef = import_react55.useRef(collapsed);
+  const [collapsed, setCollapsed] = import_react57.useState(() => collapsedSides(layout.defaultLayout));
+  const collapsedRef = import_react57.useRef(collapsed);
   collapsedRef.current = collapsed;
-  const reopening = import_react55.useRef(new Set);
-  const openSizesRef = import_react55.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
+  const reopening = import_react57.useRef(new Set);
+  const openSizesRef = import_react57.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
   const contextPanel = fn();
   const chatPanel = fn();
-  const panelFor = import_react55.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
-  const collapse = import_react55.useCallback((side) => {
+  const panelFor = import_react57.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
+  const collapse = import_react57.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel || panel.isCollapsed())
       return false;
     panel.collapse();
     return true;
   }, [panelFor]);
-  const expand = import_react55.useCallback((side) => {
+  const expand = import_react57.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel?.isCollapsed())
       return false;
@@ -77654,12 +77849,12 @@ function useShellColumns({
     else
       collapse(side);
   };
-  const focusNext = import_react55.useRef(null);
-  const toggleFrom = import_react55.useCallback((side, act, then) => {
+  const focusNext = import_react57.useRef(null);
+  const toggleFrom = import_react57.useCallback((side, act, then) => {
     const acted = act === "collapse" ? collapse(side) : expand(side);
     focusNext.current = acted ? then ?? `[data-column-control="${side}-${act === "collapse" ? "reopen" : "collapse"}"]` : null;
   }, [collapse, expand]);
-  import_react55.useEffect(() => {
+  import_react57.useEffect(() => {
     const sel = focusNext.current;
     if (!sel)
       return;
@@ -77669,7 +77864,7 @@ function useShellColumns({
     focusNext.current = null;
     el.focus();
   });
-  const onLayoutChanged = import_react55.useCallback((next, meta) => {
+  const onLayoutChanged = import_react57.useCallback((next, meta) => {
     layout.onLayoutChanged(next, meta);
     const panels = { context: contextPanel.current, chat: chatPanel.current };
     const now = collapsedFrom(next, panels);
@@ -77689,17 +77884,17 @@ function useShellColumns({
       storage.setItem(OPEN_KEY, encodeOpenSizes(remembered));
     }
   }, [layout, storage, contextPanel, chatPanel]);
-  const columns = import_react55.useMemo(() => ({
+  const columns = import_react57.useMemo(() => ({
     collapsed: { context: collapsed.context, chat: collapsed.chat },
     collapse: (side) => void collapse(side),
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
-  const [quietWanted, setQuiet] = import_react55.useState(false);
+  const [quietWanted, setQuiet] = import_react57.useState(false);
   const quiet = quietWanted && !state.openImage;
   const fade = quiet ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
-  const [seenMessage, setSeenMessage] = import_react55.useState(newestMessage);
-  import_react55.useEffect(() => {
+  const [seenMessage, setSeenMessage] = import_react57.useState(newestMessage);
+  import_react57.useEffect(() => {
     if (!collapsed.chat && seenMessage !== newestMessage)
       setSeenMessage(newestMessage);
   }, [collapsed.chat, newestMessage, seenMessage]);
@@ -77806,31 +78001,31 @@ function ShellBody({
   const { send } = daemon;
   const toasts = useToastStore();
   const restoreCommand = `${state.launcher ? `${state.launcher} ` : ""}open --restore ${state.sessionId}`;
-  const [endPhase, setEndPhase] = import_react56.useState(null);
+  const [endPhase, setEndPhase] = import_react58.useState(null);
   const ended = daemon.connection === "ended";
-  const endedBefore = import_react56.useRef(ended);
-  import_react56.useEffect(() => {
+  const endedBefore = import_react58.useRef(ended);
+  import_react58.useEffect(() => {
     if (ended && !endedBefore.current)
       setEndPhase("ended");
     endedBefore.current = ended;
   }, [ended]);
-  const [endNotice, setEndNotice] = import_react56.useState(null);
-  import_react56.useEffect(() => {
+  const [endNotice, setEndNotice] = import_react58.useState(null);
+  import_react58.useEffect(() => {
     if (endPhase === "ending" && daemon.connection !== "open" && !ended) {
       setEndPhase("confirm");
       setEndNotice(UNREACHABLE);
     }
   }, [endPhase, daemon.connection, ended]);
-  const chipRef = import_react56.useRef(null);
-  const [settingsOpen, setSettingsOpen] = import_react56.useState(false);
-  const [theme, setThemeState] = import_react56.useState(() => readAppliedTheme());
-  const setTheme = import_react56.useCallback((next) => {
+  const chipRef = import_react58.useRef(null);
+  const [settingsOpen, setSettingsOpen] = import_react58.useState(false);
+  const [theme, setThemeState] = import_react58.useState(() => readAppliedTheme());
+  const setTheme = import_react58.useCallback((next) => {
     applyTheme(next);
     setThemeState(next);
     storageProp?.setItem(THEME_KEY, next);
   }, [storageProp]);
   const themeKept = keptTheme(storageProp?.getItem(THEME_KEY));
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     if (themeKept && themeKept !== readAppliedTheme()) {
       applyTheme(themeKept);
       setThemeState(themeKept);
@@ -77856,20 +78051,20 @@ function ShellBody({
     fade,
     chatUnseen
   } = useShellColumns({ storageProp, storageKey, state });
-  const [draft, setDraft] = import_react56.useState("");
-  const [floatClosed, setFloatClosedState] = import_react56.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
-  const setFloatClosed = import_react56.useCallback((closed) => {
+  const [draft, setDraft] = import_react58.useState("");
+  const [floatClosed, setFloatClosedState] = import_react58.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
+  const setFloatClosed = import_react58.useCallback((closed) => {
     setFloatClosedState(closed);
     storage.setItem(FLOAT_KEY, encodeFloatClosed(closed));
   }, [storage]);
-  const chatWasCollapsed = import_react56.useRef(collapsed.chat);
-  import_react56.useEffect(() => {
+  const chatWasCollapsed = import_react58.useRef(collapsed.chat);
+  import_react58.useEffect(() => {
     if (chatWasCollapsed.current && !collapsed.chat && floatClosed)
       setFloatClosed(false);
     chatWasCollapsed.current = collapsed.chat;
   }, [collapsed.chat, floatClosed, setFloatClosed]);
   const floating = floatShown(collapsed, floatClosed);
-  const [dock, setDock] = import_react56.useState(null);
+  const [dock, setDock] = import_react58.useState(null);
   const floatIcon = floatOnRail(collapsed, floatClosed);
   const sessionLabel = `session ${state.sessionId}${daemon.connection === "ended" ? " (ended)" : ""}`;
   const { focusPane, showChatTab, focusComposer, rootRef } = usePaneKeys({
@@ -77880,159 +78075,42 @@ function ShellBody({
     floating,
     floatClosed
   });
-  const openDoc = import_react56.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
-  const openImage = state.openImage ?? null;
-  const [rawMain, setRawMain] = import_react56.useState(null);
-  const openOriginal = openDoc?.original ?? null;
-  const rawRef = import_react56.useRef(rawMain);
-  rawRef.current = rawMain;
-  import_react56.useEffect(() => {
-    if (rawRef.current !== null && openOriginal !== rawRef.current)
-      setRawMain(null);
-  }, [openOriginal]);
-  const [selection, setSelection] = import_react56.useState(null);
-  const [clearSeq, setClearSeq] = import_react56.useState(0);
-  const [reveal, setReveal] = import_react56.useState(null);
-  const revealSeq = import_react56.useRef(0);
-  const selectionRef = import_react56.useRef(selection);
-  selectionRef.current = selection;
-  const onSelectionEvent = import_react56.useCallback((event) => {
-    const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
-    selectionRef.current = held;
-    setSelection(held);
-    if (clearPaint)
-      setClearSeq((n) => n + 1);
-    if (event.type === "shown")
-      setReveal((r) => revealAfter(r, event));
-    else
-      setReveal((r) => revealAfter(r, { type: "selection" }));
-  }, []);
-  const shownDoc = openDoc?.slug ?? null;
-  const shownVersion = openDoc?.active ?? null;
-  import_react56.useEffect(() => {
-    onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
-  }, [shownDoc, shownVersion, onSelectionEvent]);
-  const [pointedAt, setPointedAt] = import_react56.useState(null);
-  const focusedNote = pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion ? pointedAt.id : null;
-  const pickedState = focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
-  import_react56.useEffect(() => {
-    if (!pointedAt || pickedState === undefined)
-      return;
-    if (pickedState && !pointedAt.resolved)
-      setPointedAt(null);
-    else if (!pickedState && pointedAt.resolved)
-      setPointedAt({ ...pointedAt, resolved: false });
-  }, [pickedState, pointedAt]);
-  const [showResolvedNotes, setShowResolvedNotes] = import_react56.useState(false);
-  const connected = daemon.connection === "open";
-  const docsRef = import_react56.useRef(state.docs);
-  docsRef.current = state.docs;
-  import_react56.useEffect(() => {
-    if (!connected)
-      return;
-    if (!selection) {
-      send({ op: "select", selection: null });
-      return;
-    }
-    const doc = docsRef.current.find((d) => d.slug === selection.doc);
-    const path = doc?.versions.find((v) => v.n === selection.version)?.path;
-    if (!path)
-      return;
-    send({
-      op: "select",
-      selection: {
-        doc: selection.doc,
-        version: selection.version,
-        path,
-        fromLine: selection.fromLine,
-        toLine: selection.toLine,
-        text: selection.text
-      }
-    });
-  }, [selection, send, connected]);
-  const [pointedDocs, setPointedDocs] = import_react56.useState(null);
-  const reportSelection = import_react56.useCallback((s) => {
-    if (s.from !== s.to)
-      setPointedDocs(null);
-    onSelectionEvent({ type: "report", selection: s });
-  }, [onSelectionEvent]);
-  const dropSelection = import_react56.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
-  const pointDocs = import_react56.useCallback((p) => {
-    const next = p && (p.docs.length > 0 || p.label) ? p : null;
-    if (next && selectionRef.current)
-      onSelectionEvent({ type: "drop" });
-    setPointedDocs(next);
-  }, [onSelectionEvent]);
-  const [treeSelected, setTreeSelected] = import_react56.useState([]);
-  const [addedRefs, setAddedRefs] = import_react56.useState([]);
-  const addRef = import_react56.useCallback((ref) => setAddedRefs((rs) => rs.some((r) => r.path === ref.path) ? rs : [...rs, ref]), []);
-  const removeRef = import_react56.useCallback((path) => setAddedRefs((rs) => rs.filter((r) => r.path !== path)), []);
-  const clearRefs = import_react56.useCallback(() => setAddedRefs([]), []);
-  const requestReveal = import_react56.useCallback((target) => {
-    setReveal({ ...target, seq: ++revealSeq.current });
-  }, []);
-  const revealApplied = import_react56.useCallback((seq) => setReveal((r) => revealAfter(r, { type: "applied", seq })), []);
-  const [pendingShow, setPendingShow] = import_react56.useState(null);
-  const openAt = import_react56.useCallback((path, at) => {
-    if (openDoc && openDoc.original === path) {
-      setPendingShow(null);
-      if (at)
-        requestReveal({ doc: openDoc.slug, version: openDoc.active, from: at.from, to: at.to });
-      return;
-    }
-    setPendingShow(at ? { path, from: at.from, to: at.to, since: openDoc?.original ?? null } : null);
-    send({ op: "open", path });
-  }, [send, requestReveal, openDoc]);
-  const openResult = import_react56.useCallback((r) => {
-    if (r.image) {
-      setPendingShow(null);
-      send({ op: "open", path: r.image });
-      return;
-    }
-    openAt(r.path, r.kind === "text" && r.from !== undefined && r.to !== undefined ? { from: r.from, to: r.to } : undefined);
-  }, [openAt, send]);
-  import_react56.useEffect(() => {
-    if (!pendingShow)
-      return;
-    if (openDoc?.original !== pendingShow.path) {
-      if ((openDoc?.original ?? null) !== pendingShow.since)
-        setPendingShow(null);
-      return;
-    }
-    setPendingShow(null);
-    requestReveal({
-      doc: openDoc.slug,
-      version: openDoc.active,
-      from: pendingShow.from,
-      to: pendingShow.to,
-      ...pendingShow.heading ? { heading: pendingShow.heading } : {}
-    });
-  }, [pendingShow, openDoc, requestReveal]);
-  const openDocRef = import_react56.useRef(openDoc);
-  openDocRef.current = openDoc;
-  const { onFrame: onDaemonFrame } = daemon;
-  const { announce: announceToast } = toasts;
-  import_react56.useEffect(() => onDaemonFrame((frame) => {
-    if (frame.op !== "link.target")
-      return;
-    const f = frame;
-    if (f.state !== "in-context" || !f.heading || f.refused)
-      return;
-    const { found, anchor } = f.heading;
-    if (!found)
-      announceToast("Heading not found", `No heading “${anchor}” in ${baseName(f.path)}; opened at the top.`);
-    setPendingShow({
-      path: f.path,
-      from: found?.from ?? 0,
-      to: found?.from ?? 0,
-      ...found ? { heading: { from: found.from, to: found.to } } : {},
-      since: openDocRef.current?.original ?? null
-    });
-  }), [onDaemonFrame, announceToast]);
-  const [imageLinks, setImageLinks] = import_react56.useState(null);
+  const {
+    openDoc,
+    openImage,
+    rawMain,
+    setRawMain,
+    selection,
+    clearSeq,
+    reveal,
+    setPointedAt,
+    focusedNote,
+    showResolvedNotes,
+    setShowResolvedNotes,
+    pointedDocs,
+    reportSelection,
+    dropSelection,
+    pointDocs,
+    treeSelected,
+    setTreeSelected,
+    addedRefs,
+    addRef,
+    removeRef,
+    clearRefs,
+    requestReveal,
+    revealApplied
+  } = useHeldSelection({ daemon, state, send });
+  const { setPendingShow, openAt, openResult } = useReveal({
+    daemon,
+    toasts,
+    send,
+    openDoc,
+    requestReveal
+  });
+  const [imageLinks, setImageLinks] = import_react58.useState(null);
   const openImagePath = openImage?.path ?? null;
   const { request } = daemon;
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     if (openImagePath === null) {
       setImageLinks(null);
       return;
@@ -78053,21 +78131,21 @@ function ShellBody({
     };
   }, [openImagePath, request, state]);
   const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
-  const endedToastAt = import_react56.useRef(0);
-  import_react56.useEffect(() => {
+  const endedToastAt = import_react58.useRef(0);
+  import_react58.useEffect(() => {
     if (lastError)
       setPendingShow(null);
-  }, [lastError]);
+  }, [lastError, setPendingShow]);
   const noticeOwned = notice !== undefined;
-  const ownedToast = import_react56.useRef(null);
+  const ownedToast = import_react58.useRef(null);
   const { dismiss: dismissToast } = toasts;
-  const letOwnedToastGo = import_react56.useCallback(() => {
+  const letOwnedToastGo = import_react58.useCallback(() => {
     if (ownedToast.current === null)
       return;
     dismissToast(ownedToast.current);
     ownedToast.current = null;
   }, [dismissToast]);
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     if (!lastError)
       return;
     if (noticeOwned && lastError !== SESSION_ENDED) {
@@ -78086,7 +78164,7 @@ function ShellBody({
     clearError();
   }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   const linkRefused = lastError !== null && lastErrorTitle === LINK_REFUSED;
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     if (!linkRefused)
       return;
     const onKey = (e) => {
@@ -78096,19 +78174,19 @@ function ShellBody({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [linkRefused, clearError]);
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     if (!lastError || !collapsed.context)
       letOwnedToastGo();
   }, [lastError, collapsed.context, letOwnedToastGo]);
-  const moved = import_react56.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
-  const created = import_react56.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
-  import_react56.useEffect(() => {
+  const moved = import_react58.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const created = import_react58.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
+  import_react58.useEffect(() => {
     if (done?.stay === "rename")
       return;
     if (done?.of === "doc.create" || done?.of === "bundle.create")
       send({ op: "open", path: done.path });
   }, [done, send]);
-  const workspace = import_react56.useMemo(() => ({
+  const workspace = import_react58.useMemo(() => ({
     daemon,
     state,
     openDoc,
@@ -78177,7 +78255,7 @@ function ShellBody({
   } : null;
   const userHome = state.userHome || null;
   const contextEntries = state.context;
-  const askDescribe = import_react56.useCallback((path) => {
+  const askDescribe = import_react58.useCallback((path) => {
     const set = contextEntries.find((e) => e.membership === "mirrored" && path.startsWith(`${e.root}/`));
     const shown = set ? `${set.label}/${path.slice(set.root.length + 1)}` : tildify(path, userHome);
     send({
@@ -78188,14 +78266,14 @@ function ShellBody({
       about: { path }
     });
   }, [send, userHome, contextEntries]);
-  import_react56.useEffect(() => {
+  import_react58.useEffect(() => {
     setTreeSelected((rows) => {
       if (rows.length === 0)
         return rows;
       const kept = rowsShown(contextEntries, rows);
       return kept.length === rows.length ? rows : kept;
     });
-  }, [contextEntries]);
+  }, [contextEntries, setTreeSelected]);
   const contextBody = /* @__PURE__ */ jsx_runtime57.jsx(ContextSidebar, {
     entries: state.context,
     activeDoc,
@@ -78262,12 +78340,12 @@ function ShellBody({
   const openNotes = notes.filter((n) => !n.resolved);
   const tasks = state.tasks;
   const outstanding = tasks.filter((t) => !isFinishedStatus(t.status));
-  const docName = import_react56.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
-  const pathName = import_react56.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
+  const docName = import_react58.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
+  const pathName = import_react58.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
   const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
   const agentListening = state.agentListening !== false;
   const owedNotes = state.notesWaiting ?? [];
-  const [askPressed, setAskPressed] = import_react56.useState(() => new Map);
+  const [askPressed, setAskPressed] = import_react58.useState(() => new Map);
   const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
   if (daemon.connection === "open") {
     for (const [id, at] of askPressed)
@@ -78291,7 +78369,7 @@ function ShellBody({
     if (sent !== null)
       setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
   } : undefined;
-  const noteReplies = import_react56.useMemo(() => repliesByNote(state.chat), [state.chat]);
+  const noteReplies = import_react58.useMemo(() => repliesByNote(state.chat), [state.chat]);
   const noteName = (noteId) => {
     for (const d of state.docs) {
       const n = d.notes.find((x) => x.id === noteId);
@@ -78325,7 +78403,7 @@ function ShellBody({
   const pointedLabel = pointedDocs?.label ?? null;
   const dropPointed = () => pointDocs(null);
   const activePath = openDoc?.versions.find((v) => v.n === openDoc.active)?.path;
-  const treeRefs = import_react56.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
+  const treeRefs = import_react58.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
   const parts = messageParts({
     selection: attachable !== null && !pointedDocs,
     pointed: pointedDocs?.inAppPart ? [] : pointedDocs?.docs ?? [],
@@ -78501,7 +78579,7 @@ function ShellBody({
     ...panels
   ];
   const TAB_KEY = "tab";
-  const [panelId, setPanelIdState] = import_react56.useState(() => storage.getItem(TAB_KEY));
+  const [panelId, setPanelIdState] = import_react58.useState(() => storage.getItem(TAB_KEY));
   const setPanelId = (id) => {
     setPanelIdState(id);
     storage.setItem(TAB_KEY, id);
@@ -79089,10 +79167,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
 }
 
 // src/scriptorium/surface/useMapView.tsx
-var import_react59 = __toESM(require_react(), 1);
+var import_react61 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/MapView.tsx
-var import_react58 = __toESM(require_react(), 1);
+var import_react60 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -80066,14 +80144,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/forceLayout.ts
-var import_react57 = __toESM(require_react(), 1);
+var import_react59 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size, enabled) {
-  const [positions, setPositions] = import_react57.useState(new Map);
-  const sim = import_react57.useRef(null);
-  const bodies = import_react57.useRef(new Map);
-  const [dragging, setDragging] = import_react57.useState(null);
-  import_react57.useEffect(() => {
+  const [positions, setPositions] = import_react59.useState(new Map);
+  const sim = import_react59.useRef(null);
+  const bodies = import_react59.useRef(new Map);
+  const [dragging, setDragging] = import_react59.useState(null);
+  import_react59.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -80096,7 +80174,7 @@ function useForceLayout(nodes, edges, size, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size.width, size.height, enabled]);
-  const onDragStart = import_react57.useCallback((path, at) => {
+  const onDragStart = import_react59.useCallback((path, at) => {
     const body = bodies.current.get(path);
     if (!body)
       return;
@@ -80105,7 +80183,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fy = at.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react57.useCallback((at) => {
+  const onDragMove = import_react59.useCallback((at) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -80114,7 +80192,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fx = at.x;
     body.fy = at.y;
   }, [dragging]);
-  const onDragEnd = import_react57.useCallback(() => {
+  const onDragEnd = import_react59.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -80190,10 +80268,10 @@ function MapView({
   onOpenDoc,
   onClose
 }) {
-  const root = import_react58.useRef(null);
-  const close = import_react58.useRef(onClose);
+  const root = import_react60.useRef(null);
+  const close = import_react60.useRef(onClose);
   close.current = onClose;
-  import_react58.useEffect(() => {
+  import_react60.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape" || e.defaultPrevented)
         return;
@@ -80208,15 +80286,15 @@ function MapView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [hover, setHover] = import_react58.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react58.useState(null);
-  const { placed, width, height, headings } = import_react58.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
-  const at = import_react58.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react58.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
+  const [hover, setHover] = import_react60.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react60.useState(null);
+  const { placed, width, height, headings } = import_react60.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at = import_react60.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react60.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
   const links = drawn.reduce((sum, e) => sum + e.count, 0);
   const dense = links > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react58.useMemo(() => {
+  const connected = import_react60.useMemo(() => {
     if (!hover)
       return null;
     const set = new Set([hover]);
@@ -80230,7 +80308,7 @@ function MapView({
   }, [hover, drawn]);
   const lit = (path) => connected === null || connected.has(path);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react58.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react58.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  const force = useForceLayout(import_react60.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react60.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
   return /* @__PURE__ */ jsx_runtime59.jsxs("div", {
     ref: root,
     "data-slot": "map",
@@ -80491,7 +80569,7 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react58.useRef(null);
+  const svg = import_react60.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at = (e) => {
     const box = svg.current?.getBoundingClientRect();
@@ -80639,12 +80717,12 @@ var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
 var messageOf = (e) => e instanceof Error ? e.message : String(e);
 function useMapView(daemon) {
-  const [showing, setShowing] = import_react59.useState(null);
-  const [active, setActive] = import_react59.useState(false);
-  const [mode, setMode] = import_react59.useState("columns");
+  const [showing, setShowing] = import_react61.useState(null);
+  const [active, setActive] = import_react61.useState(false);
+  const [mode, setMode] = import_react61.useState("columns");
   const { request, send, state } = daemon;
-  const asked = import_react59.useRef(0);
-  const fetch2 = import_react59.useCallback((entry) => {
+  const asked = import_react61.useRef(0);
+  const fetch2 = import_react61.useCallback((entry) => {
     const seq = ++asked.current;
     setShowing({ entryId: entry.id, graph: null });
     const keep = (next) => {
@@ -80658,18 +80736,18 @@ function useMapView(daemon) {
   }, [request]);
   const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
   const gone = showing !== null && state !== null && entry === undefined;
-  import_react59.useEffect(() => {
+  import_react61.useEffect(() => {
     if (!gone)
       return;
     asked.current++;
     setShowing(null);
     setActive(false);
   }, [gone]);
-  const show = import_react59.useCallback((e) => {
+  const show = import_react61.useCallback((e) => {
     fetch2(e);
     setActive(true);
   }, [fetch2]);
-  const appView = import_react59.useMemo(() => {
+  const appView = import_react61.useMemo(() => {
     if (!showing || !entry)
       return;
     return {
@@ -80699,7 +80777,7 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react59.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
+  const menuActions = import_react61.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
     {
       id: MAP_VIEW,
       label: MAP_LABEL,
@@ -80809,18 +80887,18 @@ function scriptoriumEndWarning(state) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const prefs = import_react60.useRef(state?.prefs ?? NO_PREFS);
+  const prefs = import_react62.useRef(state?.prefs ?? NO_PREFS);
   prefs.current = state?.prefs ?? NO_PREFS;
-  const connection = import_react60.useRef(daemon.connection);
+  const connection = import_react62.useRef(daemon.connection);
   connection.current = daemon.connection;
-  const sendRef = import_react60.useRef(send);
+  const sendRef = import_react62.useRef(send);
   sendRef.current = send;
-  const storage = import_react60.useMemo(() => prefsStorage({
+  const storage = import_react62.useMemo(() => prefsStorage({
     read: () => prefs.current,
     write: (key, value) => sendRef.current({ op: "prefs.set", key, value }),
     ended: () => connection.current === "ended"
   }), []);
-  import_react60.useEffect(() => {
+  import_react62.useEffect(() => {
     const flush = () => storage.flush();
     window.addEventListener("pagehide", flush);
     return () => {
@@ -80828,15 +80906,15 @@ function Frame({ daemon }) {
       flush();
     };
   }, [storage]);
-  const hints = import_react60.useRef(new Map);
-  import_react60.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react62.useRef(new Map);
+  import_react62.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react60.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react62.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
   const noBlock = noFrontmatterOf(state);
-  const textOffer = import_react60.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
+  const textOffer = import_react62.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -80847,12 +80925,12 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react60.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react62.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map = useMapView(daemon);
   const hidden = state ? hiddenOf(state) : null;
-  const menuActions = import_react60.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
-  const [showDiff, setShowDiff] = import_react60.useState(null);
-  const requestDiff = import_react60.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
+  const menuActions = import_react62.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
+  const [showDiff, setShowDiff] = import_react62.useState(null);
+  const requestDiff = import_react62.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
   return /* @__PURE__ */ jsx_runtime61.jsx(WorkspaceShell, {
     daemon,
