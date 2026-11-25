@@ -45,10 +45,11 @@ export const TIERS: Record<string, number> = {
   facts: 0,
   types: 0,
   manifest: 0,
-  // Tier 1: the core, which every part takes (S3). Within it, `places`
-  // takes `state`, one way.
+  // Tier 1: the core, which every part takes (S3). Within it, `places` and
+  // `writes` take `state`, and `writes` takes `places`, one way.
   state: 1,
   places: 1,
+  writes: 1,
 };
 
 /**

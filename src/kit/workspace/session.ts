@@ -15,7 +15,7 @@
  * - The original is written only by `save`. Opening copies it to v1; nothing
  *   else touches it.
  * - Every write this module makes is remembered by content hash (the `owned`
- *   map), so the watcher can tell the daemon's own writes from anyone else's. A
+ *   map, in `session/writes.ts`), so the watcher can tell the daemon's own writes from anyone else's. A
  *   write to the active version that is not ours is a mistake the daemon
  *   announces.
  * - The agent never writes the active version. That is enforced socially by the
@@ -287,7 +287,7 @@ import {
   treeHash,
 } from "./session/paths.ts";
 import { Places } from "./session/places.ts";
-import { refuseWrite, State } from "./session/state.ts";
+import { State } from "./session/state.ts";
 import {
   type AppDeclaration,
   type ContextIndex,
@@ -302,6 +302,7 @@ import {
   type RestoreReport,
   TASK_NEXT,
 } from "./session/types.ts";
+import { Writes } from "./session/writes.ts";
 import {
   bundleNode,
   bundlesIn,
@@ -397,14 +398,7 @@ export class WorkspaceSession {
   /** Tier 1 (docs/architecture/workspace-session.md): the core every part takes, built first. */
   private readonly core: State;
   private readonly places: Places;
-  /** path to hash of the daemon's last write to it. */
-  private owned = new Map<string, string>();
-  /**
-   * A bundle folder the session itself just wrote whole (made, copied,
-   * renamed, retitled), to when that is no longer news: the watcher's echo
-   * of the session's own act is not reported as a change to the bundle.
-   */
-  private ownBundles = new Map<string, number>();
+  private readonly writes: Writes;
   /** slug to hash of the active version's current text. */
   private activeHash = new Map<string, string>();
   /** slug to the active version's text as the daemon last wrote (or adopted) it:
@@ -478,6 +472,7 @@ export class WorkspaceSession {
     this.core = new State(sessionsRoot, app, manifest);
     this.dir = this.core.dir;
     this.places = new Places(this.core);
+    this.writes = new Writes(this.core, this.places);
   }
 
   /**
@@ -951,6 +946,12 @@ export class WorkspaceSession {
     return this.places.revealTarget(rawPath);
   }
 
+  isOwnWrite(path: string, text: string): boolean {
+    return this.writes.isOwnWrite(path, text);
+  }
+
+  static readonly OWN_BUNDLE_ECHO_MS = Writes.OWN_BUNDLE_ECHO_MS;
+
   /** Name the app's own folder (`appHome`): guarded as the sessions root is. */
   setAppHome(appHome: string | undefined): void {
     this.core.appHome = appHome === undefined ? undefined : resolve(appHome);
@@ -1007,32 +1008,15 @@ export class WorkspaceSession {
     }
   }
 
-  /** A version file written: only inside the session's own `docs/` (`ownFileOrDie`). */
-  private writeVersion(path: string, text: string): void {
-    this.writeOwned(this.places.ownFileOrDie(path), text, this.own);
-  }
-
-  /** A write the watcher will know as the daemon's own: a version (`this.own`) or an original (`this.places.world`). */
-  private writeOwned(path: string, text: string, disk: Disk): void {
-    // Checked before anything: a refused write leaves no hash behind.
-    const why = disk.refusal(path);
-    if (why !== null) throw refuseWrite(why);
-    disk.mkdir(dirname(path), { recursive: true });
-    // Remember before writing: the watcher's event can arrive before this
-    // function returns, and it must find the hash already there.
-    this.owned.set(path, contentHash(text));
-    disk.writeFile(path, text);
-  }
-
   private adoptActive(d: Doc, text: string): void {
     const p = this.core.versionPath(d, d.active);
-    this.owned.set(p, contentHash(text));
+    this.writes.own(p, text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
 
   private writeActive(d: Doc, text: string): void {
-    this.writeVersion(this.core.versionPath(d, d.active), text);
+    this.writes.writeVersion(this.core.versionPath(d, d.active), text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
@@ -1051,14 +1035,9 @@ export class WorkspaceSession {
       outside: true,
     };
     d.versions.push(rec);
-    this.writeVersion(this.core.versionPath(d, n), text);
+    this.writes.writeVersion(this.core.versionPath(d, n), text);
     this.persist();
     return { ...rec, path: this.core.versionPath(d, n) };
-  }
-
-  /** True iff `text` at `path` is exactly what the daemon last wrote there. */
-  isOwnWrite(path: string, text: string): boolean {
-    return this.owned.get(path) === contentHash(text);
   }
 
   // ── context ────────────────────────────────────────────────────────────
@@ -1616,7 +1595,7 @@ export class WorkspaceSession {
       }
       if (onDisk !== null && !this.isOwnWrite(path, onDisk))
         preserved = this.preserveOutside(d, onDisk);
-      this.owned.set(path, contentHash(text));
+      this.writes.own(path, text);
       this.own.rename(staged, path);
       landed = true;
     } finally {
@@ -1662,7 +1641,7 @@ export class WorkspaceSession {
         onDisk = null;
       }
       if (onDisk !== null && (onDisk === text || this.isOwnWrite(path, onDisk))) {
-        this.writeVersion(path, text);
+        this.writes.writeVersion(path, text);
         return { saved: n, kept: null, path };
       }
     }
@@ -1676,7 +1655,7 @@ export class WorkspaceSession {
     };
     d.versions.push(rec);
     const path = this.core.versionPath(d, v);
-    this.writeVersion(path, text);
+    this.writes.writeVersion(path, text);
     this.persist();
     return { saved: v, kept: was ? "changed" : "deleted", path };
   }
@@ -1703,7 +1682,7 @@ export class WorkspaceSession {
       ...(opts.label ? { label: opts.label } : {}),
     };
     d.versions.push(rec);
-    this.writeVersion(this.core.versionPath(d, n), text);
+    this.writes.writeVersion(this.core.versionPath(d, n), text);
     this.persist();
     return { slug: d.slug, version: { ...rec, path: this.core.versionPath(d, n) } };
   }
@@ -1753,7 +1732,7 @@ export class WorkspaceSession {
       // The record is what the session believes; a file already gone (a hand
       // tidy, a crash between write and record) must not block removing it.
     }
-    this.owned.delete(path);
+    this.writes.disown(path);
     this.persist();
     return {
       slug: d.slug,
@@ -2232,7 +2211,7 @@ export class WorkspaceSession {
     // The bytes on disk are already the text: a save that changes nothing, which
     // the daemon never wakes the agent for. Still written, as the human asked.
     const unchanged = fileThere && readFileSync(d.original).equals(Buffer.from(text, "utf8"));
-    this.writeOwned(d.original, text, this.places.world);
+    this.writes.writeOwned(d.original, text, this.places.world);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
@@ -3422,7 +3401,7 @@ export class WorkspaceSession {
         if (n < d.nextVersion) {
           const next = this.takeVersion(d);
           const to = this.core.versionPath(d, next);
-          this.owned.set(to, contentHash(text));
+          this.writes.own(to, text);
           this.own.rename(abs, this.places.ownFileOrDie(to));
           d.versions.push({ n: next, by: "agent", createdAt: nowIso() });
           d.versions.sort((a, b) => a.n - b.n);
@@ -3432,7 +3411,7 @@ export class WorkspaceSession {
         d.versions.push({ n, by: "agent", createdAt: nowIso() });
         d.versions.sort((a, b) => a.n - b.n);
         d.nextVersion = Math.max(d.nextVersion, n + 1);
-        this.owned.set(abs, contentHash(text));
+        this.writes.own(abs, text);
         this.persist();
         return { kind: "version.created", doc: d.slug, version: n, path: abs };
       }
@@ -3451,7 +3430,7 @@ export class WorkspaceSession {
           preservedPath: kept.path,
         };
       }
-      this.owned.set(abs, contentHash(text));
+      this.writes.own(abs, text);
       return { kind: "version.changed", doc: d.slug, version: n, text, active: false };
     }
 
@@ -3517,8 +3496,7 @@ export class WorkspaceSession {
       this.rescanAround(bundle);
       this.refreshListed(bundle);
       // The echo of the session's own act: the tree is read again, and that is all.
-      if ((this.ownBundles.get(bundle) ?? 0) > Date.now()) return null;
-      this.ownBundles.delete(bundle);
+      if (this.writes.isOwnBundleEcho(bundle)) return null;
       return { kind: "bundle", path: bundle, file: abs };
     }
 
@@ -3529,14 +3507,6 @@ export class WorkspaceSession {
       }
     }
     return null;
-  }
-
-  /** How long the watcher's echo of the session's own write to a bundle is not news. */
-  static readonly OWN_BUNDLE_ECHO_MS = 2000;
-
-  /** The session itself just wrote the bundle at `abs` whole. */
-  private wroteBundle(abs: string): void {
-    this.ownBundles.set(abs, Date.now() + WorkspaceSession.OWN_BUNDLE_ECHO_MS);
   }
 
   /** The bundle the context shows that `abs` is in, or is, by its folder's path; else null. */
@@ -3806,7 +3776,7 @@ export class WorkspaceSession {
           : fitName(given, type.extension);
     const abs = join(dir, folder);
     this.refuseExisting(abs);
-    this.wroteBundle(abs);
+    this.writes.wroteBundle(abs);
     this.places.world.mkdir(abs);
     this.places.world.writeFile(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
       flag: "wx",
@@ -3853,7 +3823,7 @@ export class WorkspaceSession {
         409,
       );
     if (item.bundle) {
-      this.wroteBundle(to);
+      this.writes.wroteBundle(to);
       // ⛔ The copy's folder is made here first, alone (no `recursive`), so it
       // fails if anything is at `to` by now (a link, a folder another process
       // just made): only a folder this act made is ever removed below.
@@ -4302,11 +4272,11 @@ export class WorkspaceSession {
     const pins = opts.links && to !== from ? this.pinLinks([from]) : null;
     if (to !== from) {
       this.renameOrDie(from, to);
-      this.wroteBundle(to);
+      this.writes.wroteBundle(to);
       this.followMove(from, to);
     }
     if (titleTo !== titleFrom) {
-      this.wroteBundle(to);
+      this.writes.wroteBundle(to);
       this.places.world.writeFile(
         join(to, BUNDLE_INFO),
         writeBundleInfo(before, type, { title: titleTo }),
@@ -4380,7 +4350,7 @@ export class WorkspaceSession {
     const text = "{}\n";
     const d = this.core.m.docs.find((x) => x.original === to);
     if (d && this.activeText(d) !== "") return null;
-    this.writeOwned(to, text, this.places.world);
+    this.writes.writeOwned(to, text, this.places.world);
     if (!d) return null;
     this.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
@@ -4677,7 +4647,7 @@ export class WorkspaceSession {
         if (onDisk.count > 0) {
           // Before the write, so the watcher finds its own write already known.
           d.originalHash = contentHash(onDisk.text);
-          this.writeOwned(d.original, onDisk.text, this.places.world);
+          this.writes.writeOwned(d.original, onDisk.text, this.places.world);
         }
         let activeCount = heldCount ?? 0;
         if (heldCount === undefined) {
