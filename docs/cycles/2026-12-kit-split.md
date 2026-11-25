@@ -81,3 +81,4 @@ _Written at close._
 - fix/grapevine-hold-has-no-way-out (landed 2026-11-24)
 - chore/kit-split-g1 (landed 2026-11-24)
 - fix/grapevine-paused-daemon-reads-as-gone (landed 2026-11-24)
+- fix/grapevine-small-hint-miscounts (open)

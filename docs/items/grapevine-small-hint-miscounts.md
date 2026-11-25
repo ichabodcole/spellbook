@@ -6,7 +6,7 @@ description:
   --last n counts mark and reopen frames tail never shows, and doctor's hint
   says list spawns a daemon when it doesn't.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a176ad-1b41-742e-b500-e653179c0122
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
