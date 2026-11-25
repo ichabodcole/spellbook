@@ -31,10 +31,12 @@ parts Spellbook has that Story Studio does not. We keep their tiers and their
 part names, so a port between the two kits is a diff between files of the same
 name.
 
-On 2026-11-24 **no part is built**. G1 put the guard in place: the size limit,
-the tier test with empty tables, and the start-path test (below). S2 builds the
-first parts. When a step builds a part, it adds the part's row here and in the
-tier test, in the same change.
+G1 put the guard in place: the size limit, the tier test with empty tables, and
+the start-path test (below). **S2 built tier 0**: `errors`, `names`, `paths`,
+`facts`, `types` and `manifest` are files in `session/`, and `session.ts`
+imports them and re-exports every name it exported before, so no import outside
+the file changed. The other tiers are still planned. When a step builds a part,
+it adds the part's row here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -58,7 +60,7 @@ is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts, planned (none built yet)                                                                                                                | Story Studio's, not ours                 |
+| Tier | Holds                                          | Parts (tier 0 built at S2; the rest planned)                                                                                                   | Story Studio's, not ours                 |
 | ---- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                     |                                          |
 | 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                  |                                          |
@@ -146,7 +148,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   after the last token, so a file's decisions written in JSDoc do not push it
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
-  file is under 1,200. `session.ts` is frozen at 7,848 and `server.ts` at 4,876.
+  file is under 1,200. `session.ts` was frozen at 7,848 and S2 lowered it to
+  7,210; `server.ts` is at 4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -218,11 +221,14 @@ that finds the same in our code records our instance under it.
 - **A spy on a module export works only where the export is defined.** Story
   Studio's `spyOn(sessionModule, "newSessionId")` kept `newSessionId` in
   `session.ts` when tier 0 moved out. Grep for `spyOn(` on the session module
-  before moving a module-level name.
+  before moving a module-level name. Ours had none at S2: no test spies on an
+  export of `session.ts`, so every tier 0 name moved.
 - **Tier 0 parts must not import back across the tier in a cycle.** Where two
   pure parts need each other's helpers, keep the shared helper in the one lower
   in the chain (their `names` kept `entryAt` and `tilde` rather than importing
-  `paths`).
+  `paths`). Ours does the same at S2: `copyName` in `names` uses `entryAt` and
+  `tilde`, so both live in `names`, and `paths` imports `names` (`contentHash`
+  for `treeHash`, `bundleNameAt` for the bundle refusals), never the reverse.
 - **A write the session makes is the daemon's own only if `writes` knows it.**
   `owned` is private to `writes`: a write that does not go through `writeOwned`
   is remembered with `writes.own(path, text)` before it lands, and a file the
@@ -276,3 +282,6 @@ that finds the same in our code records our instance under it.
   kit-split G1: the tiers and planned parts, ours that they don't have, the tier
   test with empty tables, the size limit and the start-path test, before any
   part is built.
+- **2026-11-25**: S2 built tier 0 (`errors`, `names`, `paths`, `facts`, `types`,
+  `manifest`); the tier test lists them, and `session.ts`'s override went from
+  7,848 to 7,210.
