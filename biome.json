@@ -47,6 +47,246 @@
           }
         }
       }
+    },
+    {
+      "includes": ["src/**/*.ts", "src/**/*.tsx", "!**/*.test.ts", "!**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1200
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/workspace/session.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 7848
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/workspace/server.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 4876
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/bounty/backend/server.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 2736
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/grapevine/backend/cli.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 2392
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/bounty/backend/cli.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 2333
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/document/DocumentPane.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 2115
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/shell/WorkspaceShell.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 2029
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/workspace/verbs.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1937
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/mind-mapper/backend/cli.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1889
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/imago/backend/server.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1853
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/mind-mapper/backend/server.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1826
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/mind-mapper/surface/App.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1719
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/workspace/protocol.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1565
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/grapevine/backend/daemon.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1541
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/kit/context/ContextSidebar.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1271
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }
