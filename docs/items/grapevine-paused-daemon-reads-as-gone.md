@@ -11,6 +11,7 @@ id: 01a176ad-1aaa-77b5-960e-775139c32393
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-12-kit-split
 ---
 
 # A paused grapevine daemon is taken for gone, and a second one starts

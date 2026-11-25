@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9ca3-744e-8fe9-41bc09ef7b2d]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move DocumentPane's link writing, save and revert, and drops out

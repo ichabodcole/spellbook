@@ -11,6 +11,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9dc7-71e7-9c8f-bf60ff08a8ac]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move DocumentPane's reader mode out

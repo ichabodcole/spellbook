@@ -11,6 +11,7 @@ id: 01a176ad-1bd5-71a6-834c-2a18ecd6382e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-12-kit-split
 ---
 
 # bounty's latest pointer and list title go stale

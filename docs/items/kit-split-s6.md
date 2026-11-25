@@ -15,6 +15,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-8ddd-7780-8233-0ec66f9dbc98]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move session.ts's small tier 2 parts out: viewer, media, sidecars, placing

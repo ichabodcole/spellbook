@@ -14,6 +14,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-8d4d-71ee-826d-c0c379a47214]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move session.ts's read side out: links, profiles, relations, search

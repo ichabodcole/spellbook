@@ -14,6 +14,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-90a6-7488-81de-acac08e2ef93]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Finish the session split: views out, the facade left, the parts public

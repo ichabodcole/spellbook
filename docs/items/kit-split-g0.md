@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-11-24 }
 tags: [kit, refactor]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Upgrade Biome to 2.5.x and add a kit typecheck to the gate

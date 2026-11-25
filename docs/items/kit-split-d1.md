@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-8ba5-7686-8775-15ef37334619]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move server.ts's module-level code out: types, rules, landings

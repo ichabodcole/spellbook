@@ -14,6 +14,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9e5b-775d-b927-06e28f08bf78]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move DocumentPane's compare, agent pointing and text offer out

@@ -15,6 +15,7 @@ blocked_by:
   [01a20f86-9134-771c-84f4-f5e4034f54de, 01a20f86-91ca-7673-92c9-1c4284d2c0f6]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move the daemon's kernel out: core and views

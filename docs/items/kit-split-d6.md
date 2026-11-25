@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9403-76cd-89dc-719d7a681d99]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move the daemon's incoming images out

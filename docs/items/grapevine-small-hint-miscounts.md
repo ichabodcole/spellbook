@@ -11,6 +11,7 @@ id: 01a176ad-1b41-742e-b500-e653179c0122
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-12-kit-split
 ---
 
 # Three grapevine hints count the wrong thing

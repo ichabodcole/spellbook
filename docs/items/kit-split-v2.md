@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-96d1-7069-96b6-7360b05f9f0d]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move verbs.ts's daemon client out

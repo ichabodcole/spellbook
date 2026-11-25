@@ -6,7 +6,7 @@ description:
   behaviour unchanged, so later kit work and ports land on small files.
 tags: [kit, refactor]
 status: stable
-lifecycle: planned
+lifecycle: active
 started: 2026-11-24
 appetite:
   Stop when session.ts and server.ts are under the 1,200-line limit with their

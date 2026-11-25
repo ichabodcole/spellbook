@@ -14,6 +14,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-8c31-70b9-bba9-cacf4bcd0674]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move session.ts's core out: state, places, writes

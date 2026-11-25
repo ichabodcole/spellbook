@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9259-7734-ab81-7e643acba754]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move the daemon's prefs, presence and messages out

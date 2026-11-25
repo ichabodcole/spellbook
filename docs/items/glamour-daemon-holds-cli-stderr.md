@@ -12,6 +12,7 @@ kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [glamour, cli]
 from: items/_archive/shrink-shipped-dist.md
+cycle: 2026-12-kit-split
 ---
 
 # glamour's daemon holds the CLI's stderr open

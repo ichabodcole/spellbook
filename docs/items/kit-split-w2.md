@@ -12,6 +12,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9926-72ec-8e93-934381ff98cf]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move WorkspaceShell's column and pane-key hooks out

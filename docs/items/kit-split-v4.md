@@ -14,6 +14,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-97fd-7563-9968-df77ad20baf0]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move verbs.ts's command rows out, by topic

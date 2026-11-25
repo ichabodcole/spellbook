@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-8f88-70d1-bfc9-53d9b1eb9b9f]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move session.ts's reconcile and watcher handling out

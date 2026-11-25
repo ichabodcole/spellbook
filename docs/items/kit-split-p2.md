@@ -13,6 +13,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9c0f-7692-b618-d5ad34c51a77]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move DocumentPane's document menu out

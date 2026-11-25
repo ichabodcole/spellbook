@@ -16,6 +16,7 @@ tags: [kit, refactor]
 blocked_by: [01a20f86-9015-7264-8ac2-4ba13e886670]
 parent: feature/kit-split
 from: 01a17a8e-259e-77a4-b704-af6c786e9732
+cycle: 2026-12-kit-split
 ---
 
 # Move session.ts's tree-spanning changes out: relink, structure, trash, images, move plan, sets
