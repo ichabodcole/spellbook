@@ -76,3 +76,4 @@ _Written at close._
 ## Sessions
 
 <!-- One line per branch: `- <type>/<slug> (open)`, then `(landed YYYY-MM-DD)`. -->
+- chore/kit-split-g0 (open)

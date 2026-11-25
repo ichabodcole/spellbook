@@ -5,8 +5,8 @@ description:
   Biome moves from 2.4.16 to 2.5.x, where noExcessiveLinesPerFile is a style
   rule, and a typecheck over src/kit and src/scriptorium joins the gate, so
   every split step after it is typechecked.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-8b1a-738f-aaca-e6def070f969
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
