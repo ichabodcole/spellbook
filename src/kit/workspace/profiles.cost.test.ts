@@ -72,7 +72,8 @@ test("a 2,500-document profile check reads each document once, each profile file
   }
   const s = inContext(join(root, "sessions"), join(docs, "east"));
   s.addContext(join(docs, "west"));
-  const reader = (s as unknown as { profileReader: profiles.ProfileReader }).profileReader;
+  const reader = (s as unknown as { profilesPart: { profileReader: profiles.ProfileReader } })
+    .profilesPart.profileReader;
   const walks = spyOn(tree, "docPaths");
   const reads = spyOn(links, "extractLinks");
   const lookups = spyOn(profiles.ProfileReader.prototype, "file");

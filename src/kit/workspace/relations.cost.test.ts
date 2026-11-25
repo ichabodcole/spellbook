@@ -48,7 +48,8 @@ test("a 2,500-document world's relations come from the link cache: one read per 
   writeVocabulary(join(docs, "west"), { relations: { "grounded-in": { inverse: "grounds" } } });
   const s = inContext(join(root, "sessions"), join(docs, "east"));
   s.addContext(join(docs, "west"));
-  const reader = (s as unknown as { relationsReader: RelationsReader }).relationsReader;
+  const reader = (s as unknown as { relationsPart: { relationsReader: RelationsReader } })
+    .relationsPart.relationsReader;
   const { slug } = s.openPath(at(0));
   const walks = spyOn(tree, "docPaths");
   const reads = spyOn(links, "extractLinks");

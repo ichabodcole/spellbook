@@ -543,7 +543,8 @@ describe("shared fields: allOf with whole-file $ref", () => {
     required: ["type"],
     ...extra,
   });
-  const reader = () => (s as unknown as { profileReader: ProfileReader }).profileReader;
+  const reader = () =>
+    (s as unknown as { profilesPart: { profileReader: ProfileReader } }).profilesPart.profileReader;
   const cave = () => join(world, "the-cave.md");
   const mark = () => join(world, "the-mark.md");
 

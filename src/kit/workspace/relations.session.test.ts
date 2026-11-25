@@ -339,7 +339,8 @@ describe("the relations verb", () => {
   test("a file is parsed once per change, however many asks", () => {
     dreamwood();
     s = inContext(join(root, "sessions"), world);
-    const reader = (s as unknown as { relationsReader: { parsed: number } }).relationsReader;
+    const reader = (s as unknown as { relationsPart: { relationsReader: { parsed: number } } })
+      .relationsPart.relationsReader;
     const slug = open("locations/the-ruin.md");
     s.linkTargets(slug);
     s.linkTargets(slug);
