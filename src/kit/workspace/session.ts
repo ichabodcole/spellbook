@@ -44,7 +44,6 @@ import {
   statSync,
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { parseDocument } from "yaml";
 import { NOT_PLACED } from "../document/notPlaced.ts";
 import {
   BUNDLE_INFO,
@@ -58,7 +57,6 @@ import {
   bundleTypes,
   isBundleMain,
   isBundleMember,
-  isMemberDir,
   newBundleInfo,
   type ReferencePlace,
   referencingBundle,
@@ -92,8 +90,7 @@ import { homeDir } from "../lib/home.ts";
 import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
 import { decodePath, linkScheme, splitTarget } from "../lib/linkTarget.ts";
 import { EMBED_BLOCKED, EMBED_REMOTE, EMBED_SVG } from "../lib/markdown.ts";
-import { withoutCode } from "../lib/markdownCode.ts";
-import { countPair, type KindPairUse, kindUseFrom } from "../lib/relationUse.ts";
+import { kindUseFrom } from "../lib/relationUse.ts";
 import {
   describeSidecar,
   type ImageDescription,
@@ -143,9 +140,6 @@ import {
 } from "./links";
 import {
   keepPreMigrate,
-  type ManifestMigrateContext,
-  type ManifestMigrated,
-  type MigrateManifest,
   migrateRefusal,
   PRE_MIGRATE_FILE,
   runManifestMigrate,
@@ -167,7 +161,6 @@ import {
 } from "./noHome";
 import {
   checkFields,
-  type FieldRule,
   fixFor,
   NO_MATCH,
   PROFILES_DIR,
@@ -231,7 +224,6 @@ import type {
   Speaker,
   SymmetryHint,
   Task,
-  TaskAuthor,
   TaskStatus,
   TrashPreview,
   Version,
@@ -249,6 +241,75 @@ import {
 } from "./relations";
 import { safeExt, safeSlug } from "./safeNames";
 import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
+import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
+import {
+  BACKLINK_CAP,
+  cardFacts,
+  type DocFacts,
+  docFacts,
+  EMBED_CAP,
+  GRAPH_CAP,
+  IMAGES_DIR,
+  IMPORT_NAMES_MAX,
+  IMPORTED_DIR,
+  keptOutside,
+  LINK_CHECK_CAP,
+  MANIFEST_FORMAT,
+  MOVES_KEPT,
+  NO_FACTS,
+  OUTWARD,
+  oneLine,
+  PROFILE_CHECK_CAP,
+  PROFILE_WARNINGS_PER_DOC,
+  type ProfilePass,
+  relationUses,
+  ruleView,
+} from "./session/facts.ts";
+import { migrateSlot, refuseForeignManifest, refuseMalformedManifest } from "./session/manifest.ts";
+import {
+  bundleNameAt,
+  caseInsensitiveAt,
+  checkSessionId,
+  contentHash,
+  copyName,
+  entryAt,
+  FREE_NAME_TRIES,
+  fitName,
+  newSessionId,
+  nowIso,
+  randHex,
+  sideName,
+  slugBase,
+  tilde,
+  uncopied,
+} from "./session/names.ts";
+import {
+  bundleHolding,
+  isFolder,
+  movedPairs,
+  outsideMembers,
+  overlapOf,
+  realOr,
+  refuseInBundle,
+  refuseWorkspaceInBundle,
+  rootReal,
+  shownOverlap,
+  treeHash,
+} from "./session/paths.ts";
+import {
+  type AppDeclaration,
+  type ContextIndex,
+  checkApp,
+  type EdgePin,
+  type EntryAfter,
+  type FileEvent,
+  isFinished,
+  type LinkPin,
+  type NewTask,
+  type PlanWorld,
+  type RestoreReport,
+  TASK_NEXT,
+} from "./session/types.ts";
 import {
   bundleNode,
   bundlesIn,
@@ -272,590 +333,48 @@ import {
   toPosix,
 } from "./tree";
 
-export const MANIFEST_FORMAT = 1;
-
-/** The context's documents by path, each with the entry listing it, and the entries' realpath roots. */
-type ContextIndex = {
-  entryOf: Map<string, string>;
-  /**
-   * Every image the context shows (a set's image nodes and loose images): what
-   * a link or an embed may land on besides a document. Never read, only named.
-   */
-  images: Set<string>;
-  /** Every document the tree marks as an image's description (`sidecar`). */
-  sidecars: Set<string>;
-  realRoots: { root: string; real: string }[];
-};
-
-/**
- * How many backlinks one answer carries. The documents read are already bounded
- * the way search and the link picker's are (each context entry lists at most
- * MIRROR_NODE_CAP); this bounds what one heavily linked document can send.
- */
-export const BACKLINK_CAP = 500;
-
-/** Schemes a link opens outward, in a browser: what `outlinks` marks `outward`. */
-const OUTWARD = new Set(["http", "https", "mailto"]);
-
-/** How many distinct embeds one `embeds` answer resolves: a document with more shows the rest as placeholders. */
-export const EMBED_CAP = 200;
-
-/** How many moves the session keeps for the link check's `proposed` (`moves`). */
-const MOVES_KEPT = 500;
-
-/**
- * A version kept from an outside write to the active one (`preserveOutside`):
- * the agent's by its record, but no proposal. `Version.outside` marks it; one
- * kept before that field, by its label.
- */
-const keptOutside = (v: Version): boolean =>
-  v.outside === true || /^outside write to v\d+$/.test(v.label ?? "");
-
-/** How many entries each section of one link check carries; its `count` is the whole. */
-export const LINK_CHECK_CAP = 500;
-
-/** How many warnings one profile check lists; its `count` is the whole. */
-export const PROFILE_CHECK_CAP = 500;
-
-/**
- * How many documents one link graph answer carries, the best connected first;
- * `total` is the whole. At about twenty links each, 500 documents is already
- * thousands of edges, and no drawing reads more than a few hundred nodes.
- */
-export const GRAPH_CAP = 500;
-
-/**
- * What the graph and the profile check read from a document besides its links,
- * kept in the same per-file cache: its frontmatter `title`, `type` and `status`
- * (scalars only), its first `#` heading, and the whole frontmatter block parsed
- * (`fields`, null when there is none or it does not parse), which a profile
- * checks. Frontmatter is the first few hundred bytes, so holding it costs
- * little at 2,500 documents.
- */
-/** A link pinned before a move (`pinLinks`): where it is written, as written, and where it landed. */
-type LinkPin = {
-  /** `reference`: a bundle's reference (a card on a board), read and written by its type. */
-  kind: LinkKind | "reference";
-  src: string;
-  raw: string;
-  target: string;
-  line: number;
-  label?: string;
-  embed?: true;
-  /** A reference's holder, by its id in the file. */
-  id?: string;
-};
-
-/** An app edge pinned before a move (`pinEdges`): where it is written, as written, and where it landed. */
-type EdgePin = {
-  kind: string;
-  src: string;
-  raw: string;
-  target: string;
-  key?: string;
-  line?: number;
-};
-
-/** A context entry as it would be after a move (`planWorld`), with a listed entry's one item. */
-type EntryAfter = { e: ContextEntry; file: string | null };
-
-/**
- * The world after a move that has not happened (`movePlan`): the paths, the
- * context's entries as they would be, and the documents an app's resolver
- * would be handed then, once built.
- */
-type PlanWorld = MovedWorld & {
-  entries: readonly EntryAfter[];
-  docs?: readonly ResolvableDocument[];
-};
-
-type DocFacts = {
-  title: string | null;
-  type: string | null;
-  status: string | null;
-  heading: string | null;
-  fields: Record<string, unknown> | null;
-  /** Why a frontmatter block that is there could not be read as fields; else null. */
-  unparsed: string | null;
-};
-
-const NO_FACTS: DocFacts = {
-  title: null,
-  type: null,
-  status: null,
-  heading: null,
-  fields: null,
-  unparsed: null,
-};
-
-/** How many warnings one document contributes to a profile check; the rest are counted. */
-export const PROFILE_WARNINGS_PER_DOC = 20;
-
-/** One pass's profile lookup (`profilePass`): the profile a document matches. */
-type ProfilePass = {
-  lookup: ProfileLookup;
-  match: (path: string, facts: DocFacts) => ProfileMatch;
-};
-
-/** What `profile <doc>` shows of one field's rule. */
-type FieldView = Omit<NonNullable<DocumentProfile["fields"]>[number], "field" | "required">;
-
-function ruleView(rule: FieldRule): FieldView {
-  if (rule === false) return { forbidden: true };
-  return {
-    ...(rule.type ? { type: rule.type } : {}),
-    ...(rule.enum ? { enum: rule.enum } : {}),
-    ...(rule.const ? { const: rule.const.value } : {}),
-    ...(rule.minLength !== undefined ? { minLength: rule.minLength } : {}),
-    ...(rule.description !== undefined ? { description: rule.description } : {}),
-  };
-}
-
-/** A frontmatter value the graph can show: a string or a number, trimmed; else null. */
-const scalar = (v: unknown): string | null =>
-  typeof v === "string" ? v.trim() || null : typeof v === "number" ? String(v) : null;
-
-/** What a card adds to a summary: the `description` and the count of links to files. */
-function cardFacts(
-  facts: DocFacts,
-  links: readonly { scheme?: string }[],
-): { description?: string; links: number } {
-  const description = scalar(facts.fields?.description);
-  return {
-    ...(description !== null ? { description } : {}),
-    links: links.filter((l) => l.scheme === undefined).length,
-  };
-}
-
-/** The first level-one ATX heading of a body, without its marks. */
-const FIRST_HEADING = /^ {0,3}#[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/m;
-
-/** A document's facts, read from its whole text. A block that will not parse has none. */
-/** Text as one line: every run of whitespace, newlines included, one space. */
-function oneLine(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
-}
-
-function docFacts(text: string): DocFacts {
-  const { raw, body } = splitFrontmatter(text);
-  const heading = FIRST_HEADING.exec(withoutCode(body))?.[1]?.trim() || null;
-  if (raw === null) return { ...NO_FACTS, heading };
-  try {
-    const doc = parseDocument(raw, { prettyErrors: false });
-    const error = doc.errors[0];
-    if (error)
-      return {
-        ...NO_FACTS,
-        heading,
-        unparsed: `does not parse as YAML: ${firstLine(error.message)}`,
-      };
-    const parsed = doc.toJS() as unknown;
-    // An empty block is no frontmatter, not a broken one.
-    if (parsed === null || parsed === undefined) return { ...NO_FACTS, heading };
-    if (typeof parsed !== "object" || Array.isArray(parsed))
-      return {
-        ...NO_FACTS,
-        heading,
-        unparsed: `is ${Array.isArray(parsed) ? "a list" : "a single value"}, not a mapping of fields`,
-      };
-    const f = parsed as Record<string, unknown>;
-    return {
-      title: scalar(f.title),
-      type: scalar(f.type),
-      status: scalar(f.status),
-      heading,
-      fields: f,
-      unparsed: null,
-    };
-  } catch (e) {
-    return {
-      ...NO_FACTS,
-      heading,
-      unparsed: `does not parse as YAML: ${firstLine(e instanceof Error ? e.message : String(e))}`,
-    };
-  }
-}
-
-const firstLine = (t: string) => t.split("\n")[0]?.trim() ?? "";
-
-/**
- * How the world's typed links use each relation: how many links carry it, and
- * how many between each pair of kinds (a link into a document with no kind,
- * or into none, counts only in `uses`). What the link picker ranks by.
- */
-function relationUses(
-  kinds: ReadonlyMap<string, string | null>,
-  links: readonly { source: string; rel: string[]; to: string | null }[],
-): { uses: Map<string, number>; pairs: KindPairUse[] } {
-  const uses = new Map<string, number>();
-  const pairs = new Map<string, KindPairUse>();
-  for (const l of links) {
-    const toKind = l.to === null ? null : (kinds.get(l.to) ?? null);
-    const fromKind = kinds.get(l.source) ?? null;
-    for (const rel of l.rel) {
-      uses.set(rel, (uses.get(rel) ?? 0) + 1);
-      if (toKind !== null) countPair(pairs, fromKind, toKind, rel);
-    }
-  }
-  return { uses, pairs: [...pairs.values()] };
-}
-
-/**
- * Whether the disk holding `path` ignores case, asked of the disk itself: the
- * same file under the other case of its name (or of a folder above it). A path
- * with no cased letter anywhere falls back to the platform's default.
- */
-export function caseInsensitiveAt(path: string): boolean {
-  const flip = (s: string) => {
-    const up = s.toUpperCase();
-    return up !== s ? up : s.toLowerCase();
-  };
-  for (let p = path; dirname(p) !== p; p = dirname(p)) {
-    const name = basename(p);
-    const other = flip(name);
-    if (other === name) continue;
-    try {
-      const a = statSync(p);
-      const b = statSync(join(dirname(p), other));
-      return a.ino === b.ino && a.dev === b.dev;
-    } catch {
-      return false;
-    }
-  }
-  return process.platform === "darwin" || process.platform === "win32";
-}
-
-/** The folder inside a session that stands in as the workspace when none was chosen. */
-export const IMPORTED_DIR = "imported";
-
-/** The folder beside a document that an image pasted or dropped into it lands in. */
-export const IMAGES_DIR = "images";
-
-/** The most names of converted images the manifest remembers for their descriptions. */
-const IMPORT_NAMES_MAX = 500;
-
-/**
- * The app's slot in the manifest. `version` is the slot's own schema version;
- * `migrate` brings a stored slot forward from an older one. A fresh session
- * starts from `migrate({}, 0)`, so the slot has one place that says what it
- * looks like, at every version.
- */
-export type AppSlot = {
-  version: number;
-  migrate(prev: Record<string, unknown>, prevVersion: number): Record<string, unknown>;
-};
-
-/** Where a set's scan is: the entry, its folder, and the app's slot as it is now (read-only). */
-export type ScanAt = {
-  entryId: string;
-  root: string;
-  slot: Readonly<Record<string, unknown>>;
-};
-
-/**
- * What an app says about one scan of a set (`AppDeclaration.scan`). `skip`
- * leaves a path out of the tree, and so out of search, links and the graph;
- * the files stay on disk. The object is the place for more of the same kind
- * (a rule that changes a node rather than dropping it), so an app can say
- * more without a second hook.
- */
-export type ScanRule = {
-  skip?: ScanSkip;
-};
-
-/** What an app declares about itself: its name and its manifest slot. */
-export type AppDeclaration = {
-  name: string;
-  /** The name a human reads ("Sound Stage"), shown in the surface's top bar. Defaults to `name`. */
-  title?: string;
-  slot: AppSlot;
-  /** How to run the app's CLI, absolute (`bun /path/to/scripts/cli.ts`), shown to the human to copy. */
-  launcher?: string;
-  /**
-   * The app's filter on the kit's tree scan: asked once per scan of a set (a
-   * restore, a rescan, an outside change, an add), with the slot as it is
-   * then. Keep what it reads in the app slot, so it survives a restart and
-   * every rescan sees it; after changing that, call `refilter` so the tree,
-   * search and links follow. `undefined` (or no hook) scans everything.
-   */
-  scan?: (at: ScanAt) => ScanRule | undefined;
-  /**
-   * A whole-manifest migrate, run on a stored manifest before a restore reads
-   * it: before the format check and the foreign-manifest guard. For sessions
-   * written by something with another core shape. Null for a manifest that
-   * needs nothing; a throw refuses the restore with its reason, and nothing is
-   * written. See `manifestMigrate.ts` for the rules.
-   */
-  migrateManifest?: MigrateManifest;
-  /**
-   * Asked again at the moment a conversion is written (the kept copy and the
-   * converted manifest), and before anything else in the session folder is
-   * touched: why the write is refused now, or null. For a rule the app checked
-   * at boot that the disk can break later (a sessions folder swapped for a
-   * link). A refusal is the restore's 409, and nothing is written.
-   */
-  migrateWriteRefusal?: (at: ManifestMigrateContext) => string | null;
-  /**
-   * `false`: the app has no home workspace (`./noHome.ts`). Nothing writes a
-   * new file or folder to a place the caller did not name: a create, drop or
-   * import that names no folder is refused with the way to name one, the
-   * session keeps no workspace folder, and `workspace.set` is refused. Absent
-   * (or `true`): the kit's home workspace, where those land.
-   */
-  homeWorkspace?: boolean;
-  /**
-   * With `homeWorkspace: false`: how this app's caller names a place, or makes
-   * one, in its own verbs' words; the hint of every refusal for want of one.
-   * Absent: the kit's words (`DEFAULT_LOCATION_HINT`).
-   */
-  locationHint?: string;
-};
-
-const APP_NAME = /^[a-z][a-z0-9-]*$/;
-
-/** Validate what an app declared, once, where the mistake is cheap to read. */
-export function checkApp(app: AppDeclaration): AppDeclaration {
-  if (!APP_NAME.test(app.name))
-    throw new Error(`invalid app name: ${JSON.stringify(app.name)} (lowercase, digits, dashes)`);
-  if (!Number.isInteger(app.slot.version) || app.slot.version < 1)
-    throw new Error(`app ${app.name}: slot.version must be a whole number from 1`);
-  return app;
-}
-
-/** A refusal the daemon turns into an HTTP status; `choices` when the set is in hand. */
-export class SessionError extends Error {
-  constructor(
-    message: string,
-    readonly status: 400 | 404 | 409,
-    readonly choices?: string[],
-    /** What to do about it, when the message alone does not say. */
-    readonly hint?: string,
-  ) {
-    super(message);
-  }
-}
-
-/**
- * A refusal that can never turn into success: a recorded act names a place
- * that is gone from disk. An undo or redo refused this way leaves the stack
- * (see the daemon's `history.undo`), so the acts under it stay reachable.
- */
-export class GoneError extends SessionError {}
-
-/**
- * Save refused: the original changed on disk and the watcher never said so (a
- * change just as a watch armed, or an event a busy fseventsd dropped). `event`
- * is what the watcher would have said, classified now that Save has seen the
- * change: the daemon passes it on, so the human lands where a delivered event
- * would have put them ("Changed on disk", or the file's text reloaded).
- */
-export class UnseenChangeError extends SessionError {
-  constructor(
-    message: string,
-    readonly event: FileEvent | null,
-    hint: string,
-  ) {
-    super(message, 409, undefined, hint);
-  }
-}
-
-export const contentHash = (text: string): string => Bun.hash(text).toString(16);
-
-const randHex = (n: number) =>
-  Array.from(crypto.getRandomValues(new Uint8Array(n)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-export const newSessionId = (): string => randHex(4);
-
-/**
- * A session id is one plain folder name, and not `latest`, which is the
- * discovery pointer's own word. `open --restore ../elsewhere` must not read a
- * manifest from outside the sessions folder.
- */
-export function checkSessionId(id: string): string {
-  if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(id) || id.toLowerCase() === "latest")
-    throw new SessionError(
-      `"${id}" is not a session id (letters, numbers, dashes; not "latest")`,
-      400,
-    );
-  return id;
-}
-
-/** An ISO 8601 timestamp, now. */
-export const nowIso = (): string => new Date().toISOString();
-
-/** Whether `p` is a directory now (false when it is gone or unreadable). */
-function isFolder(p: string): boolean {
-  try {
-    return statSync(p).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-/** A path's realpath, or the path itself when it cannot be resolved (gone). */
-/** An entry's root realpath, as it was when the entry was added. */
-/** The most bytes one file name may have on the disks the studio runs on. */
-export const NAME_MAX_BYTES = 255;
-
-/**
- * `stem` and then `tail` (a number and the extension, kept whole), with the
- * stem shortened, a whole character at a time, until the name fits in
- * NAME_MAX_BYTES of UTF-8: a taken name at the limit still gets a free one.
- */
-export function fitName(stem: string, tail: string): string {
-  const room = NAME_MAX_BYTES - Buffer.byteLength(tail);
-  const chars = [...stem];
-  while (chars.length > 0 && Buffer.byteLength(chars.join("")) > room) chars.pop();
-  return `${chars.join("").trimEnd()}${tail}`;
-}
-
-function rootReal(e: ContextEntry): string {
-  return e.realRoot ?? realOr(e.root);
-}
-
-export function realOr(p: string): string {
-  try {
-    return realpathSync(p);
-  } catch {
-    return p;
-  }
-}
-
-/**
- * The set (mirrored entry) whose folder is `workspace` or holds it, compared by
- * realpath, or null. The user's rule of 2026-10-06: neither may sit inside the
- * other's folder in a way that makes one file belong to both. A set INSIDE the
- * workspace is not an overlap: the workspace is not mirrored, so the set's
- * files show once, in the set.
- */
-export function overlapOf(workspace: string, context: readonly ContextEntry[]): Overlap | null {
-  const ws = realOr(workspace);
-  for (const e of context) {
-    if (e.membership !== "mirrored") continue;
-    const root = rootReal(e);
-    if (ws === root || ws.startsWith(root + sep))
-      return { label: e.label, root: e.root, same: ws === root };
-  }
-  return null;
-}
-
-/** A path as the app shows it in words: the home folder as `~`. */
-export function tilde(abs: string): string {
-  const home = homeDir();
-  return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
-}
-
-/** An overlap with its paths as the app shows them, for a chat line or a finding. */
-function shownOverlap(o: Overlap, workspace: string): Overlap & { workspace: string } {
-  return { ...o, root: tilde(o.root), workspace: tilde(workspace) };
-}
-
-/** What a watcher event turned out to be. `null` means nothing: ours, or no change. */
-export type FileEvent =
-  | { kind: "version.changed"; doc: string; version: number; text: string; active: false }
-  | {
-      kind: "active.outside";
-      doc: string;
-      version: number;
-      path: string;
-      /** The new agent version the outside text was preserved as. */
-      preservedAs: number;
-      preservedPath: string;
-    }
-  | {
-      kind: "version.created";
-      doc: string;
-      version: number;
-      path: string;
-      /** The number the hand-written file carried, when it was renumbered. */
-      renamedFrom?: number;
-    }
-  | { kind: "original.reloaded"; doc: string; version: number; text: string; original: string }
-  | { kind: "original.conflict"; doc: string; original: string }
-  /** The original is gone from disk; `folder` when its folder went too. */
-  | { kind: "original.missing"; doc: string; original: string; folder: boolean }
-  /** A missing original is back, as it was. (Back with other text is a conflict.) */
-  | { kind: "original.back"; doc: string; original: string }
-  | { kind: "tree"; entryId: string }
-  /**
-   * A file inside a bundle the context shows changed (`file`, which may be
-   * the bundle itself): a change to the bundle at `path`. Its main file, when
-   * the session holds it, is classified as a document instead.
-   */
-  | { kind: "bundle"; path: string; file: string };
-
-/** What a restore found: changes made while no daemon was watching. */
-export type RestoreReport = {
-  /** Documents whose original changed (or vanished) while the session was closed. */
-  outside: { doc: string; original: string; missing: boolean }[];
-  /** Tasks the restore had to settle, because the daemon that ran them is gone. */
-  tasks: { id: string; title: string; was: TaskStatus; now: TaskStatus }[];
-  /** The app slot was brought forward from this version. */
-  slotMigratedFrom?: number;
-  /** The app's whole-manifest migrate converted the stored manifest (`AppDeclaration.migrateManifest`). */
-  manifestMigrated?: ManifestMigrated;
-  /** The manifest had no workspace: the folder chosen for it (the first context entry's, else the session's `imported/`). */
-  workspaceDefaulted?: string;
-  /**
-   * An app with no home workspace: the folder the manifest still held as its
-   * workspace, dropped and added as a set because it holds files.
-   */
-  workspaceAdded?: string;
-  /**
-   * Entries the manifest held that showed the app's own places (the sessions
-   * or the app home): `dropped`, one that lay among them, `why` saying so;
-   * `narrowed`, a set that holds them in plain sight, kept with them left out
-   * of its scan, `why` the own folder left out (the outermost it holds).
-   */
-  ownPlaceSets?: { label: string; root: string; outcome: "dropped" | "narrowed"; why: string }[];
-};
-
-/** The legal task transitions. Everything else is a conflict. */
-const TASK_NEXT: Record<TaskStatus, readonly TaskStatus[]> = {
-  open: ["running", "cancelled"],
-  running: ["done", "failed", "cancelled"],
-  done: [],
-  failed: [],
-  cancelled: [],
-};
-
-export const FINISHED: readonly TaskStatus[] = ["done", "failed", "cancelled"];
-export const isFinished = (s: TaskStatus): boolean => FINISHED.includes(s);
-
-export type NewTask = {
-  title: string;
-  by: TaskAuthor;
-  /** `open` (the default) or `running` (the creator is already on it). */
-  status?: "open" | "running";
-  kind?: string;
-  messageId?: string;
-  parent?: string;
-  /** Settles with no chat line or toast of its own: its parent speaks for it (`Task.quiet`). */
-  quiet?: boolean;
-  detail?: string;
-  /**
-   * What the runner needs to do the job (a render's document and voice). Held by
-   * the task engine in memory for the task's life, passed to the runner as
-   * `task.input`, never written to the manifest, and dropped when the task settles.
-   */
-  input?: unknown;
-};
-
-/** What a move or rename moved: the item, and an image's description beside it. */
-const movedPairs = (
-  from: string,
-  to: string,
-  sidecar: string | null,
-  sidecarTo: string | null,
-): (readonly [string, string])[] =>
-  sidecar && sidecarTo
-    ? [
-        [from, to],
-        [sidecar, sidecarTo],
-      ]
-    : [[from, to]];
+// Tier 0 of the session parts (docs/architecture/workspace-session.md): every
+// name this module exported before the split, still exported from here.
+export { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
+export {
+  BACKLINK_CAP,
+  EMBED_CAP,
+  GRAPH_CAP,
+  IMAGES_DIR,
+  IMPORTED_DIR,
+  LINK_CHECK_CAP,
+  MANIFEST_FORMAT,
+  PROFILE_CHECK_CAP,
+  PROFILE_WARNINGS_PER_DOC,
+} from "./session/facts.ts";
+export {
+  bundleNameAt,
+  caseInsensitiveAt,
+  checkSessionId,
+  contentHash,
+  copyName,
+  entryAt,
+  fitName,
+  NAME_MAX_BYTES,
+  newSessionId,
+  nowIso,
+  sideName,
+  tilde,
+  uncopied,
+} from "./session/names.ts";
+export { bundleHolding, overlapOf, realOr, treeHash } from "./session/paths.ts";
+export {
+  type AppDeclaration,
+  type AppSlot,
+  checkApp,
+  FINISHED,
+  type FileEvent,
+  isFinished,
+  type NewTask,
+  type RestoreReport,
+  type ScanAt,
+  type ScanRule,
+} from "./session/types.ts";
 
 /**
  * The note guard (`showsSelection`), loaded the first time a note arrives with
@@ -8743,330 +8262,4 @@ function placeNote(text: string, note: Note): PlacedNote {
   if (at.from === null) return { ...note, ...at, fromLine: null, toLine: null };
   const lines = linesOf(text, at.from, at.to);
   return { ...note, ...at, fromLine: lines.from, toLine: lines.to };
-}
-
-/**
- * ⛔ Refuse a manifest that is not this app's own, by its shape, never by its
- * path. Scriptorium's session manifests say `format: 1` too, and a restore that
- * took one would throw on a missing `tasks` or, worse, misread `who`, times in
- * milliseconds and `author` without a word, then persist it as the kit's.
- *
- * - Scriptorium's shape (millisecond `createdAt`, chat by `who`) is refused
- *   whatever else the manifest carries, an `app` slot included.
- * - The kit always writes an `app` slot (an object); a manifest without one is
- *   not the kit's.
- * - `appName` names the app that wrote it; another app's is refused.
- * - Stamped (`appName` present): the slot's `version` is a whole number from 0,
- *   as every stamping build writes it.
- * - Unstamped: a kit manifest from before `appName`. It is told from a foreign
- *   one by the kit's own marks: an ISO `createdAt` (a string), and a slot
- *   `version` that is absent (migrated from 0) or a whole number from 0.
- */
-/**
- * Refuses (409) a manifest that is this app's but not of the shape a restore
- * reads: the lists it walks, and the fields of each entry it reads, are of
- * their type. Nothing is changed or written before it answers.
- */
-function refuseMalformedManifest(raw: Record<string, unknown>, sessionId: string): void {
-  const refuse = (what: string): never => {
-    throw new SessionError(
-      `session ${sessionId} has a malformed manifest: ${what}. Nothing was changed`,
-      409,
-      undefined,
-      "the manifest was edited by hand or written by something else: fix it, or start a new session",
-    );
-  };
-  const isObj = (v: unknown): v is Record<string, unknown> =>
-    v !== null && typeof v === "object" && !Array.isArray(v);
-  const list = (key: string): Record<string, unknown>[] => {
-    const v = raw[key];
-    if (!Array.isArray(v)) return refuse(`\`${key}\` is not a list`);
-    v.forEach((x, i) => {
-      if (!isObj(x)) refuse(`\`${key}[${i}]\` is not an object`);
-    });
-    return v as Record<string, unknown>[];
-  };
-  const fields = (at: string, o: Record<string, unknown>, spec: Record<string, string>) => {
-    for (const [k, type] of Object.entries(spec)) {
-      const v = o[k];
-      const ok =
-        type === "list"
-          ? Array.isArray(v)
-          : type === "number"
-            ? typeof v === "number" && Number.isFinite(v)
-            : typeof v === type;
-      if (!ok) refuse(`\`${at}.${k}\` is not ${type === "list" ? "a list" : `a ${type}`}`);
-    }
-  };
-  list("context").forEach((e, i) => {
-    fields(`context[${i}]`, e, {
-      id: "string",
-      root: "string",
-      membership: "string",
-      nodes: "list",
-    });
-    // A relative root would be read against the daemon's working directory.
-    if (!isAbsolute(e.root as string)) refuse(`\`context[${i}].root\` is not a full path`);
-  });
-  list("docs").forEach((d, i) => {
-    fields(`docs[${i}]`, d, {
-      slug: "string",
-      name: "string",
-      original: "string",
-      versions: "list",
-      active: "number",
-      notes: "list",
-    });
-    // ⛔ Both become part of a path the kit writes (`docs/<slug>/v<n><ext>`):
-    // one that climbs out would put a version anywhere (`safeNames.ts`).
-    const badSlug = safeSlug(d.slug);
-    if (badSlug !== null) refuse(`\`docs[${i}].slug\` is not one safe folder name: ${badSlug}`);
-    const badExt = safeExt(d.ext);
-    if (badExt !== null) refuse(`\`docs[${i}].ext\` is not a plain extension: ${badExt}`);
-    (d.versions as unknown[]).forEach((v, j) => {
-      if (!isObj(v)) refuse(`\`docs[${i}].versions[${j}]\` is not an object`);
-      fields(`docs[${i}].versions[${j}]`, v as Record<string, unknown>, { n: "number" });
-    });
-    (d.notes as unknown[]).forEach((n, j) => {
-      if (!isObj(n)) refuse(`\`docs[${i}].notes[${j}]\` is not an object`);
-    });
-  });
-  list("chat");
-  list("tasks").forEach((t, i) => {
-    fields(`tasks[${i}]`, t, { id: "string", status: "string" });
-  });
-  if (raw.openDoc != null && typeof raw.openDoc !== "string")
-    refuse("`openDoc` is not a string or null");
-}
-
-function refuseForeignManifest(
-  raw: Record<string, unknown>,
-  app: AppDeclaration,
-  sessionId: string,
-): void {
-  const refuse = (message: string, what: string): never => {
-    throw new SessionError(
-      `session ${sessionId} was not written by ${app.name}: ${message}`,
-      409,
-      undefined,
-      `it looks like ${what}. Restore it with the app that wrote it; ${app.name} will not read it`,
-    );
-  };
-  if (looksLikeScriptorium(raw))
-    refuse(
-      "its manifest has Scriptorium's shape",
-      "a Scriptorium session (format 1, times in milliseconds, chat by `who`)",
-    );
-  const slot = raw.app;
-  if (slot === null || typeof slot !== "object" || Array.isArray(slot))
-    refuse(
-      "its manifest has no app slot",
-      "a manifest with no `app` slot, so not one a workspace-kit app wrote",
-    );
-  const owner = raw.appName;
-  if (owner !== undefined && owner !== app.name) {
-    const name = typeof owner === "string" ? owner : JSON.stringify(owner);
-    throw new SessionError(
-      `session ${sessionId} belongs to ${name}, not ${app.name}`,
-      409,
-      undefined,
-      `it looks like a ${name} session. Restore it with ${name}; ${app.name} will not read it`,
-    );
-  }
-  const version = (slot as Record<string, unknown>).version;
-  const wholeVersion = typeof version === "number" && Number.isInteger(version) && version >= 0;
-  if (owner === undefined) {
-    if (typeof raw.createdAt !== "string")
-      refuse(
-        "its manifest has no `appName` and no ISO `createdAt`",
-        "a manifest no workspace-kit app wrote",
-      );
-    if (version !== undefined && !wholeVersion)
-      refuse(
-        `its app slot's version is ${JSON.stringify(version)}`,
-        "a manifest no workspace-kit app wrote",
-      );
-  } else if (!wholeVersion)
-    refuse(
-      `its app slot's version is ${JSON.stringify(version)}, not a whole number`,
-      "a damaged or hand-made manifest",
-    );
-}
-
-/** Scriptorium's manifest: `createdAt` in milliseconds, or chat messages that say `who`. */
-function looksLikeScriptorium(raw: Record<string, unknown>): boolean {
-  if (typeof raw.createdAt === "number") return true;
-  return (
-    Array.isArray(raw.chat) &&
-    raw.chat.some((m) => m !== null && typeof m === "object" && "who" in m)
-  );
-}
-
-/** Bring a stored app slot to the declared version, or refuse one from the future. */
-function migrateSlot(
-  app: AppDeclaration,
-  stored: unknown,
-  sessionId: string,
-  report: RestoreReport,
-): Session["app"] {
-  const raw = (stored && typeof stored === "object" ? stored : {}) as Record<string, unknown>;
-  const { version, ...prev } = raw;
-  const prevVersion = typeof version === "number" && Number.isInteger(version) ? version : 0;
-  if (prevVersion > app.slot.version)
-    throw new SessionError(
-      `session ${sessionId} was written by a newer ${app.name} (app data version ${prevVersion}; this build reads up to ${app.slot.version})`,
-      409,
-    );
-  if (prevVersion === app.slot.version) return { ...prev, version: prevVersion };
-  report.slotMigratedFrom = prevVersion;
-  const next = app.slot.migrate(prev, prevVersion);
-  if ("version" in next) throw new Error(`app ${app.name}: migrate() may not set \`version\``);
-  return { ...next, version: app.slot.version };
-}
-
-/**
- * What a path holds, as one hash: a file's text (`contentHash`, as a
- * description's undo has always compared it), or a folder's every name, kind
- * and content, in order. What an undo of a made thing compares, so it removes
- * nothing that was written into since.
- */
-export function treeHash(abs: string): string {
-  if (!lstatSync(abs).isDirectory()) return contentHash(readFileSync(abs, "utf8"));
-  const parts: string[] = [];
-  const walk = (dir: string, rel: string) => {
-    for (const name of readdirSync(dir).sort()) {
-      const p = join(dir, name);
-      const r = rel === "" ? name : `${rel}/${name}`;
-      const st = lstatSync(p);
-      if (st.isDirectory()) {
-        parts.push(`${r}/`);
-        walk(p, r);
-      } else if (st.isSymbolicLink()) parts.push(`${r}@`);
-      else parts.push(`${r}:${Bun.hash(readFileSync(p)).toString(16)}`);
-    }
-  };
-  walk(abs, "");
-  return Bun.hash(parts.join("\n")).toString(16);
-}
-
-/**
- * Whether anything is at `abs`, a dangling link included: what a name a
- * create or a copy is about to take is checked with. `existsSync` follows a
- * link, and calls a dangling one free.
- */
-export function entryAt(abs: string): boolean {
-  try {
-    lstatSync(abs);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** How far `freeName` counts from 2 before a default name is refused. */
-const FREE_NAME_TRIES = 100_000;
-/** How far `copyName` counts after "copy" before a copy is refused. */
-const COPY_NAME_TRIES = 100_000;
-
-/** A copy suffix at a stem's end: ` copy`, ` copy 2`. */
-const COPY_SUFFIX = / copy(?: \d+)?$/;
-
-/** A name without the copy suffix it ends in: `Ch 4` for `Ch 4 copy 2`, and for `Ch 4`. */
-export function uncopied(stem: string): string {
-  return stem.replace(COPY_SUFFIX, "") || stem;
-}
-
-/**
- * The name a copy of `name` takes in `dir`, as Finder names one: the stem
- * without any copy suffix it has, then ` copy`, else ` copy N` with N the
- * first free number from 2, then `ext` (a bundle's own; `""` for a folder).
- * `Ch 4.md` gives `Ch 4 copy.md`, then `Ch 4 copy 2.md`; a copy of `Ch 4
- * copy.md` is the next free `Ch 4 copy N.md`, never `Ch 4 copy copy.md`. A
- * long stem is shortened to fit the name limit, never the suffix. `suffix`
- * is what followed the stem (` copy 2`), for a bundle's title. Bounded:
- * past COPY_NAME_TRIES it is refused rather than counted further.
- */
-export function copyName(dir: string, name: string, ext: string): { name: string; suffix: string } {
-  const own = ext ? name.slice(0, name.length - ext.length) : name;
-  const stem = uncopied(own);
-  for (let i = 1; i < 1 + COPY_NAME_TRIES; i++) {
-    const suffix = i === 1 ? " copy" : ` copy ${i}`;
-    const n = fitName(stem, `${suffix}${ext}`);
-    if (!entryAt(join(dir, n))) return { name: n, suffix };
-  }
-  throw new SessionError(`no free name for a copy of ${name} is left in ${tilde(dir)}`, 409);
-}
-
-/**
- * The bundle a folder is in, by its name or, through a link, by where it
- * really is; else null.
- */
-export function bundleHolding(dir: string): ReturnType<typeof bundleOf> {
-  return bundleOf(dir) ?? bundleOf(realOr(dir));
-}
-
-/** Refuse a workspace folder inside a bundle, as it is named or as it really is. */
-function refuseWorkspaceInBundle(dir: string): void {
-  const inBundle = bundleHolding(dir);
-  if (inBundle)
-    throw new SessionError(
-      `the workspace folder is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)} (${tilde(dir)}): nothing is written into a ${inBundle.type.label} from here. Set the workspace to a folder outside it (\`workspace <dir>\`)`,
-      409,
-    );
-}
-
-/**
- * Refuse a destination inside a bundle, as it is named or as it really is (a
- * linked folder). A bundle type's member folder (`docs/` in a stage) and
- * anything under it is no refusal: its files are ordinary documents. It must
- * be one as named AND as it really is, so a linked folder in a member folder
- * that leads into the bundle's own files (`audio/`), or out of the bundle,
- * is refused still.
- */
-function refuseInBundle(dir: string, what: string): void {
-  if (isMemberDir(dir) && isMemberDir(realOr(dir))) return;
-  const inBundle = bundleHolding(dir);
-  if (inBundle)
-    throw new SessionError(
-      `${what} (${tilde(dir)}) is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`,
-      409,
-    );
-}
-
-/** What may be written into a bundle of `type` from here, said after a refusal. */
-function outsideMembers(type: BundleType): string {
-  const members = type.expand?.members ?? [];
-  return members.length === 0
-    ? `nothing is written into a ${type.label} from here`
-    : `only its ${members.map((m) => `${m}/`).join(" and ")} folder${members.length === 1 ? "" : "s"} can be written into from here`;
-}
-
-/** A name as a slug reads it: lower case, runs of anything but letters, digits, `_` and `-` as one `-`. */
-function slugBase(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "doc"
-  );
-}
-
-/** A bundle's name as its row shows it, read from its `info.json` on disk. */
-export function bundleNameAt(abs: string): string {
-  const title = readBundleInfo(abs)?.title;
-  return bundleDisplayName(basename(abs), typeof title === "string" ? title : undefined);
-}
-
-/**
- * How a comparison side reads in a message to a human or an agent. The file is
- * named, not described: "the original" sounds temporal when the thing is
- * locational, and "save to the saved file" says nothing. So it gets its own
- * name, `note.md`.
- *
- * `file` is the document's name when the caller knows it; without one this falls
- * back to a generic, for contexts that have no document in hand.
- */
-export function sideName(side: DiffSide, file?: string): string {
-  if (side !== "original") return `v${side}`;
-  return file ?? "the saved file";
 }

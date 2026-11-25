@@ -34,15 +34,23 @@ const SESSION_DIR = join(WORKSPACE, "session");
 
 /**
  * Each part's tier, from the write-up's module tables
- * (docs/items/kit-split-oversized-modules/write-up.md). Empty until S2 builds
- * the first parts; each step adds the rows for the parts it builds.
+ * (docs/items/kit-split-oversized-modules/write-up.md). Each step adds the
+ * rows for the parts it builds.
  */
-export const TIERS: Record<string, number> = {};
+export const TIERS: Record<string, number> = {
+  // Tier 0: pure, no session state (S2).
+  errors: 0,
+  names: 0,
+  paths: 0,
+  facts: 0,
+  types: 0,
+  manifest: 0,
+};
 
 /**
  * Story Studio's table on their develop (b2abead4), which the fixtures below
- * were written against: our own table is empty until S2, and a fixture needs
- * parts with tiers to break the rule with.
+ * were written against: our own table holds only the parts built so far, and a
+ * fixture needs parts in every tier to break the rule with.
  */
 const FIXTURE_TIERS: Record<string, number> = {
   // Tier 0: pure, no session state.
