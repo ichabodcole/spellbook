@@ -7,7 +7,7 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -283,6 +283,74 @@ describe("grapevine cli", () => {
         try {
           process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
         } catch {}
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test("doctor on a stale-version daemon names `roll`, and that line really swaps it", async () => {
+    // A daemon reporting a forged version, in a HOME of its own: a stand-in
+    // served from this process (the real daemon's version comes from plugin.json
+    // and has no seam). It leaves on DELETE / like the real one, so `roll` can
+    // replace it with a real daemon of this CLI's version. The hint used to say
+    // "`stop`, then any verb", and `list`/`info`/`doctor` start nothing.
+    const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-ver-"));
+    const portFile = join(home, "daemon.port");
+    const stale = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch(req) {
+        const path = new URL(req.url).pathname;
+        if (req.method === "DELETE" && path === "/") {
+          setTimeout(() => {
+            rmSync(portFile, { force: true });
+            stale.stop(true);
+          }, 50);
+          return Response.json({ ok: true, shutting_down: true });
+        }
+        if (path === "/presence") return Response.json({ channels: [] });
+        return Response.json({ ok: true, pid: 424242, version: "0.0.0-forged" });
+      },
+    });
+    writeFileSync(portFile, String(stale.port));
+    writeFileSync(join(home, "daemon.pid"), "424242");
+    // Async: the stand-in answers from this process's event loop.
+    const run = (argv: string[]) =>
+      new Promise<{ code: number; out: string }>((resolve) => {
+        const p = spawn(argv[0] as string, argv.slice(1), {
+          env: { ...process.env, GRAPEVINE_HOME: home },
+          stdio: ["ignore", "pipe", "ignore"],
+        });
+        const out: Buffer[] = [];
+        p.stdout.on("data", (b) => out.push(b));
+        p.on("exit", (c) => resolve({ code: c ?? -1, out: Buffer.concat(out).toString() }));
+      });
+    try {
+      const before = JSON.parse((await run([process.execPath, CLI, "doctor"])).out);
+      expect(before.authoritative.version).toBe("0.0.0-forged");
+      const hint = must(
+        (before.hints as string[]).find((h) => h.includes("differs from this CLI's version")),
+        "the version-mismatch hint",
+      );
+      const cmd = must(hint.match(/Run `([^`]+)`/)?.[1], "the hint names a command in backticks");
+      expect(cmd).toBe(`bun ${CLI} roll`);
+      expect((await run(cmd.split(" "))).code).toBe(0);
+      const after = JSON.parse((await run([process.execPath, CLI, "doctor"])).out);
+      expect(after.authoritative.data_dir).toBe(home);
+      expect(after.authoritative.version).toBe(after.cli_version);
+      expect(after.hints.some((h: string) => h.includes("differs"))).toBe(false);
+    } finally {
+      stale.stop(true);
+      await run([process.execPath, CLI, "stop"]);
+      // Only the daemon `roll` spawned in this cell's own temp HOME, by its pid file.
+      const pidFile = join(home, "daemon.pid");
+      if (existsSync(pidFile)) {
+        const pid = Number(readFileSync(pidFile, "utf-8").trim());
+        if (pid !== 424242) {
+          try {
+            process.kill(pid, "SIGKILL");
+          } catch {}
+        }
       }
       rmSync(home, { recursive: true, force: true });
     }

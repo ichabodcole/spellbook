@@ -1676,13 +1676,12 @@ async function cmdDoctor() {
 
   // Hints — surface the most actionable signals.
   const hints: string[] = [];
+  // Each hint names a runnable verb that does what it says (`list` never spawned).
+  const verb = (v: string) => (invocationPrefix() ? `\`${invocationPrefix()} ${v}\`` : `\`${v}\``);
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
-  else if (!authoritative) {
-    // `start` is the verb that spawns one; `list` (named here once) never did.
-    const start = invocationPrefix() ? `\`${invocationPrefix()} start\`` : "the `start` verb";
-    hints.push(`No authoritative daemon running for this HOME. Run ${start} to start one.`);
-  }
+  else if (!authoritative)
+    hints.push(`No authoritative daemon running for this HOME. Run ${verb("start")} to start one.`);
   if (otherDaemons.length > 0) {
     hints.push(
       `Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` +
@@ -1706,11 +1705,11 @@ async function cmdDoctor() {
   ) {
     hints.push(
       `Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` +
-        "Restart the daemon to align — drop active tails, then `stop`, then any verb.",
+        `Run ${verb("roll")} to swap in this version (with tails attached it needs --force; they reconnect).`,
     );
   }
   if (authoritative && (authoritative.version === null || authoritative.version === undefined)) {
-    hints.push("Authoritative daemon predates version reporting (pre-V1.6.2). Restart to align.");
+    hints.push(`Daemon predates version reporting (pre-V1.6.2). Run ${verb("roll")}.`);
   }
   if (totalSubscribers > 0) {
     hints.push(

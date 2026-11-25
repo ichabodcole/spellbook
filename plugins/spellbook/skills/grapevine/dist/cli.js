@@ -2273,12 +2273,11 @@ async function cmdDoctor() {
     }
   } catch {}
   const hints = [];
+  const verb = (v) => invocationPrefix() ? `\`${invocationPrefix()} ${v}\`` : `\`${v}\``;
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
-  else if (!authoritative) {
-    const start = invocationPrefix() ? `\`${invocationPrefix()} start\`` : "the `start` verb";
-    hints.push(`No authoritative daemon running for this HOME. Run ${start} to start one.`);
-  }
+  else if (!authoritative)
+    hints.push(`No authoritative daemon running for this HOME. Run ${verb("start")} to start one.`);
   if (otherDaemons.length > 0) {
     hints.push(`Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` + "They may be zombies from past runs OR daemons serving other HOMEs (different GRAPEVINE_HOME).");
     const reapableCount = otherDaemons.filter((d) => d.reapable).length;
@@ -2290,10 +2289,10 @@ async function cmdDoctor() {
     }
   }
   if (authoritative && PLUGIN_VERSION && typeof authoritative.version === "string" && authoritative.version !== PLUGIN_VERSION) {
-    hints.push(`Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` + "Restart the daemon to align \u2014 drop active tails, then `stop`, then any verb.");
+    hints.push(`Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` + `Run ${verb("roll")} to swap in this version (with tails attached it needs --force; they reconnect).`);
   }
   if (authoritative && (authoritative.version === null || authoritative.version === undefined)) {
-    hints.push("Authoritative daemon predates version reporting (pre-V1.6.2). Restart to align.");
+    hints.push(`Daemon predates version reporting (pre-V1.6.2). Run ${verb("roll")}.`);
   }
   if (totalSubscribers > 0) {
     hints.push(`${totalSubscribers} active subscriber(s) across ${busyChannels.length} channel(s). ` + "Daemon restart would force them to auto-reconnect (works, but disruptive) \u2014 coordinate first.");
