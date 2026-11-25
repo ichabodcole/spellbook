@@ -77,4 +77,4 @@ _Written at close._
 
 <!-- One line per branch: `- <type>/<slug> (open)`, then `(landed YYYY-MM-DD)`. -->
 
-- chore/kit-split-g0 (open)
+- chore/kit-split-g0 (landed 2026-11-24)

@@ -6,7 +6,7 @@ description:
   rule, with the upgrade's new findings fixed; the gate's type-check ward
   already typechecks src/kit and src/scriptorium.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a20f86-8b1a-738f-aaca-e6def070f969
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
@@ -18,17 +18,18 @@ cycle: 2026-12-kit-split
 
 # Upgrade Biome to 2.5.x
 
-This is step G0 of the kit split ([feature](../features/kit-split/feature.md)).
-Tooling only, before the guard. Biome goes to 2.5.x (Story Studio runs 2.5.15);
-in our 2.4.16 the size rule exists only in `nursery`. It was also to add a
-`typecheck` script over `src/kit` and `src/scriptorium` to `bun run gate`; at G0
-the gate turned out to typecheck both already, through the type-check ward
+This is step G0 of the kit split
+([feature](../../features/kit-split/feature.md)). Tooling only, before the
+guard. Biome goes to 2.5.x (Story Studio runs 2.5.15); in our 2.4.16 the size
+rule exists only in `nursery`. It was also to add a `typecheck` script over
+`src/kit` and `src/scriptorium` to `bun run gate`; at G0 the gate turned out to
+typecheck both already, through the type-check ward
 (`grimoire/type-check-ward.test.ts`), so none was added. Kept apart from G1 so a
 Biome minor's new findings don't mix with the guard.
 
 Detail, risks and the lessons that apply:
-[the write-up](./kit-split-oversized-modules/write-up.md#the-build-steps), and
-its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
+[the write-up](../kit-split-oversized-modules/write-up.md#the-build-steps), and
+its [step table](../kit-split-oversized-modules/write-up.md#the-build-steps).
 
 ## Definition of done
 
@@ -47,4 +48,4 @@ its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 
 ## Related Documents
 
-- [Split the kit's oversized modules, starting with session.ts](./kit-split-oversized-modules/item.md)
+- [Split the kit's oversized modules, starting with session.ts](../kit-split-oversized-modules/item.md)

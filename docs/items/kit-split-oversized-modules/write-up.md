@@ -656,7 +656,7 @@ Cole, 2026-11-24: all eight decisions as recommended.
 2. ~~Cole answers the decisions below (box 5).~~ Done 2026-11-24; see Decided.
 3. ~~The build items are filed from the step table.~~ Done 2026-11-24, under
    [the kit-split feature](../../features/kit-split/feature.md), each
-   `blocked_by` the one before in its chain: [G0](../kit-split-g0.md),
+   `blocked_by` the one before in its chain: [G0](../kit-split-g0/item.md),
    [G1](../kit-split-g1.md); the session [S2](../kit-split-s2.md),
    [S3](../kit-split-s3.md), [S4](../kit-split-s4.md), [S5](../kit-split-s5.md),
    [S6](../kit-split-s6.md), [S7](../kit-split-s7.md), [S8](../kit-split-s8.md),
