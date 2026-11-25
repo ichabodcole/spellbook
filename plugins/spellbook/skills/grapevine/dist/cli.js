@@ -1391,10 +1391,10 @@ async function maybeWarnOnVersionMismatch(port) {
     const data = await res.json();
     const daemonVersion = data?.version ?? null;
     if (daemonVersion === null) {
-      process.stderr.write(`# grapevine: daemon is older than this CLI (no version reported). ` + `CLI is v${PLUGIN_VERSION}. Some features may silently degrade. ` + `Restart the daemon (drop tails, then \`stop\`, then any verb) to upgrade.
+      process.stderr.write(`# grapevine: daemon is older than this CLI (no version reported). ` + `CLI is v${PLUGIN_VERSION}. Some features may silently degrade; run ${runnable("roll")}.
 `);
     } else if (daemonVersion !== PLUGIN_VERSION) {
-      process.stderr.write(`# grapevine: daemon version (v${daemonVersion}) differs from CLI version (v${PLUGIN_VERSION}). ` + `Some features may silently degrade. Restart the daemon to align.
+      process.stderr.write(`# grapevine: daemon version (v${daemonVersion}) differs from CLI version (v${PLUGIN_VERSION}). ` + `Some features may silently degrade. Run ${runnable("roll")} to align.
 `);
     }
   } catch {}
@@ -1485,6 +1485,7 @@ function invocationPrefix() {
   const entry = process.argv[1];
   return entry ? `bun ${entry}` : "";
 }
+var runnable = (v) => `\`${invocationPrefix() ? `${invocationPrefix()} ` : ""}${v}\``;
 function dieApi(data, status) {
   const msg = data?.error ?? `HTTP ${status}`;
   const prefix = invocationPrefix();
@@ -2172,7 +2173,7 @@ async function cmdRoll(opts) {
     } catch (e) {
       if (heldUntil === null || !(e instanceof CliError))
         throw e;
-      die2(`${e.message} \u2014 the hold (stop --hold) still stands until ${new Date(heldUntil).toISOString()}, ` + "so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run `roll` " + "again; or let the hold lapse, after which any verb (or a waiting tail) starts the daemon.", e.kind, e.extra);
+      die2(`${e.message} \u2014 the hold (stop --hold) still stands until ${new Date(heldUntil).toISOString()}, ` + `so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run ${runnable("roll")} ` + `again; or let the hold lapse, after which ${runnable("start")} (or a waiting tail) starts the daemon.`, e.kind, e.extra);
     }
     releaseHold();
     printJson2({
@@ -2273,26 +2274,28 @@ async function cmdDoctor() {
     }
   } catch {}
   const hints = [];
-  const verb = (v) => invocationPrefix() ? `\`${invocationPrefix()} ${v}\`` : `\`${v}\``;
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
-  else if (!authoritative)
-    hints.push(`No authoritative daemon running for this HOME. Run ${verb("start")} to start one.`);
+  else if (!authoritative) {
+    const held = holdActive();
+    const why = held ? ` (a hold stands until ${new Date(held).toISOString()})` : "";
+    hints.push(`No authoritative daemon${why}; ${runnable(held ? "roll" : "start")} starts one.`);
+  }
   if (otherDaemons.length > 0) {
     hints.push(`Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` + "They may be zombies from past runs OR daemons serving other HOMEs (different GRAPEVINE_HOME).");
     const reapableCount = otherDaemons.filter((d) => d.reapable).length;
     if (reapableCount > 0) {
-      hints.push(`Found ${reapableCount} reapable orphan daemon(s). Run \`grapevine reap\` to clear them safely.`);
+      hints.push(`Found ${reapableCount} reapable orphan daemon(s). Run ${runnable("reap")} to clear them safely.`);
     }
     if (otherDaemons.some((d) => d.status === "unresponsive")) {
-      hints.push("Some daemons are unresponsive; `grapevine reap --force` includes them.");
+      hints.push(`Some daemons are unresponsive; ${runnable("reap --force")} includes them.`);
     }
   }
   if (authoritative && PLUGIN_VERSION && typeof authoritative.version === "string" && authoritative.version !== PLUGIN_VERSION) {
-    hints.push(`Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` + `Run ${verb("roll")} to swap in this version (with tails attached it needs --force; they reconnect).`);
+    hints.push(`Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` + `Run ${runnable("roll")} to swap in this version (with tails attached it needs --force; they reconnect).`);
   }
   if (authoritative && (authoritative.version === null || authoritative.version === undefined)) {
-    hints.push(`Daemon predates version reporting (pre-V1.6.2). Run ${verb("roll")}.`);
+    hints.push(`Daemon predates version reporting (pre-V1.6.2). Run ${runnable("roll")}.`);
   }
   if (totalSubscribers > 0) {
     hints.push(`${totalSubscribers} active subscriber(s) across ${busyChannels.length} channel(s). ` + "Daemon restart would force them to auto-reconnect (works, but disruptive) \u2014 coordinate first.");

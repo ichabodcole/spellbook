@@ -257,36 +257,46 @@ describe("grapevine cli", () => {
     expect(ownEntry).toBeUndefined();
   });
 
-  test("doctor with no daemon names a verb that really starts one, run verbatim", async () => {
-    // A HOME of its own, with no daemon: the hint used to say `list` spawns one,
-    // and `list` never does.
-    const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-"));
-    const env = { ...process.env, GRAPEVINE_HOME: home };
-    const run = (argv: string[]) => spawnSync(argv[0] as string, argv.slice(1), { env });
-    try {
-      const before = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
-      expect(before.authoritative).toBeNull();
-      const hint = must(
-        (before.hints as string[]).find((h) => h.startsWith("No authoritative daemon")),
-        "the no-daemon hint",
-      );
-      const cmd = must(hint.match(/`([^`]+)`/)?.[1], "the hint names a command in backticks");
-      expect(cmd).toBe(`bun ${CLI} start`);
-      expect(run(cmd.split(" ")).status).toBe(0);
-      const after = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
-      expect(after.authoritative?.data_dir).toBe(home);
-    } finally {
-      run([process.execPath, CLI, "stop"]);
-      // Only this cell's own daemon: the pid in its own temp HOME's pid file.
-      const pidFile = join(home, "daemon.pid");
-      if (existsSync(pidFile)) {
-        try {
-          process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
-        } catch {}
+  test.each([
+    ["start", false],
+    ["roll", true],
+  ])(
+    "doctor with no daemon names `%s` (held: %p), and that line really starts one",
+    async (verb, held) => {
+      // A HOME of its own, with no daemon: the hint used to say `list` spawns one,
+      // and `list` never does. Under a hold `start` only reports it; `roll` ends it.
+      const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-"));
+      const env = { ...process.env, GRAPEVINE_HOME: home };
+      const run = (argv: string[]) => spawnSync(argv[0] as string, argv.slice(1), { env });
+      const holdFile = join(home, "daemon.hold");
+      if (held) writeFileSync(holdFile, String(Date.now() + 60_000));
+      try {
+        const before = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+        expect(before.authoritative).toBeNull();
+        const hint = must(
+          (before.hints as string[]).find((h) => h.startsWith("No authoritative daemon")),
+          "the no-daemon hint",
+        );
+        const cmd = must(hint.match(/`([^`]+)`/)?.[1], "the hint names a command in backticks");
+        expect(cmd).toBe(`bun ${CLI} ${verb}`);
+        if (held) expect(hint).toContain("a hold stands until");
+        expect(run(cmd.split(" ")).status).toBe(0);
+        const after = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+        expect(after.authoritative?.data_dir).toBe(home);
+        expect(existsSync(holdFile)).toBe(false);
+      } finally {
+        run([process.execPath, CLI, "stop"]);
+        // Only this cell's own daemon: the pid in its own temp HOME's pid file.
+        const pidFile = join(home, "daemon.pid");
+        if (existsSync(pidFile)) {
+          try {
+            process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
+          } catch {}
+        }
+        rmSync(home, { recursive: true, force: true });
       }
-      rmSync(home, { recursive: true, force: true });
-    }
-  });
+    },
+  );
 
   test("doctor on a stale-version daemon names `roll`, and that line really swaps it", async () => {
     // A daemon reporting a forged version, in a HOME of its own: a stand-in
@@ -309,25 +319,33 @@ describe("grapevine cli", () => {
           return Response.json({ ok: true, shutting_down: true });
         }
         if (path === "/presence") return Response.json({ channels: [] });
-        return Response.json({ ok: true, pid: 424242, version: "0.0.0-forged" });
+        return Response.json({ ok: true, version: "0.0.0-forged" });
       },
     });
     writeFileSync(portFile, String(stale.port));
-    writeFileSync(join(home, "daemon.pid"), "424242");
+    // No pid file and no pid: a port that answers is all discovery needs, and a
+    // forged pid could name a live process. Only `roll`'s real daemon writes one.
     // Async: the stand-in answers from this process's event loop.
     const run = (argv: string[]) =>
-      new Promise<{ code: number; out: string }>((resolve) => {
+      new Promise<{ code: number; out: string; err: string }>((resolve) => {
         const p = spawn(argv[0] as string, argv.slice(1), {
           env: { ...process.env, GRAPEVINE_HOME: home },
-          stdio: ["ignore", "pipe", "ignore"],
+          stdio: ["ignore", "pipe", "pipe"],
         });
         const out: Buffer[] = [];
+        const err: Buffer[] = [];
         p.stdout.on("data", (b) => out.push(b));
-        p.on("exit", (c) => resolve({ code: c ?? -1, out: Buffer.concat(out).toString() }));
+        p.stderr.on("data", (b) => err.push(b));
+        const text = (bs: Buffer[]) => Buffer.concat(bs).toString();
+        p.on("exit", (c) => resolve({ code: c ?? -1, out: text(out), err: text(err) }));
       });
     try {
-      const before = JSON.parse((await run([process.execPath, CLI, "doctor"])).out);
+      const doctor = await run([process.execPath, CLI, "doctor"]);
+      const before = JSON.parse(doctor.out);
       expect(before.authoritative.version).toBe("0.0.0-forged");
+      // Every verb's one-shot stderr warning names the same runnable `roll`.
+      expect(doctor.err).toContain(`differs from CLI version`);
+      expect(doctor.err).toContain(`Run \`bun ${CLI} roll\` to align.`);
       const hint = must(
         (before.hints as string[]).find((h) => h.includes("differs from this CLI's version")),
         "the version-mismatch hint",
@@ -345,12 +363,9 @@ describe("grapevine cli", () => {
       // Only the daemon `roll` spawned in this cell's own temp HOME, by its pid file.
       const pidFile = join(home, "daemon.pid");
       if (existsSync(pidFile)) {
-        const pid = Number(readFileSync(pidFile, "utf-8").trim());
-        if (pid !== 424242) {
-          try {
-            process.kill(pid, "SIGKILL");
-          } catch {}
-        }
+        try {
+          process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
+        } catch {}
       }
       rmSync(home, { recursive: true, force: true });
     }
