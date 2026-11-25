@@ -4,8 +4,9 @@
  * (`linkTargets`, `linkHeadings`), what dropped rows and embeds write and show
  * (`droppedLinks`, `embeds`), and which paths are documents in the context
  * (`contextDocs`). Tier 4 of the session parts
- * (docs/architecture/workspace-session.md); it takes the core, `places` and
- * the read index, and the facade's members it needs as hooks. `linkTargets`
+ * (docs/architecture/workspace-session.md); it takes the core, `places`, the
+ * read index, `media` and `sidecars`, and the facade's members it needs as
+ * hooks. `linkTargets`
  * reads the relations (`typedLinks`, `relationPass`), a part that itself
  * resolves through this one, so those two are hooks too, not an import.
  */
@@ -25,7 +26,6 @@ import { anchorFor, anchorHref, headingPlainText } from "../../lib/headingAnchor
 import { linkScheme, splitTarget } from "../../lib/linkTarget.ts";
 import { EMBED_BLOCKED, EMBED_REMOTE, EMBED_SVG } from "../../lib/markdown.ts";
 import { kindUseFrom } from "../../lib/relationUse.ts";
-import type { ImageDescription } from "../../lib/sidecar.ts";
 import { readHeadFd } from "../images";
 import type { ResolvableDocument } from "../linkEdges";
 import {
@@ -52,6 +52,7 @@ import { docFacts, EMBED_CAP, oneLine, relationUses } from "./facts.ts";
 import type { Media } from "./media.ts";
 import type { Places } from "./places.ts";
 import type { ReadIndex } from "./readIndex.ts";
+import type { Sidecars } from "./sidecars.ts";
 import type { State } from "./state.ts";
 import type { ContextIndex, PlanWorld } from "./types.ts";
 
@@ -61,10 +62,9 @@ export class LinkResolve {
     private readonly places: Places,
     private readonly readIndex: ReadIndex,
     private readonly media: Media,
+    private readonly sidecars: Sidecars,
     private readonly hooks: {
       docOrDie: (slug?: string, opts?: { takesPath?: boolean }) => Doc;
-      imageOfDoc: (path: string, index?: ContextIndex) => string | null;
-      imageDescription: (abs: string, index?: ContextIndex) => ImageDescription | undefined;
       docsAfter: (index: ContextIndex, world: PlanWorld) => readonly ResolvableDocument[];
       typedLinks: (
         index: ContextIndex,
@@ -120,7 +120,7 @@ export class LinkResolve {
     const targets: LinkTarget[] = all
       // An image's description is offered as its image, never as a document of
       // its own: a link to it would be a link to the words, not the picture.
-      .filter((c) => c.path !== from && this.hooks.imageOfDoc(c.path, index) === null)
+      .filter((c) => c.path !== from && this.sidecars.imageOfDoc(c.path, index) === null)
       .map((c) => ({
         path: c.path,
         name: c.name,
@@ -134,7 +134,7 @@ export class LinkResolve {
       for (const path of imagePaths(e)) {
         if (seen.has(path)) continue;
         seen.add(path);
-        const d = this.hooks.imageDescription(path, index);
+        const d = this.sidecars.imageDescription(path, index);
         const description = d ? [d.title, d.summary].filter(Boolean).join(": ") : "";
         targets.push({
           path,
@@ -235,7 +235,7 @@ export class LinkResolve {
         continue;
       }
       const title = isImage
-        ? this.hooks.imageDescription(path, index)?.title?.trim()
+        ? this.sidecars.imageDescription(path, index)?.title?.trim()
         : this.droppedDocTitle(path);
       out.push({
         path,

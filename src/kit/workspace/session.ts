@@ -69,11 +69,9 @@ import {
   SVG_REFUSED,
   sniffImage,
 } from "../lib/docFormat.ts";
-import { splitFrontmatter } from "../lib/frontmatter.ts";
 import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
 import { splitTarget } from "../lib/linkTarget.ts";
 import {
-  describeSidecar,
   type ImageDescription,
   type ImageSource,
   imageOfSidecar,
@@ -154,7 +152,6 @@ import type {
 import { Chats } from "./session/chats.ts";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
 import {
-  docFacts,
   IMAGES_DIR,
   IMPORT_NAMES_MAX,
   IMPORTED_DIR,
@@ -199,6 +196,7 @@ import { Profiles } from "./session/profiles.ts";
 import { ReadIndex } from "./session/readIndex.ts";
 import { Relations } from "./session/relations.ts";
 import { Search } from "./session/search.ts";
+import { Sidecars } from "./session/sidecars.ts";
 import { State } from "./session/state.ts";
 import { Tasks } from "./session/tasks.ts";
 import {
@@ -313,6 +311,8 @@ export class WorkspaceSession {
   private readonly chats: Chats;
   /** Tier 2: the images the session shows, as files. */
   private readonly media: Media;
+  /** Tier 2: an image's description, its sidecar. */
+  private readonly sidecars: Sidecars;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
@@ -351,6 +351,7 @@ export class WorkspaceSession {
     this.writes = new Writes(this.core, this.places);
     this.chats = new Chats(this.core, { persist: () => this.persist() });
     this.media = new Media(this.core, this.places);
+    this.sidecars = new Sidecars(this.core, this.places, { activeText: (d) => this.activeText(d) });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.readIndex = new ReadIndex(this.core, this.places, {
       activeText: (d) => this.activeText(d),
@@ -359,14 +360,19 @@ export class WorkspaceSession {
       findDoc: (key) => this.findDoc(key),
       docOrDie: (slug, opts) => this.docOrDie(slug, opts),
     });
-    this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, this.media, {
-      docOrDie: (slug, opts) => this.docOrDie(slug, opts),
-      imageOfDoc: (path, index) => this.imageOfDoc(path, index),
-      imageDescription: (abs, index) => this.imageDescription(abs, index),
-      docsAfter: (index, world) => this.docsAfter(index, world),
-      typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
-      relationPass: (index) => this.relationsPart.relationPass(index),
-    });
+    this.linkResolve = new LinkResolve(
+      this.core,
+      this.places,
+      this.readIndex,
+      this.media,
+      this.sidecars,
+      {
+        docOrDie: (slug, opts) => this.docOrDie(slug, opts),
+        docsAfter: (index, world) => this.docsAfter(index, world),
+        typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
+        relationPass: (index) => this.relationsPart.relationPass(index),
+      },
+    );
     this.profilesPart = new Profiles(this.core, this.places, this.readIndex);
     this.relationsPart = new Relations(
       this.places,
@@ -374,9 +380,7 @@ export class WorkspaceSession {
       this.linkResolve,
       this.profilesPart,
     );
-    this.searchPart = new Search(this.places, this.readIndex, {
-      imageOfDoc: (path, index) => this.imageOfDoc(path, index),
-    });
+    this.searchPart = new Search(this.places, this.readIndex, this.sidecars);
     this.linkCheckPart = new LinkChecker(
       this.core,
       this.places,
@@ -988,7 +992,7 @@ export class WorkspaceSession {
     // A loose image comes with its description, when one is beside it: listed
     // too, and folded into the image's row by the surface.
     const only = listedFile(probe);
-    const sidecar = only?.kind === "image" ? this.sidecarFileOf(only.abs) : null;
+    const sidecar = only?.kind === "image" ? this.sidecars.sidecarFileOf(only.abs) : null;
     if (sidecar && !this.places.itemAt(sidecar))
       this.core.m.context.push(entryForPath(sidecar, `c-${randHex(3)}`));
     this.relink();
@@ -2301,7 +2305,7 @@ export class WorkspaceSession {
         size: st.size,
         type: sniffImage(readHeadFd(fd)),
         stamp: stampOf(st),
-        ...this.withDescription(abs),
+        ...this.sidecars.withDescription(abs),
       };
     } finally {
       closeSync(fd);
@@ -2319,43 +2323,21 @@ export class WorkspaceSession {
    * (in a set, listed beside a loose image, or held): its path, else null. A
    * file nobody added is never read for the viewer.
    */
-  sidecarDocOf(abs: string, index: ContextIndex = this.places.contextIndex()): string | null {
-    const p = sidecarOf(abs);
-    return index.sidecars.has(p) ? p : null;
+  sidecarDocOf(abs: string, index?: ContextIndex): string | null {
+    return this.sidecars.sidecarDocOf(abs, index);
   }
 
   /**
    * The image a document describes, when the document is a sidecar and the
    * session shows that image: its path, else null.
    */
-  imageOfDoc(path: string, index: ContextIndex = this.places.contextIndex()): string | null {
-    const image = imageOfSidecar(path);
-    return image !== null && index.sidecars.has(path) && index.images.has(image) ? image : null;
-  }
-
-  /** A sidecar's text as the session holds it: its active version, else the file. */
-  private sidecarText(path: string): string | null {
-    const d = this.core.m.docs.find((x) => x.original === path);
-    try {
-      return d ? this.activeText(d) : readFileSync(path, "utf8");
-    } catch {
-      return null;
-    }
+  imageOfDoc(path: string, index?: ContextIndex): string | null {
+    return this.sidecars.imageOfDoc(path, index);
   }
 
   /** What the viewer shows of an image's sidecar, or undefined when it has none the session shows. */
   imageDescription(abs: string, index?: ContextIndex): ImageDescription | undefined {
-    const path = this.sidecarDocOf(abs, index);
-    if (!path) return undefined;
-    const text = this.sidecarText(path);
-    if (text === null) return undefined;
-    const facts = docFacts(text);
-    return describeSidecar(path, facts.fields, splitFrontmatter(text).body, facts.unparsed);
-  }
-
-  private withDescription(abs: string): { description?: ImageDescription } {
-    const description = this.imageDescription(abs);
-    return description ? { description } : {};
+    return this.sidecars.imageDescription(abs, index);
   }
 
   /**
@@ -2364,7 +2346,7 @@ export class WorkspaceSession {
    * that name is not carried.
    */
   sidecarFileOf(imageAbs: string): string | null {
-    return sidecarFile(imageAbs);
+    return this.sidecars.sidecarFileOf(imageAbs);
   }
 
   /**
@@ -3009,7 +2991,7 @@ export class WorkspaceSession {
       }
     }
     // An image's description goes to the Trash with it.
-    const sidecar = dir || link ? null : this.sidecarFileOf(item.abs);
+    const sidecar = dir || link ? null : this.sidecars.sidecarFileOf(item.abs);
     if (sidecar) files++;
     const inside = (p: string) =>
       p === item.abs || p.startsWith(item.abs + sep) || (sidecar !== null && p === sidecar);
@@ -3724,7 +3706,7 @@ export class WorkspaceSession {
     const to = join(into, basename(item.abs));
     this.refuseExisting(to);
     // An image's description goes with it, or nothing moves.
-    const sidecar = item.dir ? null : this.sidecarFileOf(item.abs);
+    const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
     if (sidecarTo) this.refuseExisting(sidecarTo);
     const sidecarShown = sidecar !== null && this.places.itemAt(sidecar);
@@ -3771,7 +3753,7 @@ export class WorkspaceSession {
       throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
     const to = join(into, basename(item.abs));
     this.refuseExisting(to);
-    const sidecar = item.dir ? null : this.sidecarFileOf(item.abs);
+    const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
     if (sidecarTo) this.refuseExisting(sidecarTo);
     const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
@@ -4031,7 +4013,7 @@ export class WorkspaceSession {
     if (!caseOnly) this.refuseExisting(to);
     // An image's description is renamed with it (`fox.png.md` to `wolf.png.md`),
     // or nothing is renamed.
-    const sidecar = item.dir ? null : this.sidecarFileOf(item.abs);
+    const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
     if (sidecarTo && !caseOnly) this.refuseExisting(sidecarTo);
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;

@@ -2,7 +2,7 @@
  * Search: fuzzy on names, exact in text, over every document in the session
  * (`search`, `searchEach`). Tier 4 of the session parts
  * (docs/architecture/workspace-session.md); it takes `places` and the read
- * index, and `imageOfDoc` from the facade as a hook.
+ * index, and `sidecars` (for `imageOfDoc`).
  */
 
 import { bundleOf, isBundleMain } from "../../lib/bundles.ts";
@@ -12,15 +12,13 @@ import { SessionError } from "./errors.ts";
 import { bundleNameAt } from "./names.ts";
 import type { Places } from "./places.ts";
 import type { ReadIndex } from "./readIndex.ts";
-import type { ContextIndex } from "./types.ts";
+import type { Sidecars } from "./sidecars.ts";
 
 export class Search {
   constructor(
     private readonly places: Places,
     private readonly readIndex: ReadIndex,
-    private readonly hooks: {
-      imageOfDoc: (path: string, index?: ContextIndex) => string | null;
-    },
+    private readonly sidecars: Sidecars,
   ) {}
 
   /**
@@ -42,7 +40,7 @@ export class Search {
     // image's path, which is what a surface opens.
     const index = this.places.contextIndex();
     for (const r of report.results) {
-      const image = this.hooks.imageOfDoc(r.path, index);
+      const image = this.sidecars.imageOfDoc(r.path, index);
       if (image) r.image = image;
       this.labelBundleHit(r);
     }
@@ -84,7 +82,7 @@ export class Search {
     return queries.map((q) => {
       const report = searchDocuments(candidates, q, read, opts.limit ?? DEFAULT_LIMIT);
       for (const r of report.results) {
-        const image = this.hooks.imageOfDoc(r.path, index);
+        const image = this.sidecars.imageOfDoc(r.path, index);
         if (image) r.image = image;
         this.labelBundleHit(r);
       }
