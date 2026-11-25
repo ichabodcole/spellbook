@@ -6,7 +6,7 @@ description:
   session/readIndex.ts, linkResolve.ts, profiles.ts, relations.ts, linkCheck.ts,
   linkReports.ts and search.ts.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-8ddd-7780-8233-0ec66f9dbc98
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
