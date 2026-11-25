@@ -28,8 +28,8 @@
  */
 
 // ⛔ No raw write from `node:fs` here: every write goes through `./disk.ts`
-// (`this.world` for the world the sets show, `this.own` for the session's own
-// files), which checks each path at the syscall. The ward
+// (`this.places.world` for the world the sets show, `this.own` for the session's
+// own files), which checks each path at the syscall. The ward
 // `grimoire/kit-disk-write-ward.test.ts` holds this file to it.
 import {
   accessSync,
@@ -40,7 +40,6 @@ import {
   lstatSync,
   readdirSync,
   readFileSync,
-  realpathSync,
   statSync,
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -51,7 +50,6 @@ import {
   type BundleType,
   bundleDisplayName,
   bundleOf,
-  bundlePlace,
   bundleStem,
   bundleTypeOf,
   bundleTypes,
@@ -86,7 +84,6 @@ import {
   nearestHeading,
 } from "../lib/headingAnchor.ts";
 import { type Heading, headingsOf } from "../lib/headings.ts";
-import { homeDir } from "../lib/home.ts";
 import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
 import { decodePath, linkScheme, splitTarget } from "../lib/linkTarget.ts";
 import { EMBED_BLOCKED, EMBED_REMOTE, EMBED_SVG } from "../lib/markdown.ts";
@@ -101,7 +98,7 @@ import {
 } from "../lib/sidecar.ts";
 import { type Anchor, anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
 import { applyHunks, diffText } from "./diff";
-import { type Disk, worldDisk } from "./disk";
+import type { Disk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
 import { IMAGE_MAX_BYTES, openNoFollow, readAllFd, readHeadFd, stampOf } from "./images";
@@ -146,18 +143,13 @@ import {
 } from "./manifestMigrate";
 import { type EdgeBreak, type MovedWorld, type MovePlan, movedWorld, treeOrder } from "./movePlan";
 import {
-  onDisk as diskPath,
   hasHomeWorkspace,
   holdsOwnPlaces,
   inOwnPlaces,
-  noLocation,
   notAddedWhole,
-  notALocation,
   notASet,
   noWorkspaceToSet,
-  type OwnPlaces,
   ownPlaceGuard,
-  within,
 } from "./noHome";
 import {
   checkFields,
@@ -289,12 +281,12 @@ import {
   outsideMembers,
   overlapOf,
   realOr,
-  refuseInBundle,
   refuseWorkspaceInBundle,
   rootReal,
   shownOverlap,
   treeHash,
 } from "./session/paths.ts";
+import { Places } from "./session/places.ts";
 import { refuseWrite, State } from "./session/state.ts";
 import {
   type AppDeclaration,
@@ -329,7 +321,6 @@ import {
   type ScanSkip,
   scanTree,
   sidecarFile,
-  sidecarPaths,
   toPosix,
 } from "./tree";
 
@@ -405,6 +396,7 @@ export class WorkspaceSession {
   readonly dir: string;
   /** Tier 1 (docs/architecture/workspace-session.md): the core every part takes, built first. */
   private readonly core: State;
+  private readonly places: Places;
   /** path to hash of the daemon's last write to it. */
   private owned = new Map<string, string>();
   /**
@@ -485,6 +477,7 @@ export class WorkspaceSession {
   ) {
     this.core = new State(sessionsRoot, app, manifest);
     this.dir = this.core.dir;
+    this.places = new Places(this.core);
   }
 
   /**
@@ -780,41 +773,13 @@ export class WorkspaceSession {
     return folder;
   }
 
-  /**
-   * The workspace, ready to be written into. The session's own `imported/`
-   * folder is made on demand; a chosen folder that has gone is a conflict in
-   * words, never a raw ENOENT.
-   */
-  private workspaceOrDie(): string {
-    // No home workspace: a write that names no folder has nowhere to go.
-    if (!this.hasHome) {
-      const r = noLocation(this.app);
-      throw new SessionError(r.message, 400, undefined, r.hint);
-    }
-    const dir = this.workspace;
-    // ⛔ The one gate for writing into the workspace (new documents, folders
-    // and bundles, drops, imported images, moves): a workspace inside a bundle
-    // would write into the bundle, which is one item and never a folder.
-    refuseWorkspaceInBundle(dir);
-    this.notOwnPlaceOrDie(dir);
-    if (existsSync(dir)) return dir;
-    if (dir === join(this.dir, IMPORTED_DIR)) {
-      this.own.mkdir(dir, { recursive: true });
-      return dir;
-    }
-    throw new SessionError(
-      `the workspace folder is gone: ${dir}. Set it with \`workspace <dir>\``,
-      409,
-    );
-  }
-
   /** Point the workspace at an existing folder (relative paths resolve against the daemon's cwd: callers send absolute ones). */
   setWorkspace(rawPath: string): { path: string; from: string } {
     if (!this.hasHome) {
       const r = noWorkspaceToSet(this.app);
       throw new SessionError(r.message, 400, undefined, r.hint);
     }
-    const abs = this.notOwnPlaceOrDie(resolve(rawPath));
+    const abs = this.places.notOwnPlaceOrDie(resolve(rawPath));
     let isDir = false;
     try {
       isDir = statSync(abs).isDirectory();
@@ -864,12 +829,6 @@ export class WorkspaceSession {
     else this.core.m.overlapSaid = key;
     this.persist();
     return o ? shownOverlap(o, this.workspace) : null;
-  }
-
-  /** Whether `abs` is the workspace folder, as named or by where it really is. */
-  isWorkspace(abs: string): boolean {
-    if (!this.hasHome) return false;
-    return abs === this.workspace || realOr(abs) === realOr(this.workspace);
   }
 
   get openDocSlug(): string | null {
@@ -972,41 +931,30 @@ export class WorkspaceSession {
     this.core.persist();
   }
 
+  isWorkspace(abs: string): boolean {
+    return this.places.isWorkspace(abs);
+  }
+
+  display(abs: string): string {
+    return this.places.display(abs);
+  }
+
+  shownFolderOrDie(dir: string): string {
+    return this.places.shownFolderOrDie(dir);
+  }
+
+  namedAsContext(path: string): string {
+    return this.places.namedAsContext(path);
+  }
+
+  revealTarget(rawPath: string): string {
+    return this.places.revealTarget(rawPath);
+  }
+
   /** Name the app's own folder (`appHome`): guarded as the sessions root is. */
   setAppHome(appHome: string | undefined): void {
     this.core.appHome = appHome === undefined ? undefined : resolve(appHome);
   }
-
-  /**
-   * The places no set shows and no structure op writes in: the sessions root
-   * and the app home. A home-workspace app's own `imported/` folder is the one
-   * exception (its default workspace, inside the session).
-   */
-  private get ownPlaces(): OwnPlaces {
-    return {
-      sessionsRoot: this.sessionsRoot,
-      ...(this.core.appHome !== undefined ? { appHome: this.core.appHome } : {}),
-      ...(this.hasHome
-        ? {
-            except: join(this.dir, IMPORTED_DIR),
-            // Only where the session folder really was at the open: an
-            // `imported/` that is a link, or a session folder swapped since,
-            // is no exception (`exceptionOf` in `./noHome.ts`).
-            ...(this.core.realDir !== undefined
-              ? { exceptReal: join(this.core.realDir, IMPORTED_DIR) }
-              : {}),
-          }
-        : {}),
-    };
-  }
-
-  /**
-   * ⛔ THE WORLD'S WRITER: every write to a file or folder the sets show (a
-   * create, a drop, a sidecar, a Save, a link rewrite, a move). Never among
-   * the sessions or in the app home, as written or as the disk resolves it,
-   * checked at the syscall (`worldDisk` in `./disk.ts`).
-   */
-  private readonly world: Disk = worldDisk(() => this.ownPlaces, refuseWrite);
 
   /**
    * An app verb's write of a file the context shows (an app's own edit of a
@@ -1017,39 +965,8 @@ export class WorkspaceSession {
    */
   writeShown(rawPath: string, text: string): string {
     const { abs } = this.shownAt(rawPath);
-    this.world.writeFile(abs, text);
+    this.places.world.writeFile(abs, text);
     return abs;
-  }
-
-  /**
-   * ⛔ THE BACKSTOP FOR EVERY STRUCTURE OP (create, move, rename, delete,
-   * trash, import, make-set). Nothing is written among the sessions or in the
-   * app home, whatever the sets say: a set that shows them (one restored from
-   * an old manifest, one whose folder became a link) never makes them a place
-   * to write. Refused before anything is changed.
-   */
-  private notOwnPlaceOrDie(abs: string, status: 400 | 409 = 409): string {
-    const why = inOwnPlaces(abs, this.ownPlaces);
-    if (why !== null)
-      throw new SessionError(`${why}: nothing is written or moved there from here`, status);
-    return abs;
-  }
-
-  /** As `notOwnPlaceOrDie`, for what an op takes away (a move's, a rename's, a trash's source): nor one that holds them. */
-  private notOwnSourceOrDie(abs: string): string {
-    this.notOwnPlaceOrDie(abs);
-    const why = holdsOwnPlaces(abs, this.ownPlaces);
-    if (why !== null)
-      throw new SessionError(`${why}: it is not moved, renamed or removed from here`, 409);
-    return abs;
-  }
-
-  /** The one guard on every route that makes a set or a listed entry (`notASet`). 409 when refused. */
-  private mayBeASetOrDie(abs: string, gone = false): void {
-    const why = notASet(abs, this.ownPlaces);
-    if (why === null) return;
-    const message = `${why}: it is not added to the context`;
-    throw gone ? new GoneError(message, 409) : new SessionError(message, 409);
   }
 
   /**
@@ -1060,7 +977,7 @@ export class WorkspaceSession {
    * both now (`notASet`).
    */
   private settleOwnPlaceSets(report: RestoreReport): void {
-    const own = this.ownPlaces;
+    const own = this.places.ownPlaces;
     const out: NonNullable<RestoreReport["ownPlaceSets"]> = [];
     this.core.m.context = this.core.m.context.filter((e) => {
       const paths =
@@ -1090,30 +1007,12 @@ export class WorkspaceSession {
     }
   }
 
-  /**
-   * A version file's path, refused unless it is in the session's own `docs/`
-   * folder as written and as the disk resolves it (a slug or extension that
-   * climbs out, a linked folder that leads out). The manifest check refuses
-   * such a slug or extension on restore; this is the backstop at every write.
-   */
-  private ownFileOrDie(path: string): string {
-    this.core.dirStillOrDie();
-    const docs = this.docsDir;
-    const real = this.core.realDir !== undefined ? join(this.core.realDir, "docs") : diskPath(docs);
-    if (!within(resolve(path), docs) || resolve(path) === docs || !within(diskPath(path), real))
-      throw new SessionError(
-        `${path} is not inside this session's docs folder (${docs}): nothing was written`,
-        409,
-      );
-    return path;
-  }
-
   /** A version file written: only inside the session's own `docs/` (`ownFileOrDie`). */
   private writeVersion(path: string, text: string): void {
-    this.writeOwned(this.ownFileOrDie(path), text, this.own);
+    this.writeOwned(this.places.ownFileOrDie(path), text, this.own);
   }
 
-  /** A write the watcher will know as the daemon's own: a version (`this.own`) or an original (`this.world`). */
+  /** A write the watcher will know as the daemon's own: a version (`this.own`) or an original (`this.places.world`). */
   private writeOwned(path: string, text: string, disk: Disk): void {
     // Checked before anything: a refused write leaves no hash behind.
     const why = disk.refusal(path);
@@ -1166,7 +1065,7 @@ export class WorkspaceSession {
 
   addContext(rawPath: string): { entry: ContextEntry; added: boolean } {
     const abs = resolve(rawPath);
-    this.mayBeASetOrDie(abs);
+    this.places.mayBeASetOrDie(abs);
     const id = `c-${randHex(3)}`;
     // The app's filter sees a new set from its first scan.
     const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
@@ -1192,7 +1091,7 @@ export class WorkspaceSession {
     // too, and folded into the image's row by the surface.
     const only = listedFile(probe);
     const sidecar = only?.kind === "image" ? this.sidecarFileOf(only.abs) : null;
-    if (sidecar && !this.itemAt(sidecar))
+    if (sidecar && !this.places.itemAt(sidecar))
       this.core.m.context.push(entryForPath(sidecar, `c-${randHex(3)}`));
     this.relink();
     this.persist();
@@ -1241,7 +1140,7 @@ export class WorkspaceSession {
       throw new GoneError(`${entry.label} (${entry.id}) shows nothing to put back`, 409);
     // Checked now, where the disk really leads: a folder swapped for a link to
     // the sessions since it was hidden is never put back as a set.
-    this.mayBeASetOrDie(path, true);
+    this.places.mayBeASetOrDie(path, true);
     let fresh: ContextEntry;
     try {
       fresh = entryForPath(
@@ -1319,7 +1218,7 @@ export class WorkspaceSession {
    * whatever a set holds or a link inside one leads to (`ownPlaceGuard`).
    */
   private scanGuard(): ScanGuard {
-    return ownPlaceGuard(this.ownPlaces);
+    return ownPlaceGuard(this.places.ownPlaces);
   }
 
   /** The app's filter for a set's scan (`AppDeclaration.scan`), as the slot is now. */
@@ -1380,7 +1279,7 @@ export class WorkspaceSession {
    * (Scriptorium's `hide`).
    */
   shownAt(rawPath: string): { abs: string; entryId: string; rel: string; whole: boolean } {
-    const item = this.itemOrDie(rawPath);
+    const item = this.places.itemOrDie(rawPath);
     return {
       abs: item.abs,
       entryId: item.entry.id,
@@ -1594,7 +1493,7 @@ export class WorkspaceSession {
     // The context's own form of the path: a caller whose cwd is a realpath
     // (/private/var/... for /var/...) names the same file differently, and it
     // must land on the same doc. A bundle opens as its main file.
-    const abs = this.canonical(this.mainOf(resolve(rawPath)));
+    const abs = this.places.canonical(this.mainOf(resolve(rawPath)));
     const existing = this.core.m.docs.find((d) => d.original === abs);
     if (existing) {
       if (focus) this.focusDoc(existing.slug);
@@ -1651,44 +1550,6 @@ export class WorkspaceSession {
     this.core.m.docAside = null;
   }
 
-  /**
-   * Every document the context lists, by path, with the entry that lists it
-   * (the first, as `locate` answers), and each entry's root by realpath. What
-   * `locate` and `canonical` would work out entry by entry, built once: a caller
-   * that asks many times in one go (backlinks resolves every matching link in
-   * the world) builds this and passes it, rather than walking every entry's
-   * tree per question.
-   */
-  private contextIndex(): ContextIndex {
-    const entryOf = new Map<string, string>();
-    const images = new Set<string>();
-    const sidecars = new Set<string>();
-    for (const e of this.core.m.context) {
-      for (const p of docPaths(e)) if (!entryOf.has(p)) entryOf.set(p, e.id);
-      for (const p of imagePaths(e)) images.add(p);
-      for (const p of sidecarPaths(e)) sidecars.add(p);
-    }
-    return {
-      entryOf,
-      images,
-      sidecars,
-      realRoots: this.core.m.context.map((e) => ({ root: e.root, real: realOr(e.root) })),
-    };
-  }
-
-  /** `abs` as the context names it, when it is the same file by realpath. */
-  private canonical(abs: string, index: ContextIndex = this.contextIndex()): string {
-    const known = (p: string) => index.entryOf.has(p) || index.images.has(p);
-    if (known(abs)) return abs;
-    const real = realOr(abs);
-    for (const { root, real: realRoot } of index.realRoots) {
-      if (!real.startsWith(realRoot + sep)) continue;
-      const named = join(root, relative(realRoot, real));
-      if (known(named)) return named;
-    }
-    return abs;
-  }
-
   openSlug(slug: string): void {
     this.focusDoc(this.docOrDie(slug).slug);
     this.persist();
@@ -1742,7 +1603,7 @@ export class WorkspaceSession {
     // new file, where the watcher finds it and preserves it too.
     // A fresh file under a random name (`stage`): never through a link
     // planted at a name it could guess.
-    this.ownFileOrDie(path);
+    this.places.ownFileOrDie(path);
     const staged = this.own.stage(path, text, "edit");
     let preserved: (Version & { path: string }) | null = null;
     let landed = false;
@@ -1883,7 +1744,7 @@ export class WorkspaceSession {
     // ⛔ Only a file inside the session's own docs/, as the disk resolves it:
     // a version folder swapped for a link deletes nothing outside. Refused
     // before the record changes.
-    const path = this.ownFileOrDie(this.core.versionPath(d, opts.version));
+    const path = this.places.ownFileOrDie(this.core.versionPath(d, opts.version));
     d.versions = d.versions.filter((x) => x.n !== opts.version);
     try {
       this.own.rm(path);
@@ -2371,7 +2232,7 @@ export class WorkspaceSession {
     // The bytes on disk are already the text: a save that changes nothing, which
     // the daemon never wakes the agent for. Still written, as the human asked.
     const unchanged = fileThere && readFileSync(d.original).equals(Buffer.from(text, "utf8"));
-    this.writeOwned(d.original, text, this.world);
+    this.writeOwned(d.original, text, this.places.world);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
@@ -2527,10 +2388,10 @@ export class WorkspaceSession {
         400,
         [...IMAGE_EXTENSIONS],
       );
-    const abs = this.contextForm(resolve(rawPath));
+    const abs = this.places.contextForm(resolve(rawPath));
     const at = this.imageNodeAt(abs) ?? this.bundleImageAt(abs);
     if (!at) throw new SessionError(`${abs} is not an image shown in this session`, 404);
-    const real = this.realInsideOrDie(abs, at.entry, "not served");
+    const real = this.places.realInsideOrDie(abs, at.entry, "not served");
     // Open the real path once, refusing a link in its last place; then make sure
     // what was opened is a plain file, and is the very file the path inside the
     // set names now, by device and inode. A swap at any moment either fails the
@@ -2540,7 +2401,7 @@ export class WorkspaceSession {
     try {
       const st = fstatSync(fd);
       if (!st.isFile()) throw new SessionError(`${abs} is not a file`, 404);
-      const now = this.realInsideOrDie(abs, at.entry, "not served");
+      const now = this.places.realInsideOrDie(abs, at.entry, "not served");
       let named: ReturnType<typeof statSync>;
       try {
         named = statSync(now);
@@ -2572,48 +2433,6 @@ export class WorkspaceSession {
   }
 
   /**
-   * `abs`'s realpath, when it lies inside `entry`'s root by realpath: a link in
-   * the set that leads out of it is refused, as a 404, so a probe learns nothing.
-   * For a listed entry the allowed place is exactly the listed file: its
-   * realpath must be its folder's realpath and its own name, so a loose image
-   * that is a link (out, or to a sibling) is refused.
-   */
-  private realInsideOrDie(abs: string, entry: ContextEntry, what: string): string {
-    let real: string;
-    try {
-      real = realpathSync(abs);
-    } catch {
-      throw new SessionError(`${abs} is not on disk`, 404);
-    }
-    // Against the root's realpath as it was when the entry was added: a
-    // symlinked folder retargeted since then leads nowhere new.
-    const root = rootReal(entry);
-    if (entry.membership === "listed") {
-      let link = true;
-      try {
-        link = lstatSync(abs).isSymbolicLink();
-      } catch {
-        /* gone: refused below as not where it was */
-      }
-      if (link) throw new SessionError(`${this.display(abs)} is a link: ${what}`, 404);
-      if (dirname(abs) !== entry.root || dirname(real) !== root)
-        throw new SessionError(
-          `${this.display(abs)} is not in the folder it was added from (a link there leads elsewhere now): ${what}`,
-          404,
-        );
-      if (basename(real) !== basename(abs))
-        throw new SessionError(`${this.display(abs)} is a link: ${what}`, 404);
-      return real;
-    }
-    if (!real.startsWith(root + sep))
-      throw new SessionError(
-        `${this.display(abs)} leads outside ${entry.label} through a link: ${what}`,
-        404,
-      );
-    return real;
-  }
-
-  /**
    * Open an image in the centre's viewer for the human. Only an image the tree
    * shows; the open document is put aside (its record and versions stay, and
    * clicking it brings it back).
@@ -2621,14 +2440,14 @@ export class WorkspaceSession {
   openImage(rawPath: string): { path: string } {
     if (!isAbsolute(rawPath))
       throw new SessionError(`"${rawPath}" is not a full path: start it with /`, 400);
-    const abs = this.contextForm(resolve(rawPath));
+    const abs = this.places.contextForm(resolve(rawPath));
     const at = isImageName(abs) ? this.imageNodeAt(abs) : null;
     if (!at)
       throw new SessionError(
         `${abs} is not an image shown in this session: add its folder to the context first`,
         400,
       );
-    this.realInsideOrDie(abs, at.entry, "not opened");
+    this.places.realInsideOrDie(abs, at.entry, "not opened");
     // The document on screen is put aside, not forgotten: closing the image
     // brings it back. A second image opened over the first keeps the same one.
     if (this.core.m.openDoc) this.core.m.docAside = this.core.m.openDoc;
@@ -2684,7 +2503,7 @@ export class WorkspaceSession {
     // Nothing is read through a link that leads out of the set, not even its size.
     let real: string;
     try {
-      real = this.realInsideOrDie(abs, at.entry, "not shown");
+      real = this.places.realInsideOrDie(abs, at.entry, "not shown");
     } catch {
       return null;
     }
@@ -2719,7 +2538,7 @@ export class WorkspaceSession {
    * (in a set, listed beside a loose image, or held): its path, else null. A
    * file nobody added is never read for the viewer.
    */
-  sidecarDocOf(abs: string, index: ContextIndex = this.contextIndex()): string | null {
+  sidecarDocOf(abs: string, index: ContextIndex = this.places.contextIndex()): string | null {
     const p = sidecarOf(abs);
     return index.sidecars.has(p) ? p : null;
   }
@@ -2728,7 +2547,7 @@ export class WorkspaceSession {
    * The image a document describes, when the document is a sidecar and the
    * session shows that image: its path, else null.
    */
-  imageOfDoc(path: string, index: ContextIndex = this.contextIndex()): string | null {
+  imageOfDoc(path: string, index: ContextIndex = this.places.contextIndex()): string | null {
     const image = imageOfSidecar(path);
     return image !== null && index.sidecars.has(path) && index.images.has(image) ? image : null;
   }
@@ -2829,10 +2648,10 @@ export class WorkspaceSession {
    */
   private carrySidecar(from: string, to: string, sidecar: string, sidecarTo: string): void {
     try {
-      this.world.rename(sidecar, sidecarTo);
+      this.places.world.rename(sidecar, sidecarTo);
     } catch (e) {
       try {
-        this.world.rename(to, from);
+        this.places.world.rename(to, from);
       } catch {
         /* the refusal below still says what failed */
       }
@@ -2856,7 +2675,7 @@ export class WorkspaceSession {
   ): { path: string; image: string; hash: string } {
     if (!isAbsolute(rawImage))
       throw new SessionError(`"${rawImage}" is not a full path: start it with /`, 400);
-    const abs = this.contextForm(resolve(rawImage));
+    const abs = this.places.contextForm(resolve(rawImage));
     if (!isImageName(abs) || !this.imageNodeAt(abs))
       throw new SessionError(
         `${abs} is not an image shown in this session: add it, or its folder, first`,
@@ -2884,12 +2703,12 @@ export class WorkspaceSession {
     // A converted image's description records the name it came in with.
     const cameAs = this.core.m.importedAs?.[abs];
     const text = sidecarSkeleton(cameAs ?? basename(abs), source, added);
-    this.world.writeFile(path, text, { flag: "wx" });
+    this.places.world.writeFile(path, text, { flag: "wx" });
     if (cameAs !== undefined && this.core.m.importedAs) {
       delete this.core.m.importedAs[abs];
       if (Object.keys(this.core.m.importedAs).length === 0) delete this.core.m.importedAs;
     }
-    if (!this.itemAt(path)) this.adoptNew(path);
+    if (!this.places.itemAt(path)) this.adoptNew(path);
     this.persist();
     return { path, image: abs, hash: contentHash(text) };
   }
@@ -2901,7 +2720,7 @@ export class WorkspaceSession {
    * type is refused with the types that are.
    */
   imageNameIn(name: string): { name: string; heic: boolean; given: string } {
-    const n = this.nameOrDie(name);
+    const n = this.places.nameOrDie(name);
     if (isSvgName(n)) throw new SessionError(SVG_REFUSED, 400);
     if (isHeicName(n))
       return { name: n.replace(/\.(?:heic|heif)$/i, ".jpg"), heic: true, given: n };
@@ -2923,7 +2742,7 @@ export class WorkspaceSession {
    * description has recorded it.
    */
   rememberImportName(abs: string, given: string): void {
-    const at = this.contextForm(resolve(abs));
+    const at = this.places.contextForm(resolve(abs));
     const names = { ...(this.core.m.importedAs ?? {}) };
     delete names[at];
     if (given !== basename(at)) names[at] = given;
@@ -2943,8 +2762,8 @@ export class WorkspaceSession {
    * only a set, a folder in one, or the workspace, so nothing else is reached.
    */
   private imageDestinationOrDie(rawDir?: string): string {
-    const dir = rawDir ? this.destinationOrDie(rawDir) : this.workspaceOrDie();
-    const set = this.coveringEntry(dir);
+    const dir = rawDir ? this.places.destinationOrDie(rawDir) : this.places.workspaceOrDie();
+    const set = this.places.coveringEntry(dir);
     if (!set) {
       if (this.isWorkspace(dir)) return dir;
       throw new SessionError(
@@ -3009,7 +2828,7 @@ export class WorkspaceSession {
       file = this.freeImageName(dir, file);
     }
     const abs = join(dir, file);
-    this.world.writeFile(abs, bytes, { flag: "wx" });
+    this.places.world.writeFile(abs, bytes, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -3025,7 +2844,7 @@ export class WorkspaceSession {
   private bundleAssetsOrDie(rawBundle: string): { bundle: string; assets: string } {
     if (!rawBundle || !isAbsolute(rawBundle))
       throw new SessionError(`"${rawBundle}" is not a full path: start it with /`, 400);
-    const abs = this.contextForm(resolve(rawBundle));
+    const abs = this.places.contextForm(resolve(rawBundle));
     const b = bundleOf(abs);
     if (!b || b.root !== abs || b.inner !== "")
       throw new SessionError(`${this.display(abs)} is not a bundle's folder`, 400);
@@ -3036,8 +2855,8 @@ export class WorkspaceSession {
         findNode(e.nodes, toPosix(relative(e.root, abs)))?.kind === "bundle",
     );
     if (!entry) throw new SessionError(`${this.display(abs)} is not a bundle a set shows`, 404);
-    this.realInsideOrDie(abs, entry, "not written into");
-    this.notOwnPlaceOrDie(abs);
+    this.places.realInsideOrDie(abs, entry, "not written into");
+    this.places.notOwnPlaceOrDie(abs);
     const assets = join(abs, "assets");
     let st: ReturnType<typeof lstatSync> | null = null;
     try {
@@ -3050,7 +2869,7 @@ export class WorkspaceSession {
         `${this.display(assets)} is not a plain folder: not written into`,
         400,
       );
-    if (!st) this.world.mkdir(assets);
+    if (!st) this.places.world.mkdir(assets);
     return { bundle: abs, assets };
   }
 
@@ -3080,7 +2899,7 @@ export class WorkspaceSession {
     // image never takes over an orphaned sidecar.
     const file = this.freeImageName(assets, given);
     const abs = join(assets, file);
-    this.world.writeFile(abs, bytes, { flag: "wx" });
+    this.places.world.writeFile(abs, bytes, { flag: "wx" });
     return { path: abs, card: `./assets/${file}` };
   }
 
@@ -3106,13 +2925,13 @@ export class WorkspaceSession {
       throw new SessionError(`${basename(f.abs)} is already this board's own`, 400);
     const file = this.freeImageName(assets, basename(f.abs));
     const abs = join(assets, file);
-    this.world.writeFile(abs, bytes, { flag: "wx" });
+    this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const from = sidecarOf(f.abs);
     const to = sidecarOf(abs);
     let sidecar: string | undefined;
     try {
       if (lstatSync(from).isFile() && !existsSync(to)) {
-        this.world.writeFile(to, readFileSync(from), { flag: "wx" });
+        this.places.world.writeFile(to, readFileSync(from), { flag: "wx" });
         sidecar = to;
       }
     } catch {
@@ -3143,8 +2962,8 @@ export class WorkspaceSession {
     bytes: Uint8Array,
     how: "paste" | "drop",
   ): { path: string; doc: string; href: string } {
-    const doc = this.contextForm(resolve(rawDoc));
-    const item = this.itemOrDie(doc);
+    const doc = this.places.contextForm(resolve(rawDoc));
+    const item = this.places.itemOrDie(doc);
     if (item.dir || docFormat(doc) !== "markdown" || !isDocName(doc))
       throw new SessionError(`${this.display(doc)} is not a markdown document to embed in`, 400);
     this.imageBytesOrDie(name, bytes);
@@ -3157,8 +2976,8 @@ export class WorkspaceSession {
     const dir = this.imagesDirBeside(doc);
     file = this.freeImageName(dir, file);
     const abs = join(dir, file);
-    this.world.writeFile(abs, bytes, { flag: "wx" });
-    const set = this.coveringEntry(abs);
+    this.places.world.writeFile(abs, bytes, { flag: "wx" });
+    const set = this.places.coveringEntry(abs);
     if (set) this.rescan(set.id);
     else this.adoptNew(abs);
     this.persist();
@@ -3172,9 +2991,9 @@ export class WorkspaceSession {
    */
   private imagesDirBeside(doc: string): string {
     const docDir = dirname(doc);
-    this.notOwnPlaceOrDie(docDir);
+    this.places.notOwnPlaceOrDie(docDir);
     const dir = join(docDir, IMAGES_DIR);
-    const set = this.coveringEntry(docDir);
+    const set = this.places.coveringEntry(docDir);
     if (!set && !this.isWorkspace(docDir))
       throw new SessionError(
         `${this.display(doc)} is not in a set${this.hasHome ? " or in the workspace folder" : ""}, so an image has nowhere of the session's to go beside it: move the document into one first`,
@@ -3200,7 +3019,7 @@ export class WorkspaceSession {
     }
     let made = false;
     if (st === null) {
-      this.world.mkdir(dir);
+      this.places.world.mkdir(dir);
       made = true;
       if (set) this.rescan(set.id);
     } else if (!st.isDirectory() && !(set && st.isSymbolicLink()))
@@ -3222,7 +3041,7 @@ export class WorkspaceSession {
     } catch (e) {
       if (made) {
         try {
-          this.world.rmdir(dir);
+          this.places.world.rmdir(dir);
         } catch {
           /* not empty, or gone: leave it */
         }
@@ -3244,7 +3063,7 @@ export class WorkspaceSession {
     const dir = this.imageDestinationOrDie(rawDir);
     const abs = join(dir, name);
     if (!this.imageNodeAt(abs)) {
-      if (!this.coveringEntry(dir) && !this.itemAt(abs) && isImageName(abs)) {
+      if (!this.places.coveringEntry(dir) && !this.places.itemAt(abs) && isImageName(abs)) {
         let st: ReturnType<typeof lstatSync> | null = null;
         try {
           st = lstatSync(abs);
@@ -3281,19 +3100,19 @@ export class WorkspaceSession {
    */
   stageImage(target: string, name: string, bytes: Uint8Array): string {
     this.imageBytesOrDie(name, bytes);
-    this.notOwnPlaceOrDie(dirname(target));
+    this.places.notOwnPlaceOrDie(dirname(target));
     const staged = join(dirname(target), `.${basename(target)}.incoming-${randHex(4)}`);
-    this.world.writeFile(staged, bytes, { flag: "wx" });
+    this.places.world.writeFile(staged, bytes, { flag: "wx" });
     return staged;
   }
 
   /** Put a staged replacement in place of `target`, whose old file is now in the Trash. */
   placeStaged(staged: string, target: string): { path: string } {
     this.refuseExisting(target);
-    this.world.rename(staged, target);
+    this.places.world.rename(staged, target);
     // A loose image's entry is still there (only the file went to the Trash); one
     // the context no longer showed is given an entry again, as a new drop would be.
-    if (this.itemAt(target)) this.rescanAround(target);
+    if (this.places.itemAt(target)) this.rescanAround(target);
     else this.adoptNew(target);
     this.persist();
     return { path: target };
@@ -3302,7 +3121,7 @@ export class WorkspaceSession {
   /** Drop a staged replacement that will not be used. */
   unstage(staged: string): void {
     try {
-      this.world.unlink(staged);
+      this.places.world.unlink(staged);
     } catch {
       /* already gone, or refused: nothing removed */
     }
@@ -3326,8 +3145,8 @@ export class WorkspaceSession {
    */
   trashPreview(rawPath: string): TrashPreview {
     if (!isAbsolute(rawPath)) throw new SessionError(`"${rawPath}" is not a full path`, 400);
-    const item = this.itemOrDie(rawPath);
-    this.notOwnSourceOrDie(item.abs);
+    const item = this.places.itemOrDie(rawPath);
+    this.places.notOwnSourceOrDie(item.abs);
     const shown = this.display(item.abs);
     if (item.whole && item.dir && !item.bundle)
       throw new SessionError(
@@ -3604,7 +3423,7 @@ export class WorkspaceSession {
           const next = this.takeVersion(d);
           const to = this.core.versionPath(d, next);
           this.owned.set(to, contentHash(text));
-          this.own.rename(abs, this.ownFileOrDie(to));
+          this.own.rename(abs, this.places.ownFileOrDie(to));
           d.versions.push({ n: next, by: "agent", createdAt: nowIso() });
           d.versions.sort((a, b) => a.n - b.n);
           this.persist();
@@ -3745,284 +3564,6 @@ export class WorkspaceSession {
   //   the exclusive flag, so a race cannot clobber either.
 
   /**
-   * How a path reads in a chat line: `set/rel` inside a set, a single
-   * document's file name, `workspace/...` in the workspace, else `~/...`.
-   */
-  display(abs: string): string {
-    // In the innermost set that holds it: a linked folder opened as a set of
-    // its own sits under the set holding its link, and is named as itself.
-    let set: ContextEntry | undefined;
-    for (const e of this.core.m.context) {
-      if (e.membership !== "mirrored") continue;
-      if (abs !== e.root && !abs.startsWith(e.root + sep)) continue;
-      if (!set || e.root.length > set.root.length) set = e;
-    }
-    if (set)
-      return abs === set.root ? set.label : `${set.label}/${toPosix(relative(set.root, abs))}`;
-    for (const e of this.core.m.context)
-      if (e.membership !== "mirrored" && e.nodes.some((n) => join(e.root, n.rel) === abs))
-        return e.label;
-    if (abs.startsWith(this.dir + sep)) return toPosix(relative(this.dir, abs));
-    if (this.hasHome && abs.startsWith(this.workspace + sep))
-      return `workspace/${toPosix(relative(this.workspace, abs))}`;
-    const home = homeDir();
-    return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
-  }
-
-  /**
-   * A folder things may be copied into (`destinationOrDie`): a set, a folder
-   * the tree shows in one, or the workspace. Throws the refusal otherwise.
-   */
-  shownFolderOrDie(dir: string): string {
-    return this.destinationOrDie(dir);
-  }
-
-  /** `path` named the way the context names it (`contextForm`), for a path from outside: the picker's. */
-  namedAsContext(path: string): string {
-    return this.contextForm(resolve(path));
-  }
-
-  /**
-   * `abs` named the way the context names it. A caller whose cwd is a
-   * realpath (/private/var/... for /var/..., a symlinked folder) names the same
-   * place differently, and it must land on the same node.
-   */
-  private contextForm(abs: string): string {
-    if (this.core.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep))) return abs;
-    const real = realOr(abs);
-    for (const e of this.core.m.context) {
-      const realRoot = realOr(e.root);
-      if (real === realRoot) return e.root;
-      if (real.startsWith(realRoot + sep)) return join(e.root, relative(realRoot, real));
-    }
-    return abs;
-  }
-
-  /** The mirrored entry that covers `abs` (its root, or anything under it), if any. */
-  private coveringEntry(abs: string, except?: string): ContextEntry | undefined {
-    return this.core.m.context.find(
-      (e) =>
-        e.id !== except &&
-        e.membership === "mirrored" &&
-        (abs === e.root || abs.startsWith(e.root + sep)),
-    );
-  }
-
-  /**
-   * A folder things may be made in or moved into: a mirrored entry's root or a
-   * visible folder under one. Refuses anything else: the context stays the way
-   * in.
-   */
-  private destinationOrDie(rawDir: string): string {
-    const abs = this.contextForm(resolve(rawDir));
-    // A folder the tree shows, and never one that is really inside a bundle
-    // (a linked folder in a set that leads into one's insides).
-    const shown = (): string => {
-      refuseInBundle(abs, "that folder");
-      return this.notOwnPlaceOrDie(abs);
-    };
-    // A set's own root first, whatever the order of the context: a linked
-    // folder added as a set of its own (what a link row's refusal says to do)
-    // is also a link's row in the set that holds it, and must take things as
-    // the set it now is.
-    if (this.core.m.context.some((e) => e.membership === "mirrored" && abs === e.root))
-      return shown();
-    for (const e of this.core.m.context) {
-      // A listed entry is no place to put things, but for a folder inside an
-      // expandable bundle listed on its own (a stage's `docs/`), which is
-      // shown under its row as a set's folder is.
-      if (e.membership !== "mirrored" && listedFile(e)?.kind !== "bundle") continue;
-      if (abs.startsWith(e.root + sep)) {
-        const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
-        if (node?.kind === "group") return this.notThroughLinkOrDie(shown(), e);
-      }
-    }
-    if (this.isWorkspace(abs)) return this.workspaceOrDie();
-    if (!this.hasHome) {
-      const r = notALocation(this.app, abs);
-      throw new SessionError(r.message, 400, undefined, r.hint);
-    }
-    throw new SessionError(
-      `${abs} is not a folder in this session: name a set, a folder inside one, or the workspace (${this.workspace})`,
-      400,
-    );
-  }
-
-  /**
-   * A folder of a set's tree that is a link (a link's row: the scan shows it
-   * and never enters it), or that really is somewhere else (a folder above it
-   * swapped for a link since the scan), takes nothing: what is made, imported,
-   * moved or dropped there would land where the link leads and vanish from
-   * the set. The way to work in it is to add it as a set of its own.
-   */
-  private notThroughLinkOrDie(abs: string, e: ContextEntry): string {
-    let link: boolean;
-    try {
-      link = lstatSync(abs).isSymbolicLink();
-    } catch {
-      throw new SessionError(
-        `${this.display(abs)} is no longer on disk: choose a folder that is, or look again once the list has caught up`,
-        404,
-      );
-    }
-    const real = realOr(abs);
-    const root = rootReal(e);
-    const outside = real !== root && !real.startsWith(root + sep);
-    if (!link && !outside) return abs;
-    throw new SessionError(
-      `${this.display(abs)} ${link ? "is a link" : "is reached through a link"}${outside ? ` that leads outside ${e.label}` : ""} (to ${tilde(real)}): nothing is made in, moved into or dropped on a linked folder, or it would land there and vanish from the set`,
-      400,
-      undefined,
-      `to work in that folder, add it as a set of its own: add ${abs}`,
-    );
-  }
-
-  /** An existing folder on disk, as the context names it: where an undone move goes back to. */
-  private folderOrDie(rawDir: string): string {
-    const abs = this.notOwnPlaceOrDie(this.contextForm(resolve(rawDir)));
-    let isDir = false;
-    try {
-      isDir = statSync(abs).isDirectory();
-    } catch {
-      isDir = false;
-    }
-    if (!isDir)
-      throw new GoneError(
-        `${tilde(abs)} is no longer a folder: the move this would undo cannot go back`,
-        409,
-      );
-    return abs;
-  }
-
-  /** A document or folder shown in the context, with where it is shown. */
-  private itemOrDie(rawPath: string): {
-    abs: string;
-    entry: ContextEntry;
-    /** The whole entry (a set's own folder, a listed document or image), or a node inside a set. */
-    whole: boolean;
-    /** A folder on disk: a set's, a group's, or a bundle's. */
-    dir: boolean;
-    /** A bundle, with its registered type: one item, though a folder on disk. */
-    bundle?: BundleType;
-  } {
-    const abs = this.contextForm(resolve(rawPath));
-    // Inside an expandable bundle only a member's files and folders are items
-    // a structure act takes: the member folder itself, the main file,
-    // `info.json` and the rest are the type's own, shown and never acted on.
-    const place = bundlePlace(abs);
-    if (place !== null && place !== "member") {
-      const b = bundleOf(abs) as NonNullable<ReturnType<typeof bundleOf>>;
-      const name = `the ${b.type.label} ${bundleNameAt(b.root)}`;
-      throw new SessionError(
-        place === "member-folder"
-          ? `${this.display(abs)} is ${name}'s folder for its documents: it is not renamed, moved, duplicated or deleted from here, but documents can be made in it, dropped into it and moved in and out of it`
-          : `${this.display(abs)} is one of ${name}'s own files: ${outsideMembers(b.type)}`,
-        409,
-      );
-    }
-    const asBundle = (node: ContextNode | undefined) =>
-      node?.kind === "bundle" ? bundleTypeOf(abs) : null;
-    for (const e of this.core.m.context) {
-      if (e.membership === "listed") {
-        const only = listedFile(e);
-        // A member's file in an expandable bundle listed on its own.
-        if (place === "member" && only?.kind === "bundle" && abs.startsWith(only.abs + sep)) {
-          const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
-          if (node && node.kind !== "file")
-            return { abs, entry: e, whole: false, dir: node.kind === "group" };
-        }
-        if (only?.abs !== abs) continue;
-        const bundle = asBundle(e.nodes[0]);
-        return bundle
-          ? { abs, entry: e, whole: true, dir: true, bundle }
-          : { abs, entry: e, whole: true, dir: false };
-      }
-      if (abs === e.root) return { abs, entry: e, whole: true, dir: true };
-      if (abs.startsWith(e.root + sep)) {
-        const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
-        const bundle = asBundle(node);
-        if (bundle) return { abs, entry: e, whole: false, dir: true, bundle };
-        if (node) return { abs, entry: e, whole: false, dir: node.kind === "group" };
-      }
-    }
-    throw new SessionError(`${abs} is not shown in this session's context`, 404);
-  }
-
-  /** Whether `abs` is shown anywhere in the context now. */
-  private itemAt(abs: string): boolean {
-    try {
-      this.itemOrDie(abs);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * The path to reveal in the file manager, or a `not_found` refusal.
-   *
-   * Only paths the session already knows are accepted: anything inside the
-   * session folder (versions, renders), and anything under a
-   * context entry's root (for a listed entry, the listed file itself, not its
-   * siblings). Both sides are compared by realpath, so a `..` or a symlink
-   * cannot carry a request outside. Anything else is refused as not found, so a
-   * page cannot aim the file manager at an arbitrary path.
-   */
-  revealTarget(rawPath: string): string {
-    if (!isAbsolute(rawPath))
-      throw new SessionError(`${rawPath} is not a full path: start it with /`, 400);
-    // Both the path as given and where it really leads must be inside a known
-    // root. A symlink outside every root that points in is refused (the
-    // given path is outside), and so is one inside that points out (its
-    // realpath is outside). What is handed to the file manager is the
-    // realpath, so what was checked is what is opened.
-    const abs = resolve(rawPath);
-    const real = realOr(abs);
-    const within = (p: string, root: string): boolean => p === root || p.startsWith(root + sep);
-    const known = (() => {
-      const roots: { root: string; only?: string }[] = [{ root: this.dir }];
-      for (const e of this.core.m.context) {
-        if (e.membership === "mirrored") roots.push({ root: e.root });
-        else
-          for (const n of e.nodes)
-            if (n.kind !== "group")
-              roots.push({ root: join(e.root, n.rel), only: join(e.root, n.rel) });
-      }
-      return roots.some(({ root }) => {
-        const lexical = within(abs, root) || within(abs, realOr(root));
-        return lexical && within(real, realOr(root));
-      });
-    })();
-    if (!known || !existsSync(abs))
-      throw new SessionError(`${abs} is not a path this session knows`, 404);
-    return real;
-  }
-
-  /** Refuse a name that is not one plain file or folder name. */
-  private nameOrDie(name: string): string {
-    const n = name.trim();
-    if (
-      n === "" ||
-      n === "." ||
-      n === ".." ||
-      n.startsWith(".") ||
-      /[/\\\0]/.test(n) ||
-      n.length > 255
-    )
-      throw new SessionError(
-        `"${name}" is not a usable name: one plain name, no slashes, not starting with a dot`,
-        400,
-      );
-    return n;
-  }
-
-  /** A document name: a name without a document extension gets `.md`. */
-  private docNameOrDie(name: string): string {
-    const n = this.nameOrDie(name);
-    return isDocName(n) ? n : `${n}.md`;
-  }
-
-  /**
    * After something moved on disk from `from` to `to`, bring the model with it:
    * opened documents keep their versions under the new path, entries rooted at
    * or holding the moved thing follow it, and every mirror is re-read. An entry
@@ -4062,7 +3603,7 @@ export class WorkspaceSession {
         if (!only) continue;
         const now = moved(only.abs);
         if (!now) continue;
-        if (this.coveringEntry(now, e.id)) drop.add(e.id);
+        if (this.places.coveringEntry(now, e.id)) drop.add(e.id);
         else {
           e.root = dirname(now);
           e.realRoot = realOr(e.root);
@@ -4079,7 +3620,7 @@ export class WorkspaceSession {
       } else {
         const now = moved(e.root);
         if (!now) continue;
-        if (this.coveringEntry(now, e.id)) drop.add(e.id);
+        if (this.places.coveringEntry(now, e.id)) drop.add(e.id);
         else {
           e.root = now;
           e.realRoot = realOr(now);
@@ -4095,7 +3636,7 @@ export class WorkspaceSession {
 
   /** After a file or folder landed at `abs`: re-read the set it is in, or give it an entry. */
   private adoptNew(abs: string): void {
-    const set = this.coveringEntry(abs);
+    const set = this.places.coveringEntry(abs);
     const listed = set ? null : this.listedBundleHolding(abs);
     // Every set whose root holds it, not only the first: a linked folder added
     // as a set of its own sits under the set holding its link, which shows it
@@ -4112,7 +3653,7 @@ export class WorkspaceSession {
     else {
       // Every write that lands here passed the backstop; a new entry still
       // takes the one set guard.
-      this.mayBeASetOrDie(abs);
+      this.places.mayBeASetOrDie(abs);
       const id = `c-${randHex(3)}`;
       this.core.m.context.push(
         entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard()),
@@ -4188,8 +3729,8 @@ export class WorkspaceSession {
     name?: string,
     opts: { text?: string; free?: boolean } = {},
   ): { path: string } {
-    const dir = this.destinationOrDie(rawDir);
-    const wanted = name === undefined ? "Untitled.md" : this.docNameOrDie(name);
+    const dir = this.places.destinationOrDie(rawDir);
+    const wanted = name === undefined ? "Untitled.md" : this.places.docNameOrDie(name);
     const file =
       name === undefined || opts.free === true ? this.freeName(dir, wanted, false) : wanted;
     const abs = join(dir, file);
@@ -4202,25 +3743,25 @@ export class WorkspaceSession {
     // A new JSON document starts as the smallest JSON there is, so its first
     // Save is not refused for being empty.
     const text = opts.text ?? (docFormat(file) === "json" ? "{}\n" : "");
-    this.world.writeFile(abs, text, { flag: "wx" });
+    this.places.world.writeFile(abs, text, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
 
   createFolder(rawDir: string, name?: string): { path: string } {
-    const dir = this.destinationOrDie(rawDir);
+    const dir = this.places.destinationOrDie(rawDir);
     // One made in the workspace gets an entry of its own (`adoptNew`): a set,
     // and named as one. Inside a set it is a folder.
-    const makesSet = !this.coveringEntry(dir) && this.isWorkspace(dir);
+    const makesSet = !this.places.coveringEntry(dir) && this.isWorkspace(dir);
     const folder =
       name === undefined
         ? this.freeName(dir, makesSet ? "New set" : "New folder", true)
-        : this.nameOrDie(name);
+        : this.places.nameOrDie(name);
     this.refuseBundleName(folder, "a new folder");
     const abs = join(dir, folder);
     this.refuseExisting(abs);
-    this.world.mkdir(abs);
+    this.places.world.mkdir(abs);
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -4248,7 +3789,7 @@ export class WorkspaceSession {
         400,
         bundleTypes().map((t) => t.extension),
       );
-    const dir = this.destinationOrDie(rawDir);
+    const dir = this.places.destinationOrDie(rawDir);
     // A member folder takes documents, never a bundle inside a bundle.
     const holder = bundleHolding(dir);
     if (holder)
@@ -4256,7 +3797,7 @@ export class WorkspaceSession {
         `a ${type.label} is not made inside the ${holder.type.label} ${bundleNameAt(holder.root)}: make it beside it`,
         409,
       );
-    const given = name === undefined ? null : this.nameOrDie(name);
+    const given = name === undefined ? null : this.places.nameOrDie(name);
     const folder =
       given === null
         ? this.freeName(dir, `Untitled${type.extension}`, false)
@@ -4266,11 +3807,11 @@ export class WorkspaceSession {
     const abs = join(dir, folder);
     this.refuseExisting(abs);
     this.wroteBundle(abs);
-    this.world.mkdir(abs);
-    this.world.writeFile(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
+    this.places.world.mkdir(abs);
+    this.places.world.writeFile(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
       flag: "wx",
     });
-    this.world.writeFile(join(abs, type.main), type.mainTemplate, { flag: "wx" });
+    this.places.world.writeFile(join(abs, type.main), type.mainTemplate, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs, hash: treeHash(abs) };
@@ -4287,8 +3828,8 @@ export class WorkspaceSession {
    * was written, so the undo can tell it is still as made.
    */
   duplicate(rawPath: string): { path: string; from: string; hash: string; dir: boolean } {
-    const item = this.itemOrDie(rawPath);
-    this.notOwnPlaceOrDie(dirname(item.abs));
+    const item = this.places.itemOrDie(rawPath);
+    this.places.notOwnPlaceOrDie(dirname(item.abs));
     const isDoc = !item.dir && isDocName(item.abs) && !isImageName(item.abs);
     if (!item.bundle && !isDoc)
       throw new SessionError(
@@ -4317,7 +3858,7 @@ export class WorkspaceSession {
       // fails if anything is at `to` by now (a link, a folder another process
       // just made): only a folder this act made is ever removed below.
       try {
-        this.world.mkdir(to);
+        this.places.world.mkdir(to);
       } catch (e) {
         if (e instanceof SessionError) throw e;
         throw refused(e);
@@ -4328,7 +3869,7 @@ export class WorkspaceSession {
         // is copied as written, so a relative one (`../a.md`) still leads
         // inside the copy, never back into the original.
         for (const name of readdirSync(item.abs))
-          this.world.cp(join(item.abs, name), join(to, name), {
+          this.places.world.cp(join(item.abs, name), join(to, name), {
             recursive: true,
             errorOnExist: true,
             force: false,
@@ -4337,7 +3878,7 @@ export class WorkspaceSession {
       } catch (e) {
         // Part of a copy is no copy: the folder this act made goes again.
         try {
-          this.world.rm(to, { recursive: true, force: true });
+          this.places.world.rm(to, { recursive: true, force: true });
         } catch {
           /* said below either way */
         }
@@ -4349,14 +3890,14 @@ export class WorkspaceSession {
       const info = readBundleInfo(to);
       const title = typeof info?.title === "string" ? info.title : bundleStem(basename(item.abs));
       if (info !== null)
-        this.world.writeFile(
+        this.places.world.writeFile(
           join(to, BUNDLE_INFO),
           writeBundleInfo(info, item.bundle, { title: `${uncopied(title)}${suffix}` }),
         );
     } else {
       this.refuseExisting(to);
       try {
-        this.world.copyFile(item.abs, to, constants.COPYFILE_EXCL);
+        this.places.world.copyFile(item.abs, to, constants.COPYFILE_EXCL);
       } catch (e) {
         if (e instanceof SessionError) throw e;
         throw refused(e);
@@ -4399,9 +3940,11 @@ export class WorkspaceSession {
         `${tilde(resolve(rawPath))} is gone: the move this would undo cannot go back`,
         409,
       );
-    const item = this.itemOrDie(rawPath);
+    const item = this.places.itemOrDie(rawPath);
     if (!item.dir) this.refuseLoneSidecar(item.abs, "move");
-    const into = opts.back ? this.folderOrDie(rawInto) : this.destinationOrDie(rawInto);
+    const into = opts.back
+      ? this.places.folderOrDie(rawInto)
+      : this.places.destinationOrDie(rawInto);
     if (into === item.abs || into.startsWith(item.abs + sep))
       throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
     if (dirname(item.abs) === into)
@@ -4412,7 +3955,7 @@ export class WorkspaceSession {
     const sidecar = item.dir ? null : this.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
     if (sidecarTo) this.refuseExisting(sidecarTo);
-    const sidecarShown = sidecar !== null && this.itemAt(sidecar);
+    const sidecarShown = sidecar !== null && this.places.itemAt(sidecar);
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
     // The app's edges it breaks are said as the plan says them, never rewritten.
     const edgePins =
@@ -4423,8 +3966,8 @@ export class WorkspaceSession {
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
     this.followMove(item.abs, to);
     if (sidecar && sidecarTo) this.followMove(sidecar, sidecarTo);
-    if (!this.itemAt(to)) this.adoptNew(to);
-    if (sidecarTo && sidecarShown && !this.itemAt(sidecarTo)) this.adoptNew(sidecarTo);
+    if (!this.places.itemAt(to)) this.adoptNew(to);
+    if (sidecarTo && sidecarShown && !this.places.itemAt(sidecarTo)) this.adoptNew(sidecarTo);
     this.persist();
     const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
     const links = pins ? this.planRelink(pins, pairs) : null;
@@ -4447,9 +3990,9 @@ export class WorkspaceSession {
    * manifest.
    */
   movePlan(rawPath: string, rawInto: string): MovePlan {
-    const item = this.itemOrDie(rawPath);
+    const item = this.places.itemOrDie(rawPath);
     if (!item.dir) this.refuseLoneSidecar(item.abs, "move");
-    const into = this.destinationOrDie(rawInto);
+    const into = this.places.destinationOrDie(rawInto);
     if (into === item.abs || into.startsWith(item.abs + sep))
       throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
     if (dirname(item.abs) === into)
@@ -4465,11 +4008,15 @@ export class WorkspaceSession {
     const edgePins = this.pinEdges(moved);
     // As `move` adopts them: the item where it lands, and an image's
     // description the tree shows, each given an entry when nothing shows it.
-    const adopted = [to, ...(sidecar && sidecarTo && this.itemAt(sidecar) ? [sidecarTo] : [])];
+    const adopted = [
+      to,
+      ...(sidecar && sidecarTo && this.places.itemAt(sidecar) ? [sidecarTo] : []),
+    ];
     const world = this.planWorld(movedWorld(pairs), adopted);
     const plan = this.planRelink(pins, pairs, world);
     const docs = item.dir
-      ? [...this.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep)).length
+      ? [...this.places.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep))
+          .length
       : 1;
     return {
       from: item.abs,
@@ -4502,7 +4049,7 @@ export class WorkspaceSession {
       if (e.membership === "listed" && !only) continue;
       const was = only ? only.abs : e.root;
       const now = world.forward(was);
-      if (now !== was && this.coveringEntry(now, e.id)) continue;
+      if (now !== was && this.places.coveringEntry(now, e.id)) continue;
       entries.push({ e: { ...e, root: only ? dirname(now) : now }, file: only ? now : null });
     }
     for (const p of adopted) {
@@ -4599,7 +4146,7 @@ export class WorkspaceSession {
   private pinEdges(moved: readonly string[]): EdgePin[] {
     if (!this.appEdges) return [];
     const under = (p: string) => moved.some((m) => p === m || p.startsWith(m + sep));
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const read = new Set<string>();
     const pins: EdgePin[] = [];
@@ -4634,7 +4181,7 @@ export class WorkspaceSession {
   ): EdgeBreak[] {
     if (pins.length === 0) return [];
     const map = movedWorld(pairs).forward;
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const out: EdgeBreak[] = [];
     for (const pin of pins) {
@@ -4679,10 +4226,10 @@ export class WorkspaceSession {
     /** With `opts.links`: the wiki links it broke, which are never rewritten. */
     wiki?: WikiBreak[];
   } {
-    const item = this.itemOrDie(rawPath);
+    const item = this.places.itemOrDie(rawPath);
     if (item.bundle) return this.renameBundle(item.abs, item.bundle, name, opts);
     if (!item.dir) this.refuseLoneSidecar(item.abs, "rename");
-    let next = this.nameOrDie(name);
+    let next = this.places.nameOrDie(name);
     if (item.dir) this.refuseBundleName(next, "a folder");
     // A document keeps a document extension: "notes" renames notes.md to
     // notes.md, not to an extensionless file the workspace would stop showing.
@@ -4732,7 +4279,7 @@ export class WorkspaceSession {
     name: string,
     opts: { links?: boolean; title?: string | null },
   ): ReturnType<WorkspaceSession["rename"]> {
-    const given = this.nameOrDie(name);
+    const given = this.places.nameOrDie(name);
     const exact = bundleTypeOf(given) === type;
     const folder = exact ? given : fitName(given, type.extension);
     if (!exact && bundleTypeOf(folder) !== type)
@@ -4760,7 +4307,7 @@ export class WorkspaceSession {
     }
     if (titleTo !== titleFrom) {
       this.wroteBundle(to);
-      this.world.writeFile(
+      this.places.world.writeFile(
         join(to, BUNDLE_INFO),
         writeBundleInfo(before, type, { title: titleTo }),
       );
@@ -4833,7 +4380,7 @@ export class WorkspaceSession {
     const text = "{}\n";
     const d = this.core.m.docs.find((x) => x.original === to);
     if (d && this.activeText(d) !== "") return null;
-    this.writeOwned(to, text, this.world);
+    this.writeOwned(to, text, this.places.world);
     if (!d) return null;
     this.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
@@ -4854,7 +4401,7 @@ export class WorkspaceSession {
   /** Every path link that a move of `moved` could break, with where it lands now. */
   private pinLinks(moved: readonly string[]): LinkPin[] {
     const under = (p: string) => moved.some((m) => p === m || p.startsWith(m + sep));
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const read = new Set<string>();
     const pins: LinkPin[] = [];
@@ -4921,7 +4468,7 @@ export class WorkspaceSession {
       }
       return p;
     };
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const byDoc = new Map<string, DocLinkFixes>();
     // One verdict per document and target as written: the same text in the
@@ -5080,7 +4627,7 @@ export class WorkspaceSession {
       const noun = rb ? { noun: rb.references.noun } : {};
       // ⛔ A document among the sessions or in the app home (one a set shows
       // only because it shows them) is never rewritten: named, and left.
-      const refused = this.world.refusal(edit.path);
+      const refused = this.places.world.refusal(edit.path);
       if (refused !== null) {
         skipped.push({ path: edit.path, reason: refused });
         continue;
@@ -5130,7 +4677,7 @@ export class WorkspaceSession {
         if (onDisk.count > 0) {
           // Before the write, so the watcher finds its own write already known.
           d.originalHash = contentHash(onDisk.text);
-          this.writeOwned(d.original, onDisk.text, this.world);
+          this.writeOwned(d.original, onDisk.text, this.places.world);
         }
         let activeCount = heldCount ?? 0;
         if (heldCount === undefined) {
@@ -5154,7 +4701,7 @@ export class WorkspaceSession {
       }
       const out = swapIn(text);
       if (out.count === 0) continue;
-      this.world.writeFile(edit.path, out.text);
+      this.places.world.writeFile(edit.path, out.text);
       docs.push({ path: edit.path, count: out.count, ...noun });
       total += out.count;
     }
@@ -5163,10 +4710,10 @@ export class WorkspaceSession {
   }
 
   private renameOrDie(from: string, to: string): void {
-    this.notOwnSourceOrDie(from);
-    this.notOwnPlaceOrDie(to);
+    this.places.notOwnSourceOrDie(from);
+    this.places.notOwnPlaceOrDie(to);
     try {
-      this.world.rename(from, to);
+      this.places.world.rename(from, to);
     } catch (e) {
       if (e instanceof SessionError) throw e;
       const code = (e as NodeJS.ErrnoException).code;
@@ -5193,7 +4740,7 @@ export class WorkspaceSession {
    * the world moved and the recorded inverse no longer describes it.
    */
   removeCreated(rawPath: string, dir: boolean): { path: string; removed: boolean } {
-    const abs = this.notOwnSourceOrDie(resolve(rawPath));
+    const abs = this.places.notOwnSourceOrDie(resolve(rawPath));
     let st: ReturnType<typeof statSync>;
     try {
       st = statSync(abs);
@@ -5217,9 +4764,9 @@ export class WorkspaceSession {
       // `rmdir` rather than a recursive remove on purpose: it throws
       // ENOTEMPTY, a second net under the emptiness check above. A recursive
       // delete would make the bug it prevents unrecoverable rather than loud.
-      this.world.rmdir(abs);
+      this.places.world.rmdir(abs);
     } else {
-      this.world.unlink(abs);
+      this.places.world.unlink(abs);
     }
     this.forgetPath(abs);
     return { path: abs, removed: true };
@@ -5289,7 +4836,7 @@ export class WorkspaceSession {
     links?: DocLinkFixes[];
     wiki?: WikiBreak[];
   } {
-    const item = this.itemOrDie(rawPath);
+    const item = this.places.itemOrDie(rawPath);
     const e = item.entry;
     if (e.membership !== "listed" || !item.whole)
       throw new SessionError(
@@ -5308,11 +4855,11 @@ export class WorkspaceSession {
     const folder = join(parent, name);
     const to = join(folder, basename(item.abs));
     // The one set guard, and the backstop: never a set among the sessions.
-    this.notOwnSourceOrDie(item.abs);
-    this.mayBeASetOrDie(folder);
+    this.places.notOwnSourceOrDie(item.abs);
+    this.places.mayBeASetOrDie(folder);
     const pins = opts.links ? this.pinLinks([item.abs]) : null;
     try {
-      this.world.mkdir(folder);
+      this.places.world.mkdir(folder);
     } catch (err) {
       if (err instanceof SessionError) throw err;
       throw new SessionError(
@@ -5325,7 +4872,7 @@ export class WorkspaceSession {
     } catch (err) {
       // Nothing moved: the folder made for it goes, so a refusal changes nothing.
       try {
-        this.world.rmdir(folder);
+        this.places.world.rmdir(folder);
       } catch {
         /* left empty: a later rescan shows it, nothing is lost */
       }
@@ -5359,7 +4906,7 @@ export class WorkspaceSession {
    * apply again), one that holds anything else, a name taken beside it.
    */
   unmakeSet(rawPath: string): { path: string; from: string; folder: string; entry: string } {
-    const abs = this.contextForm(resolve(rawPath));
+    const abs = this.places.contextForm(resolve(rawPath));
     const folder = dirname(abs);
     const e = this.core.m.context.find((x) => x.membership === "mirrored" && x.root === folder);
     let left: string[] | null = null;
@@ -5380,11 +4927,11 @@ export class WorkspaceSession {
         left.slice(0, 10),
       );
     const to = join(dirname(folder), basename(abs));
-    this.mayBeASetOrDie(to, true);
+    this.places.mayBeASetOrDie(to, true);
     this.refuseExisting(to);
     this.renameOrDie(abs, to);
     try {
-      this.world.rmdir(folder);
+      this.places.world.rmdir(folder);
     } catch {
       /* not empty after all, or gone: the document is out either way */
     }
@@ -5412,22 +4959,22 @@ export class WorkspaceSession {
     // exist yet, so a link on the way there is followed through the parent.
     const raw = resolve(rawPath);
     const name = basename(raw);
-    const abs = join(this.contextForm(dirname(raw)), name);
+    const abs = join(this.places.contextForm(dirname(raw)), name);
     // Never among the sessions or in the app home, even where a set shows it.
-    this.notOwnPlaceOrDie(raw, 400);
-    this.notOwnPlaceOrDie(abs, 400);
-    if (this.nameOrDie(name) !== name)
+    this.places.notOwnPlaceOrDie(raw, 400);
+    this.places.notOwnPlaceOrDie(abs, 400);
+    if (this.places.nameOrDie(name) !== name)
       throw new SessionError(`"${name}" is not a usable name: no space at either end`, 400);
     this.refuseBundleName(name, "a new folder");
     const parent = dirname(abs);
     let shown = false;
     try {
-      this.destinationOrDie(parent);
+      this.places.destinationOrDie(parent);
       shown = true;
     } catch (err) {
       // Inside a set but not where it shows folders (a hidden one, a bundle's
       // own files): refused as `new-folder` refuses it.
-      if (this.coveringEntry(parent) || !(err instanceof SessionError) || err.status !== 400)
+      if (this.places.coveringEntry(parent) || !(err instanceof SessionError) || err.status !== 400)
         throw err;
     }
     if (!shown) {
@@ -5445,7 +4992,7 @@ export class WorkspaceSession {
       const among = (p: string, root: string) => p === root || p.startsWith(root + sep);
       if (among(abs, sessions) || among(real, realSessions))
         throw new SessionError(`${tilde(abs)} is among the sessions' own folders`, 400);
-      this.mayBeASetOrDie(abs);
+      this.places.mayBeASetOrDie(abs);
       let isDir = false;
       try {
         isDir = statSync(parent).isDirectory();
@@ -5460,7 +5007,7 @@ export class WorkspaceSession {
     }
     this.refuseExisting(abs);
     try {
-      this.world.mkdir(abs);
+      this.places.world.mkdir(abs);
     } catch (err) {
       if (err instanceof SessionError) throw err;
       throw new SessionError(
@@ -5473,7 +5020,7 @@ export class WorkspaceSession {
     // The entry that shows it: a set (its own, when it made one), or a bundle
     // listed on its own whose member folder it was made in.
     const e =
-      this.coveringEntry(abs) ??
+      this.places.coveringEntry(abs) ??
       this.core.m.context.find((x) => {
         const only = listedFile(x);
         return only?.kind === "bundle" && abs.startsWith(only.abs + sep);
@@ -5490,7 +5037,7 @@ export class WorkspaceSession {
    * other document. A drop never replaces a file already there.
    */
   importText(name: string, text: string, into?: string): { path: string } {
-    const file = this.nameOrDie(name);
+    const file = this.places.nameOrDie(name);
     if (!isDocName(file))
       throw new SessionError(
         `not a document the workspace opens (${docExtensions().join(" ")}): ${file}`,
@@ -5503,9 +5050,9 @@ export class WorkspaceSession {
         `${file} is larger than ${WorkspaceSession.IMPORT_MAX_BYTES / 1024 / 1024} MB: not imported`,
         400,
       );
-    const dir = into ? this.destinationOrDie(into) : this.workspaceOrDie();
+    const dir = into ? this.places.destinationOrDie(into) : this.places.workspaceOrDie();
     const abs = join(dir, this.freeName(dir, file, false));
-    this.world.writeFile(abs, text, { flag: "wx" });
+    this.places.world.writeFile(abs, text, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -5697,7 +5244,7 @@ export class WorkspaceSession {
     );
     // A hit in an image's description is a hit on the image: it carries the
     // image's path, which is what a surface opens.
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     for (const r of report.results) {
       const image = this.imageOfDoc(r.path, index);
       if (image) r.image = image;
@@ -5737,7 +5284,7 @@ export class WorkspaceSession {
       }
       return texts.get(c.path) ?? null;
     };
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     return queries.map((q) => {
       const report = searchDocuments(candidates, q, read, opts.limit ?? DEFAULT_LIMIT);
       for (const r of report.results) {
@@ -5849,8 +5396,8 @@ export class WorkspaceSession {
    */
   linkHeadings(slug: string, path: string): LinkHeadings {
     this.docOrDie(slug);
-    const index = this.contextIndex();
-    const own = this.canonical(path, index);
+    const index = this.places.contextIndex();
+    const own = this.places.canonical(path, index);
     const listed = index.entryOf.has(own) || this.core.m.docs.some((d) => d.original === own);
     if (!listed || isImageName(own)) return { path: own, headings: [] };
     const hs = this.headingsAt(own) ?? [];
@@ -5870,7 +5417,7 @@ export class WorkspaceSession {
       const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep));
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
     };
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const targets: LinkTarget[] = all
       // An image's description is offered as its image, never as a document of
       // its own: a link to it would be a link to the words, not the picture.
@@ -5903,7 +5450,7 @@ export class WorkspaceSession {
     // of what changed since the last ask (kit-picker-relation-meanings). Before,
     // every document's whole text was read on every open of the picker.
     const { kinds, links } = this.typedLinks(index, all);
-    const here = this.canonical(from, index);
+    const here = this.places.canonical(from, index);
     const kind = kinds.get(here) ?? null;
     for (const t of targets) {
       const k = t.image ? null : (kinds.get(t.path) ?? null);
@@ -5930,11 +5477,11 @@ export class WorkspaceSession {
    * documents other than a link in one. It only reads.
    */
   relationsAt(path: string): RelationsAt {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const all = this.markdownCandidates();
     const { kinds, links } = this.typedLinks(index, all);
     const { uses, pairs } = relationUses(kinds, links);
-    const own = this.canonical(path, index);
+    const own = this.places.canonical(path, index);
     const pass = this.relationPass(index);
     const vocabulary = pass.at(own);
     const entry = this.entryFinder(index)(own);
@@ -6015,7 +5562,7 @@ export class WorkspaceSession {
    * use. It only reads. The `relations` verb answers from here.
    */
   relations(): RelationsReport {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const all = this.markdownCandidates();
     const { links } = this.typedLinks(index, all);
     const pass = this.relationPass(index);
@@ -6125,7 +5672,7 @@ export class WorkspaceSession {
       (src
         ? this.core.m.context.find((e) => src.startsWith(e.root + sep))
         : this.core.m.context[0]);
-    return this.resolveFrom(target, src, entry, origin, this.contextIndex());
+    return this.resolveFrom(target, src, entry, origin, this.places.contextIndex());
   }
 
   /**
@@ -6159,14 +5706,14 @@ export class WorkspaceSession {
   droppedLinks(slug: string, paths: readonly string[]): DroppedLink[] {
     const d = this.docOrDie(slug);
     const from = d.original;
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     // The entry the document is read in: its own, else the first that holds it.
     const home =
       (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
       this.core.m.context.find((e) => from.startsWith(e.root + sep));
     const out: DroppedLink[] = [];
     for (const raw of new Set(paths)) {
-      const path = this.canonical(raw, index);
+      const path = this.places.canonical(raw, index);
       const isImage = index.images.has(path);
       // A document links; a sidecar is its image's, and is reached through it.
       const isDoc = !isImage && index.entryOf.has(path) && !index.sidecars.has(path);
@@ -6207,7 +5754,7 @@ export class WorkspaceSession {
     const entry =
       (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
       this.core.m.context.find((e) => src.startsWith(e.root + sep));
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const notShown = (target: string, reason: string): EmbedView => ({
       target,
       state: "not-shown",
@@ -6363,7 +5910,7 @@ export class WorkspaceSession {
    * when `p` is no document the session may open and no image it shows.
    */
   private inContextAt(p: string, index: ContextIndex): string | null {
-    const own = this.canonical(p, index);
+    const own = this.places.canonical(p, index);
     // An image the tree shows answers a link as a document does: the
     // image's backlinks then say where it is used (kit-image-embeds).
     if (index.entryOf.has(own) || index.images.has(own)) return own;
@@ -6637,7 +6184,7 @@ export class WorkspaceSession {
     broken: { files: BrokenProfileView[]; count: number };
     notes: { path: string; shown: string; note: string }[];
   } {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const all = this.markdownCandidates();
     const read = new Set<string>();
     const pass = this.profilePass(index);
@@ -6789,7 +6336,7 @@ export class WorkspaceSession {
    * profile from here.
    */
   documentProfile(key?: string): DocumentProfile {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const subject = this.linkSubject(key, index);
     // A JSON document (a profile file among them) has no frontmatter to match.
     if (docFormat(subject.path) === "json") {
@@ -7046,7 +6593,7 @@ export class WorkspaceSession {
    * check after an edit re-reads only the document that changed.
    */
   linkCheck(opts: { edge?: readonly string[] } = {}): LinkCheck {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const all = this.markdownCandidates();
     const read = new Set<string>();
     const entryOf = this.entryFinder(index);
@@ -7565,14 +7112,14 @@ export class WorkspaceSession {
     opts: { images?: boolean } = {},
   ): { doc: string | null; path: string } {
     if (key !== undefined && isAbsolute(key) && !this.findDoc(key)) {
-      const own = this.canonical(key, index);
+      const own = this.places.canonical(key, index);
       if (index.entryOf.has(own)) return { doc: null, path: own };
       // An image is a link target and nothing more: backlinks ask about one,
       // the graph and the profile never do (they read text).
       if (opts.images && index.images.has(own)) return { doc: null, path: own };
     }
     const d = this.docOrDie(key, { takesPath: true });
-    return { doc: d.slug, path: this.canonical(d.original, index) };
+    return { doc: d.slug, path: this.places.canonical(d.original, index) };
   }
 
   /**
@@ -7587,7 +7134,7 @@ export class WorkspaceSession {
     const at = this.imageNodeAt(abs);
     if (!at) return false;
     try {
-      this.realInsideOrDie(abs, at.entry, "not pointed at");
+      this.places.realInsideOrDie(abs, at.entry, "not pointed at");
       return true;
     } catch {
       return false;
@@ -7607,10 +7154,10 @@ export class WorkspaceSession {
    * context's index is built once for the whole list (a message's refs).
    */
   contextDocEach(paths: readonly unknown[]): (string | undefined)[] {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     return paths.map((p) => {
       if (typeof p !== "string" || !isAbsolute(p)) return undefined;
-      const own = this.canonical(resolve(p), index);
+      const own = this.places.canonical(resolve(p), index);
       // A document, or an image the tree shows (a message about an image, such
       // as "describe this", points at the image file itself).
       if (index.entryOf.has(own)) return own;
@@ -7631,7 +7178,7 @@ export class WorkspaceSession {
    * `kindOf`'s answer.
    */
   linkGraph(opts: GraphOptions = {}): LinkGraph {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const focus = opts.focus === undefined ? undefined : this.linkSubject(opts.focus, index).path;
     if (opts.hops !== undefined && (!Number.isInteger(opts.hops) || opts.hops < 0 || opts.hops > 3))
       throw new SessionError(`graph: hops must be 0 to 3, not ${String(opts.hops)}`, 400);
@@ -7639,7 +7186,8 @@ export class WorkspaceSession {
       throw new SessionError(`graph: limit must be at least 1, not ${String(opts.limit)}`, 400);
     if (opts.within !== undefined && !isAbsolute(opts.within))
       throw new SessionError(`graph: within must be an absolute folder, not ${opts.within}`, 400);
-    const within = opts.within === undefined ? undefined : this.canonical(opts.within, index);
+    const within =
+      opts.within === undefined ? undefined : this.places.canonical(opts.within, index);
     const inside = (p: string) =>
       within === undefined || p === focus || p === within || p.startsWith(within + sep);
     const all = this.markdownCandidates().filter((c) => inside(c.path));
@@ -7795,7 +7343,7 @@ export class WorkspaceSession {
     // and `locate` answers by walking every entry's tree: once per link, a hub
     // that 644 of 2,500 documents link to took about 490 ms an ask, on every
     // snapshot while it was open. Built once here, each question is a lookup.
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const target = this.linkSubject(key, index, { images: true });
     const all = this.markdownCandidates();
     const read = new Set<string>();
@@ -7958,11 +7506,11 @@ export class WorkspaceSession {
    * costs one read per changed document. It only reads.
    */
   linksAmong(paths: readonly string[]): { from: string; to: string; anchor?: string }[] {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const byPath = new Map(this.markdownCandidates().map((c) => [c.path, c]));
     const want = new Set<string>();
-    for (const p of paths) if (isAbsolute(p)) want.add(this.canonical(p, index));
+    for (const p of paths) if (isAbsolute(p)) want.add(this.places.canonical(p, index));
     const read = new Set<string>();
     const out: { from: string; to: string; anchor?: string }[] = [];
     const seen = new Set<string>();
@@ -7986,7 +7534,7 @@ export class WorkspaceSession {
   }
 
   private summariesOf(paths: readonly string[], card: boolean): DocSummary[] {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const entryOf = this.entryFinder(index);
     const profiles = this.profilePass(index);
     const byPath = new Map(this.markdownCandidates().map((c) => [c.path, c]));
@@ -7995,7 +7543,7 @@ export class WorkspaceSession {
     const seen = new Set<string>();
     for (const p of paths) {
       if (!isAbsolute(p)) continue;
-      const own = this.canonical(p, index);
+      const own = this.places.canonical(p, index);
       const c = byPath.get(own);
       if (!c || seen.has(own)) continue;
       seen.add(own);
@@ -8048,7 +7596,7 @@ export class WorkspaceSession {
    * backlinks takes. It only reads.
    */
   documentText(key?: string, version?: number): DocText {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const subject = this.linkSubject(key, index);
     const got = this.subjectText(subject, version);
     const entry = this.entryFinder(index)(subject.path);
@@ -8068,7 +7616,7 @@ export class WorkspaceSession {
    * `version` names. `key` is what backlinks takes. It only reads.
    */
   outlinks(key?: string, version?: number): Outlinks {
-    const index = this.contextIndex();
+    const index = this.places.contextIndex();
     const subject = this.linkSubject(key, index);
     const entryOf = this.entryFinder(index);
     let links: LinkRef[];
@@ -8129,7 +7677,7 @@ export class WorkspaceSession {
         documents: profiles.warnings.documents,
         broken: profiles.broken.count,
       },
-      relations: this.vocabularyHealth(this.contextIndex()),
+      relations: this.vocabularyHealth(this.places.contextIndex()),
     });
   }
 
@@ -8153,7 +7701,7 @@ export class WorkspaceSession {
         documents: profiles.warnings.documents,
         broken: profiles.broken.count,
       },
-      relations: this.vocabularyHealth(this.contextIndex()),
+      relations: this.vocabularyHealth(this.places.contextIndex()),
       links: {
         // A bundle's broken references (a board's cards) are broken links too.
         dangling: check.dangling.count + check.references.count,
