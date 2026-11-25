@@ -46,7 +46,6 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { NOT_PLACED } from "../document/notPlaced.ts";
 import {
   BUNDLE_INFO,
-  type BundleReference,
   type BundleType,
   bundleDisplayName,
   bundleOf,
@@ -56,7 +55,6 @@ import {
   isBundleMain,
   isBundleMember,
   newBundleInfo,
-  type ReferencePlace,
   referencingBundle,
   writeBundleInfo,
 } from "../lib/bundles.ts";
@@ -83,7 +81,6 @@ import {
   headingPlainText,
   nearestHeading,
 } from "../lib/headingAnchor.ts";
-import { type Heading, headingsOf } from "../lib/headings.ts";
 import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
 import { decodePath, linkScheme, splitTarget } from "../lib/linkTarget.ts";
 import { EMBED_BLOCKED, EMBED_REMOTE, EMBED_SVG } from "../lib/markdown.ts";
@@ -103,17 +100,12 @@ import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
 import { IMAGE_MAX_BYTES, openNoFollow, readAllFd, readHeadFd, stampOf } from "./images";
 import {
-  type AppEdge,
   BODY_LINKS,
-  checkLinkSlot,
-  type EdgeSpot,
   edgeBacklinksTo,
   edgeKeeps,
   type LinkSlot,
-  locateEdges,
   pathShaped,
   type ResolvableDocument,
-  readEdges,
 } from "./linkEdges";
 import {
   backlinksTo,
@@ -285,6 +277,7 @@ import {
   treeHash,
 } from "./session/paths.ts";
 import { Places } from "./session/places.ts";
+import { ReadIndex } from "./session/readIndex.ts";
 import { State } from "./session/state.ts";
 import { Tasks } from "./session/tasks.ts";
 import {
@@ -400,41 +393,13 @@ export class WorkspaceSession {
   private readonly chats: Chats;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
+  /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
+  private readonly readIndex: ReadIndex;
   /** slug to hash of the active version's current text. */
   private activeHash = new Map<string, string>();
   /** slug to the active version's text as the daemon last wrote (or adopted) it:
    *  what an outside write to the active version is reverted to. */
   private lastActiveText = new Map<string, string>();
-  /**
-   * A document's links, by the file they were read from, with the stamp
-   * (inode, size, mtime, ctime) of the file when they were. Backlinks are asked for
-   * whenever the surface's snapshot changes, and re-reading every document each
-   * time would make that a full read of the world; with this, an answer stats
-   * each document and re-reads only the ones that changed. An edit lands by
-   * rename, so the active version's inode changes with every edit, which the
-   * stamp catches even within one mtime tick.
-   *
-   * ⛔ MTIME AND SIZE ARE NOT ENOUGH (found by the source editor's verifier). An
-   * outside edit that keeps the byte count and puts the old mtime back
-   * (`touch -r`, a sync tool) left the link check answering from the old links. The stamp carries ctime,
-   * which no userland call can set back. The headings, profile and relation
-   * caches stamp the same way.
-   */
-  private linkCache = new Map<
-    string,
-    {
-      stamp: string;
-      links: LinkRef[];
-      fragments: LinkRef[];
-      facts: DocFacts;
-      /** A bundle's references, for a main file whose type reads them; else empty. */
-      refs: BundleReference[];
-      /** The app's edges from it (kit-link-edges-slot), read from the same text. */
-      edges: AppEdge[];
-      /** Where each of `edges` is written, in order (`locateEdges`): what the link check opens. */
-      edgeAt?: (EdgeSpot | undefined)[];
-    }
-  >();
   /**
    * Every move and rename this daemon made (`followMove`), oldest first, an
    * undo's way back included: what the link check's `proposed` reads to say
@@ -442,18 +407,6 @@ export class WorkspaceSession {
    * and a proposal's broken link is then reported with no `suggest`.
    */
   private moves: [from: string, to: string][] = [];
-  /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
-  private linkSlot: LinkSlot = {};
-  /** What the app asks of the link check beyond the kit's own (`setLinkCheck`). */
-  private linkCheckOpts: LinkCheckOptions = {};
-  /** The documents the app's resolver may land on, built once per context index. */
-  private resolvable = new WeakMap<ContextIndex, readonly ResolvableDocument[]>();
-  /**
-   * A document's headings, by the file they were read from and its stamp, as
-   * `linkCache` holds links: read only for a document some link names with an
-   * anchor (the link check), or the picker asks about.
-   */
-  private headingCache = new Map<string, { stamp: string; headings: Heading[] }>();
 
   /**
    * The world's profile files (`_meta/profiles/<kind>.json`), each parsed once
@@ -476,6 +429,13 @@ export class WorkspaceSession {
     this.writes = new Writes(this.core, this.places);
     this.chats = new Chats(this.core, { persist: () => this.persist() });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
+    this.readIndex = new ReadIndex(this.core, this.places, {
+      activeText: (d) => this.activeText(d),
+      filteredOut: () => this.filteredOut(),
+      mainOf: (abs) => this.mainOf(abs),
+      findDoc: (key) => this.findDoc(key),
+      docOrDie: (slug, opts) => this.docOrDie(slug, opts),
+    });
   }
 
   /**
@@ -485,8 +445,7 @@ export class WorkspaceSession {
    * read again.
    */
   setLinkSlot(slot: LinkSlot | undefined): void {
-    this.linkSlot = checkLinkSlot(slot);
-    this.linkCache.clear();
+    this.readIndex.setLinkSlot(slot);
   }
 
   /**
@@ -495,12 +454,7 @@ export class WorkspaceSession {
    * daemon boots; without it the check is the kit's own.
    */
   setLinkCheck(opts: LinkCheckOptions | undefined): void {
-    this.linkCheckOpts = { ...(opts ?? {}) };
-  }
-
-  /** Whether the app adds edges of its own: what decides that the answers carry them. */
-  private get appEdges(): boolean {
-    return this.linkSlot.edges !== undefined;
+    this.readIndex.setLinkCheck(opts);
   }
 
   static create(
@@ -3932,7 +3886,7 @@ export class WorkspaceSession {
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
     // The app's edges it breaks are said as the plan says them, never rewritten.
     const edgePins =
-      opts.links && this.appEdges
+      opts.links && this.readIndex.appEdges
         ? this.pinEdges(sidecar ? [item.abs, sidecar] : [item.abs])
         : null;
     this.renameOrDie(item.abs, to);
@@ -4095,7 +4049,7 @@ export class WorkspaceSession {
    */
   private docsAfter(index: ContextIndex, world: PlanWorld): readonly ResolvableDocument[] {
     if (world.docs) return world.docs;
-    const keyed = this.resolvableDocs(index).map((d, i) => {
+    const keyed = this.readIndex.resolvableDocs(index).map((d, i) => {
       const path = world.forward(d.path);
       const at = this.listedAfter(path, world);
       return { d: { ...d, path }, i, at: at < 0 ? Number.POSITIVE_INFINITY : at };
@@ -4117,15 +4071,15 @@ export class WorkspaceSession {
    * edges.
    */
   private pinEdges(moved: readonly string[]): EdgePin[] {
-    if (!this.appEdges) return [];
+    if (!this.readIndex.appEdges) return [];
     const under = (p: string) => moved.some((m) => p === m || p.startsWith(m + sep));
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const read = new Set<string>();
     const pins: EdgePin[] = [];
-    for (const c of this.markdownCandidates()) {
+    for (const c of this.readIndex.markdownCandidates()) {
       const inside = under(c.path);
-      for (const e of this.readOf(c, read)?.edges ?? []) {
+      for (const e of this.readIndex.readOf(c, read)?.edges ?? []) {
         // Resolved as the link check resolves an edge.
         const r = this.resolveFrom(e.target, c.path, entryOf(c.path), "document", index);
         if (r.state === "missing" || (!inside && !under(r.path))) continue;
@@ -4155,7 +4109,7 @@ export class WorkspaceSession {
     if (pins.length === 0) return [];
     const map = movedWorld(pairs).forward;
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const out: EdgeBreak[] = [];
     for (const pin of pins) {
       const src = map(pin.src);
@@ -4375,12 +4329,12 @@ export class WorkspaceSession {
   private pinLinks(moved: readonly string[]): LinkPin[] {
     const under = (p: string) => moved.some((m) => p === m || p.startsWith(m + sep));
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const read = new Set<string>();
     const pins: LinkPin[] = [];
-    for (const c of this.markdownCandidates()) {
+    for (const c of this.readIndex.markdownCandidates()) {
       const inside = under(c.path);
-      for (const l of this.linksOf(c, read)) {
+      for (const l of this.readIndex.linksOf(c, read)) {
         if (l.scheme !== undefined) continue;
         const r = this.resolveFrom(l.raw, c.path, entryOf(c.path), "document", index, l.kind);
         if (r.state === "missing" || (!inside && !under(r.path))) continue;
@@ -4397,10 +4351,10 @@ export class WorkspaceSession {
     }
     // A bundle's references (a board's cards) that land on the moved thing,
     // or are written inside it, pinned the same way.
-    for (const c of this.referenceCandidates()) {
+    for (const c of this.readIndex.referenceCandidates()) {
       const inside = under(c.path);
-      for (const ref of this.readOf(c, read)?.refs ?? []) {
-        const r = this.resolveReference(ref.raw, c.path, entryOf(c.path), index);
+      for (const ref of this.readIndex.readOf(c, read)?.refs ?? []) {
+        const r = this.readIndex.resolveReference(ref.raw, c.path, entryOf(c.path), index);
         if (r.state === "missing" || (!inside && !under(r.path))) continue;
         pins.push({
           kind: "reference",
@@ -4442,7 +4396,7 @@ export class WorkspaceSession {
       return p;
     };
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const byDoc = new Map<string, DocLinkFixes>();
     // One verdict per document and target as written: the same text in the
     // same document always lands in the same place.
@@ -4457,7 +4411,7 @@ export class WorkspaceSession {
       const lands = (raw: string) => {
         const r =
           pin.kind === "reference"
-            ? this.resolveReference(raw, src, entry, index)
+            ? this.readIndex.resolveReference(raw, src, entry, index)
             : this.resolveFrom(raw, src, entry, "document", index, pin.kind, world);
         return r.state !== "missing" && r.path === to;
       };
@@ -4475,7 +4429,8 @@ export class WorkspaceSession {
           // main file, as a card names a board.
           const tb = bundleOf(to);
           const dest = tb && tb.inner === tb.type.main ? tb.root : to;
-          const written = rb?.references.write(dest, this.placeOf(src, rb.root, entry)) ?? null;
+          const written =
+            rb?.references.write(dest, this.readIndex.placeOf(src, rb.root, entry)) ?? null;
           next = written !== null && lands(written) ? written : null;
         } else {
           const written = retarget(pin.raw, src, to, entry?.root ?? null);
@@ -5139,9 +5094,9 @@ export class WorkspaceSession {
     const q = opts.query.trim();
     if (q === "") throw new SessionError("search: the query is empty", 400);
     const report = searchDocuments(
-      this.candidates(),
+      this.readIndex.candidates(),
       q,
-      (c) => this.candidateText(c),
+      (c) => this.readIndex.candidateText(c),
       opts.limit ?? DEFAULT_LIMIT,
     );
     // A hit in an image's description is a hit on the image: it carries the
@@ -5172,13 +5127,13 @@ export class WorkspaceSession {
   searchEach(opts: { queries: readonly string[]; limit?: number }): SearchReport[] {
     const queries = opts.queries.map((q) => q.trim());
     if (queries.some((q) => q === "")) throw new SessionError("search: a query is empty", 400);
-    const candidates = this.candidates();
+    const candidates = this.readIndex.candidates();
     const texts = new Map<string, string | null>();
     const read = (c: Candidate) => {
       if (!texts.has(c.path)) {
         let t: string | null;
         try {
-          t = this.candidateText(c);
+          t = this.readIndex.candidateText(c);
         } catch {
           t = null;
         }
@@ -5199,98 +5154,6 @@ export class WorkspaceSession {
   }
 
   /**
-   * Every document in the session, once: what each context entry lists, then
-   * any document opened by path that no entry lists, which is still one the
-   * human has. What search looks through and what a link can point at.
-   */
-  private candidates(): Candidate[] {
-    const candidates: Candidate[] = [];
-    const seen = new Set<string>();
-    const add = (path: string, d: Doc | undefined) => {
-      if (seen.has(path)) return;
-      seen.add(path);
-      // A bundle's main file is found by its bundle's name ("The well"), not
-      // by the name every main file of its type shares.
-      const bundle = isBundleMain(path) ? bundleOf(path) : null;
-      candidates.push({
-        path,
-        name: bundle ? bundleNameAt(bundle.root) : (d?.name ?? basename(path)),
-        slug: d?.slug ?? null,
-        version: d?.active ?? null,
-      });
-    };
-    for (const entry of this.core.m.context)
-      for (const path of docPaths(entry))
-        add(
-          path,
-          this.core.m.docs.find((d) => d.original === path),
-        );
-    // A document the session keeps but no entry lists (opened, then its entry
-    // left) is still one the human has, unless a set's folder holds it and the
-    // app's filter leaves it out there (`ScanRule.skip`): then it is out of
-    // search and links as it is out of the tree. Its record stays, versions
-    // and unsaved text, for when the filter lets it back.
-    const filtered = this.filteredOut();
-    for (const d of this.core.m.docs)
-      if (!(d.entryId === null && filtered(d.original))) add(d.original, d);
-    return candidates;
-  }
-
-  /**
-   * The candidates read as markdown: every markdown document. A JSON document
-   * has no links, frontmatter or title to read, and is not a place on the map,
-   * so link targets, backlinks, the link check, the graph and the profile
-   * survey pass over it (a world's profile files are JSON documents too, and
-   * are not untyped documents). Search does not: it matches names and plain
-   * text, no markdown.
-   */
-  private markdownCandidates(): Candidate[] {
-    return this.candidates().filter((c) => docFormat(c.path) === "markdown");
-  }
-
-  /** A candidate's text: its ACTIVE VERSION when the session holds it, else the file. */
-  private candidateText(c: Candidate): string {
-    const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
-    return d ? this.activeText(d) : readFileSync(c.path, "utf8");
-  }
-
-  /**
-   * What a link written in document `slug` can point at: every OTHER document in
-   * the session, each with the relative target to write, and the `?rel=` values
-   * the session's documents already use (read as search reads them, so a
-   * relation typed a minute ago is offered). It only reads; the link is typed
-   * into the editor by the human like any other text.
-   */
-  /**
-   * The headings of the markdown document at `path` (absolute, in the
-   * context's form), read from its ACTIVE version when the session holds it,
-   * else from its file; cached per stamp. Null when it cannot be read, and
-   * empty for a JSON document, which has none.
-   */
-  private headingsAt(path: string): Heading[] | null {
-    if (docFormat(path) === "json") return [];
-    const d = this.core.m.docs.find((x) => x.original === path);
-    const file = d ? this.core.versionPath(d, d.active) : path;
-    let stamp: string;
-    try {
-      const st = statSync(file);
-      stamp = `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
-    } catch {
-      return null;
-    }
-    const hit = this.headingCache.get(file);
-    if (hit?.stamp === stamp) return hit.headings;
-    let headings: Heading[];
-    try {
-      headings = headingsOf(readFileSync(file, "utf8"));
-    } catch {
-      return null;
-    }
-    this.headingCache.set(file, { stamp, headings });
-    return headings;
-  }
-
-  /**
    * The link picker's second step: the headings of the document at `path`,
    * each with the anchor a link writes for it (`anchorFor`: the heading's
    * text, or the path of headings that names a repeat alone), encoded. Only a
@@ -5302,7 +5165,7 @@ export class WorkspaceSession {
     const own = this.places.canonical(path, index);
     const listed = index.entryOf.has(own) || this.core.m.docs.some((d) => d.original === own);
     if (!listed || isImageName(own)) return { path: own, headings: [] };
-    const hs = this.headingsAt(own) ?? [];
+    const hs = this.readIndex.headingsAt(own) ?? [];
     const headings: HeadingOffer[] = hs.map((h, i) => ({
       level: h.level,
       text: headingPlainText(h.text),
@@ -5312,9 +5175,16 @@ export class WorkspaceSession {
     return { path: own, headings };
   }
 
+  /**
+   * What a link written in document `slug` can point at: every OTHER document in
+   * the session, each with the relative target to write, and the `?rel=` values
+   * the session's documents already use (read as search reads them, so a
+   * relation typed a minute ago is offered). It only reads; the link is typed
+   * into the editor by the human like any other text.
+   */
   linkTargets(slug: string): LinkTargets {
     const from = this.docOrDie(slug).original;
-    const all = this.markdownCandidates();
+    const all = this.readIndex.markdownCandidates();
     const shownOf = (path: string) => {
       const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep));
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
@@ -5380,13 +5250,13 @@ export class WorkspaceSession {
    */
   relationsAt(path: string): RelationsAt {
     const index = this.places.contextIndex();
-    const all = this.markdownCandidates();
+    const all = this.readIndex.markdownCandidates();
     const { kinds, links } = this.typedLinks(index, all);
     const { uses, pairs } = relationUses(kinds, links);
     const own = this.places.canonical(path, index);
     const pass = this.relationPass(index);
     const vocabulary = pass.at(own);
-    const entry = this.entryFinder(index)(own);
+    const entry = this.readIndex.entryFinder(index)(own);
     const near = entry ? pass.lookup.nearest(dirname(own), entry.root) : null;
     return {
       vocabulary: vocabulary.any,
@@ -5406,21 +5276,21 @@ export class WorkspaceSession {
    */
   private typedLinks(
     index: ContextIndex,
-    all: Candidate[] = this.markdownCandidates(),
+    all: Candidate[] = this.readIndex.markdownCandidates(),
   ): {
     kinds: Map<string, string | null>;
     links: { source: string; rel: string[]; to: string | null }[];
   } {
     const read = new Set<string>();
     const pass = this.profilePass(index);
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const kinds = new Map<string, string | null>();
     const sources = all.map((c) => {
-      const got = this.readOf(c, read);
+      const got = this.readIndex.readOf(c, read);
       kinds.set(c.path, this.kindOf(c.path, got?.facts ?? NO_FACTS, pass));
       return { path: c.path, links: got?.links ?? [] };
     });
-    this.pruneLinkCache(read);
+    this.readIndex.pruneLinkCache(read);
     const links: { source: string; rel: string[]; to: string | null }[] = [];
     for (const s of sources)
       for (const l of s.links) {
@@ -5446,7 +5316,7 @@ export class WorkspaceSession {
     at: (path: string) => Vocabulary;
   } {
     const lookup = this.relationsReader.pass();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     return {
       lookup,
       at: (path) => {
@@ -5465,12 +5335,12 @@ export class WorkspaceSession {
    */
   relations(): RelationsReport {
     const index = this.places.contextIndex();
-    const all = this.markdownCandidates();
+    const all = this.readIndex.markdownCandidates();
     const { links } = this.typedLinks(index, all);
     const pass = this.relationPass(index);
     // Every document's folder looked in, so a file nothing links under is still listed.
     for (const c of all) pass.at(c.path);
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const shown = (path: string) => {
       const entry = entryOf(path);
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
@@ -5539,9 +5409,9 @@ export class WorkspaceSession {
     folded: { key: string; earlier: string; file: string }[];
   } {
     const pass = this.relationPass(index);
-    for (const c of this.markdownCandidates()) pass.at(c.path);
+    for (const c of this.readIndex.markdownCandidates()) pass.at(c.path);
     const files = pass.lookup.files();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const shown = (path: string) => {
       const entry = entryOf(path);
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
@@ -5585,9 +5455,9 @@ export class WorkspaceSession {
    */
   private droppedDocTitle(path: string): string | undefined {
     if (docFormat(path) === "json") return undefined;
-    const c = this.markdownCandidates().find((x) => x.path === path);
+    const c = this.readIndex.markdownCandidates().find((x) => x.path === path);
     try {
-      const f = docFacts(c ? this.candidateText(c) : readFileSync(path, "utf8"));
+      const f = docFacts(c ? this.readIndex.candidateText(c) : readFileSync(path, "utf8"));
       return f.title ?? f.heading ?? undefined;
     } catch {
       return undefined;
@@ -5749,12 +5619,12 @@ export class WorkspaceSession {
       }
     };
     const inContext = (p: string): string | null => {
-      if (!world) return this.inContextAt(p, index);
+      if (!world) return this.readIndex.inContextAt(p, index);
       const at = world.back(p);
-      const own = at === null ? null : this.inContextAt(at, index);
+      const own = at === null ? null : this.readIndex.inContextAt(at, index);
       return own === null ? null : world.forward(own);
     };
-    const app = this.linkSlot.resolve;
+    const app = this.readIndex.linkSlot.resolve;
     return resolveTarget(
       target,
       src,
@@ -5773,7 +5643,7 @@ export class WorkspaceSession {
                     root,
                     kind: k,
                     documents: () =>
-                      world ? this.docsAfter(index, world) : this.resolvableDocs(index),
+                      world ? this.docsAfter(index, world) : this.readIndex.resolvableDocs(index),
                   });
                 } catch {
                   // An app resolver that throws answers nothing: the link is missing.
@@ -5786,223 +5656,6 @@ export class WorkspaceSession {
       origin,
       kind,
     );
-  }
-
-  /**
-   * Every markdown document in the context, with its frontmatter, for the
-   * app's resolver: built once per context index (one answer), read through
-   * the link cache, so the same array is handed to every target in it.
-   */
-  private resolvableDocs(index: ContextIndex): readonly ResolvableDocument[] {
-    const had = this.resolvable.get(index);
-    if (had) return had;
-    const read = new Set<string>();
-    const docs = this.markdownCandidates().map((c) => {
-      const f = this.readOf(c, read)?.facts ?? NO_FACTS;
-      return { path: c.path, type: f.type, frontmatter: f.fields };
-    });
-    this.resolvable.set(index, docs);
-    return docs;
-  }
-
-  /**
-   * What a link (or a reference) landing on `p` lands on in the session, in
-   * the context's own form, so a link written `./Part/B.md` on a
-   * case-insensitive disk reports (and opens) the file as it is named; null
-   * when `p` is no document the session may open and no image it shows.
-   */
-  private inContextAt(p: string, index: ContextIndex): string | null {
-    const own = this.places.canonical(p, index);
-    // An image the tree shows answers a link as a document does: the
-    // image's backlinks then say where it is used (kit-image-embeds).
-    if (index.entryOf.has(own) || index.images.has(own)) return own;
-    // A document gone from disk (deleted outside, or moved to the Trash)
-    // is held only as a record: a link to it answers nothing.
-    return (
-      this.core.m.docs.find((x) => !x.missing && (x.original === p || x.original === own))
-        ?.original ?? null
-    );
-  }
-
-  // ── a bundle's references (kit-canvas-references) ─────────────────────
-  //
-  // A bundle whose type reads references (Atlas's board) has links of its own:
-  // its type reads them from the main file, says where each could land, and
-  // writes and swaps them; the kit decides what each lands on, by the same
-  // test a markdown link's target meets (`inContextAt`). They are kept apart
-  // from markdown links throughout, so nothing that reads a link's `?rel=` or
-  // `#anchor` sees a reference's path.
-
-  /** The candidates that are a bundle's main file whose type reads references. */
-  private referenceCandidates(): Candidate[] {
-    return this.candidates().filter((c) => referencingBundle(c.path) !== null);
-  }
-
-  /** Where the bundle whose main file is `main` is, for its type's questions. */
-  private placeOf(main: string, bundle: string, entry: ContextEntry | undefined): ReferencePlace {
-    return {
-      main,
-      bundle,
-      entryRoot: entry?.root ?? dirname(bundle),
-      isDir: (p) => {
-        try {
-          return statSync(p).isDirectory();
-        } catch {
-          return false;
-        }
-      },
-    };
-  }
-
-  /**
-   * Where a reference written `raw` in the bundle whose main file is `main`
-   * lands: the first of its type's candidates that is on disk, read as a
-   * link's target is (in the context, outside it, a file the workspace does
-   * not open, a folder). A candidate that is a bundle's folder stands for its
-   * main file, as opening one does. `missing` when none is on disk.
-   */
-  private resolveReference(
-    raw: string,
-    main: string,
-    entry: ContextEntry | undefined,
-    index: ContextIndex,
-  ): Resolution {
-    const rb = referencingBundle(main);
-    if (!rb) return { state: "missing", tried: [] };
-    const tried = rb.references.candidates(raw, this.placeOf(main, rb.root, entry));
-    for (const c of tried) {
-      let dir: boolean;
-      try {
-        dir = statSync(c).isDirectory();
-      } catch {
-        continue;
-      }
-      const target = dir ? this.mainOf(c) : c;
-      const own = this.inContextAt(target, index);
-      if (own !== null) return { state: "in-context", path: own };
-      if (dir && target === c) return { state: "folder", path: c };
-      return isDocName(target) || isBundleMain(target)
-        ? { state: "outside", path: target }
-        : { state: "not-a-doc", path: target };
-    }
-    return { state: "missing", tried };
-  }
-
-  /** A bundle's reference as a report shows it: the bundle, named as its row is, and the reference. */
-  private referenceView(
-    main: string,
-    ref: BundleReference,
-    entryOf: (path: string) => ContextEntry | undefined,
-  ): Omit<ReferenceBacklinkView, "refs"> & ReferenceView {
-    const rb = referencingBundle(main) as NonNullable<ReturnType<typeof referencingBundle>>;
-    const entry = entryOf(main);
-    return {
-      source: main,
-      bundle: rb.root,
-      name: bundleNameAt(rb.root),
-      shown: entry ? toPosix(relative(entry.root, rb.root)) : basename(rb.root),
-      noun: rb.references.noun,
-      part: rb.references.part,
-      id: ref.id,
-      line: ref.line,
-      raw: ref.raw,
-      ...(ref.label !== undefined ? { label: ref.label } : {}),
-      ...(ref.subpath !== undefined ? { subpath: ref.subpath } : {}),
-      from: ref.from,
-      to: ref.to,
-    };
-  }
-
-  /**
-   * A candidate's links, read as search reads it (its ACTIVE VERSION when the
-   * session holds it, so an unsaved edit counts), from the cache while the file
-   * it was read from is unchanged. A document gone from disk has none.
-   */
-  private linksOf(c: Candidate, read: Set<string>): LinkRef[] {
-    return this.readOf(c, read)?.links ?? [];
-  }
-
-  /**
-   * A candidate's links and facts (`linksOf`'s cache): read once per change of
-   * the file they came from, both from the same read. Null for a document gone
-   * from disk. `version` reads one of a held document's other versions
-   * instead of its active one (the link check's `proposed`).
-   */
-  private readOf(
-    c: Candidate,
-    read: Set<string>,
-    version?: number,
-  ): {
-    links: LinkRef[];
-    fragments: LinkRef[];
-    facts: DocFacts;
-    refs: BundleReference[];
-    edges: AppEdge[];
-    edgeAt?: (EdgeSpot | undefined)[];
-  } | null {
-    const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
-    const file = d ? this.core.versionPath(d, version ?? d.active) : c.path;
-    read.add(file);
-    let stamp: string;
-    try {
-      const st = statSync(file);
-      stamp = `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
-    } catch {
-      return null;
-    }
-    // Belt and braces: the link layer and the profile survey read
-    // `markdownCandidates`, which has no JSON document, but nothing here may
-    // run markdown over one.
-    // A bundle's main file whose type reads references (a board) has those,
-    // read by its type; any other JSON document has nothing here.
-    const bundle = referencingBundle(c.path);
-    if (docFormat(c.path) === "json" && !bundle)
-      return { links: [], fragments: [], facts: NO_FACTS, refs: [], edges: [] };
-    const hit = this.linkCache.get(file);
-    if (hit?.stamp === stamp) return hit;
-    let entry: {
-      stamp: string;
-      links: LinkRef[];
-      fragments: LinkRef[];
-      facts: DocFacts;
-      refs: BundleReference[];
-      edges: AppEdge[];
-      edgeAt?: (EdgeSpot | undefined)[];
-    };
-    if (bundle) {
-      try {
-        const refs = bundle.references.read(readFileSync(file, "utf8"));
-        entry = { stamp, links: [], fragments: [], facts: NO_FACTS, refs, edges: [] };
-      } catch {
-        return null;
-      }
-      this.linkCache.set(file, entry);
-      return entry;
-    }
-    try {
-      const text = readFileSync(file, "utf8");
-      // Scheme targets kept, for the link check; backlinks passes over them.
-      // Links to a place in the same document (`#heading`) are read apart,
-      // for the link check's headings; nothing that resolves paths sees them.
-      const all = extractLinks(text, { schemes: true, fragments: true });
-      const facts = docFacts(text);
-      // The app's edges, from the same read and kept under the same stamp,
-      // so a save or an edit on disk re-reads them with the links.
-      const edges = readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields });
-      entry = {
-        stamp,
-        links: all.filter((l) => !l.fragment),
-        fragments: all.filter((l) => l.fragment),
-        facts,
-        refs: [],
-        edges,
-        ...(edges.length > 0 ? { edgeAt: locateEdges(text, edges) } : {}),
-      };
-    } catch {
-      return null;
-    }
-    this.linkCache.set(file, entry);
-    return entry;
   }
 
   /**
@@ -6050,7 +5703,7 @@ export class WorkspaceSession {
    */
   private profilePass(index: ContextIndex): ProfilePass {
     const lookup = this.profileReader.pass();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     return {
       lookup,
       match: (path, facts) => {
@@ -6087,22 +5740,22 @@ export class WorkspaceSession {
     notes: { path: string; shown: string; note: string }[];
   } {
     const index = this.places.contextIndex();
-    const all = this.markdownCandidates();
+    const all = this.readIndex.markdownCandidates();
     const read = new Set<string>();
     const pass = this.profilePass(index);
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const shown = (path: string) => {
       const entry = entryOf(path);
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
     };
     const rows = all.map((c) => {
-      const facts = this.readOf(c, read)?.facts ?? NO_FACTS;
+      const facts = this.readIndex.readOf(c, read)?.facts ?? NO_FACTS;
       const match = pass.match(c.path, facts);
       const warnings =
         match.state === "matched" ? checkFields(match.profile, facts.fields ?? {}) : [];
       return { path: c.path, shown: shown(c.path), facts, match, warnings };
     });
-    this.pruneLinkCache(read);
+    this.readIndex.pruneLinkCache(read);
     this.profileReader.prune(pass.lookup.seen());
     const lookup = pass.lookup;
     const base = (path: string) => {
@@ -6239,10 +5892,10 @@ export class WorkspaceSession {
    */
   documentProfile(key?: string): DocumentProfile {
     const index = this.places.contextIndex();
-    const subject = this.linkSubject(key, index);
+    const subject = this.readIndex.linkSubject(key, index);
     // A JSON document (a profile file among them) has no frontmatter to match.
     if (docFormat(subject.path) === "json") {
-      const entry = this.entryFinder(index)(subject.path);
+      const entry = this.readIndex.entryFinder(index)(subject.path);
       return {
         doc: subject.doc,
         path: subject.path,
@@ -6255,16 +5908,18 @@ export class WorkspaceSession {
         warnings: [],
       };
     }
-    const c: Candidate = this.markdownCandidates().find((x) => x.path === subject.path) ?? {
+    const c: Candidate = this.readIndex
+      .markdownCandidates()
+      .find((x) => x.path === subject.path) ?? {
       path: subject.path,
       name: basename(subject.path),
       slug: subject.doc,
       version: null,
     };
-    const facts = this.readOf(c, new Set())?.facts ?? NO_FACTS;
+    const facts = this.readIndex.readOf(c, new Set())?.facts ?? NO_FACTS;
     const pass = this.profilePass(index);
     const match = pass.match(c.path, facts);
-    const entry = this.entryFinder(index)(c.path);
+    const entry = this.readIndex.entryFinder(index)(c.path);
     const shown = (p: string) => (entry ? toPosix(relative(entry.root, p)) : basename(p));
     // The version the facts were read from, for a held document: the header
     // shows an answer only for the version on screen.
@@ -6403,21 +6058,6 @@ export class WorkspaceSession {
     };
   }
 
-  /**
-   * The entry that holds a source, as `resolveLink` picks it: the one that lists
-   * it, else (a document opened by path) the one whose folder it is in.
-   */
-  private entryFinder(index: ContextIndex): (path: string) => ContextEntry | undefined {
-    const byId = new Map(this.core.m.context.map((e) => [e.id, e]));
-    return (path) => {
-      const id = index.entryOf.get(path);
-      return (
-        (id !== undefined ? byId.get(id) : undefined) ??
-        this.core.m.context.find((e) => path.startsWith(e.root + sep))
-      );
-    };
-  }
-
   /** Where `path` is now, after the moves this daemon made, in order. */
   private movedTo(path: string): string {
     let p = path;
@@ -6475,15 +6115,6 @@ export class WorkspaceSession {
   }
 
   /**
-   * Forget what was read for documents the session no longer has (or for a
-   * version no longer active), so the cache is bounded by the context, not by
-   * everything ever read. Only after a pass that read every candidate.
-   */
-  private pruneLinkCache(read: Set<string>): void {
-    for (const file of this.linkCache.keys()) if (!read.has(file)) this.linkCache.delete(file);
-  }
-
-  /**
    * The link check: every link in the session's documents that nothing answers,
    * links whose scheme nothing here opens (Operator's `op:doc/…`) kept apart,
    * and documents whose file names collide, each with a suggested rename. It
@@ -6496,9 +6127,9 @@ export class WorkspaceSession {
    */
   linkCheck(opts: { edge?: readonly string[] } = {}): LinkCheck {
     const index = this.places.contextIndex();
-    const all = this.markdownCandidates();
+    const all = this.readIndex.markdownCandidates();
     const read = new Set<string>();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     // ⛔ THE INNERMOST SET WINS for which set a file is in: with `world` and
     // `world/inner` both in the context, `inner/deep.md` is `inner`'s, as the
     // shipped map counted it (whichever was added first). Resolving still goes
@@ -6527,7 +6158,7 @@ export class WorkspaceSession {
     const landed = new Map<string, string>();
     const facts = new Map<string, DocFacts>();
     const sources = all.map((c) => {
-      const got = this.readOf(c, read);
+      const got = this.readIndex.readOf(c, read);
       facts.set(c.path, got?.facts ?? NO_FACTS);
       return {
         path: c.path,
@@ -6541,7 +6172,7 @@ export class WorkspaceSession {
     // (kit-broken-links-visible), for an app that asks (`linkCheck.leaving`).
     const leavingLinks: LeavingLinkView[] = [];
     // Only for an app that asks for it (`linkCheck.leaving`).
-    const wantLeaving = this.linkCheckOpts.leaving === true;
+    const wantLeaving = this.readIndex.linkCheckOpts.leaving === true;
     const setOf = (path: string) => setEntry(path)?.id;
     /** Where a link from `from` lands, when that is outside `from`'s set; else null. */
     const leaves = (r: Resolution, from: string): { target: string } | null => {
@@ -6591,12 +6222,12 @@ export class WorkspaceSession {
     // dangling links ("card 'The Glade' points at …, which is missing"). Each
     // one that lands on an image counts as that image's use.
     const references: CheckedReferenceView[] = [];
-    for (const c of this.referenceCandidates())
-      for (const ref of this.readOf(c, read)?.refs ?? []) {
-        const r = this.resolveReference(ref.raw, c.path, entryOf(c.path), index);
+    for (const c of this.readIndex.referenceCandidates())
+      for (const ref of this.readIndex.readOf(c, read)?.refs ?? []) {
+        const r = this.readIndex.resolveReference(ref.raw, c.path, entryOf(c.path), index);
         if (r.state === "in-context" && index.images.has(r.path)) used.add(r.path);
         if (r.state !== "missing") continue;
-        const v = this.referenceView(c.path, ref, entryOf);
+        const v = this.readIndex.referenceView(c.path, ref, entryOf);
         const called = ref.label ?? basename(ref.raw);
         const set = setOf(c.path);
         references.push({
@@ -6632,7 +6263,7 @@ export class WorkspaceSession {
     // The edges nothing answers that are not written as paths (`pathShaped`):
     // a reference in a convention the kit does not know, listed, not counted.
     const unresolvedEdges: CheckedEdgeView[] = [];
-    if (this.appEdges)
+    if (this.readIndex.appEdges)
       for (const s of sources)
         s.edges.forEach((e, i) => {
           if (!keep(e.kind)) return;
@@ -6713,7 +6344,7 @@ export class WorkspaceSession {
         const wasAt = this.movedFrom(c.path);
         for (const v of d.versions) {
           if (v.n === d.active || v.by !== "agent" || v.activated || keptOutside(v)) continue;
-          const got = this.readOf(c, read, v.n);
+          const got = this.readIndex.readOf(c, read, v.n);
           if (!got) continue;
           // Every broken link of this version, then one act for them all: the
           // fix is ONE new version, so each entry's act names the whole of it.
@@ -6773,7 +6404,7 @@ export class WorkspaceSession {
         a.line - b.line ||
         a.from - b.from,
     );
-    this.pruneLinkCache(read);
+    this.readIndex.pruneLinkCache(read);
     const view = (l: Omit<DanglingLink, "tried"> | SchemeLink): CheckedLinkView => ({
       source: l.source,
       name: basename(l.source),
@@ -6882,7 +6513,7 @@ export class WorkspaceSession {
         anchored.push({ source: s.path, link, to: s.path, anchor: link.raw.slice(1) });
     }
     for (const { source, link, to, anchor } of anchored) {
-      const hs = this.headingsAt(to);
+      const hs = this.readIndex.headingsAt(to);
       if (hs === null) continue;
       const heading = decodePath(anchor);
       const m = findHeading(hs, heading);
@@ -6901,8 +6532,8 @@ export class WorkspaceSession {
       } else if (m.ambiguous)
         ambiguous.push({ ...base, nearest: headingPlainText(m.heading.text) });
     }
-    for (const file of this.headingCache.keys())
-      if (!read.has(file)) this.headingCache.delete(file);
+    for (const file of this.readIndex.headingCache.keys())
+      if (!read.has(file)) this.readIndex.headingCache.delete(file);
     missingHeadings.sort(order);
     ambiguous.sort(order);
     // A function, not a generic arrow: `<T>(` reads as JSX to a tsx parser,
@@ -6979,7 +6610,7 @@ export class WorkspaceSession {
       headings: { count: missingHeadings.length, links: cut(missingHeadings) },
       ambiguousHeadings: { count: ambiguous.length, hints: cut(ambiguous) },
       references: { count: references.length, links: cut(references) },
-      ...(this.appEdges
+      ...(this.readIndex.appEdges
         ? {
             edges: {
               count: danglingEdges.length,
@@ -6994,7 +6625,9 @@ export class WorkspaceSession {
           }
         : {}),
       ...(wantLeaving ? { leaving: { count: leavingLinks.length, links: cut(leavingLinks) } } : {}),
-      ...(this.linkCheckOpts.noun !== undefined ? { noun: this.linkCheckOpts.noun } : {}),
+      ...(this.readIndex.linkCheckOpts.noun !== undefined
+        ? { noun: this.readIndex.linkCheckOpts.noun }
+        : {}),
       // Only the sets the answer names, in the context's order.
       sets: this.core.m.context
         .filter((e) => named.has(e.id))
@@ -7003,34 +6636,6 @@ export class WorkspaceSession {
     };
   }
 
-  /**
-   * The document a link question is about: `key` is a slug or a held
-   * document's name (the open document when absent), or the absolute path of any
-   * document in the context, held or not.
-   */
-  private linkSubject(
-    key: string | undefined,
-    index: ContextIndex,
-    opts: { images?: boolean } = {},
-  ): { doc: string | null; path: string } {
-    if (key !== undefined && isAbsolute(key) && !this.findDoc(key)) {
-      const own = this.places.canonical(key, index);
-      if (index.entryOf.has(own)) return { doc: null, path: own };
-      // An image is a link target and nothing more: backlinks ask about one,
-      // the graph and the profile never do (they read text).
-      if (opts.images && index.images.has(own)) return { doc: null, path: own };
-    }
-    const d = this.docOrDie(key, { takesPath: true });
-    return { doc: d.slug, path: this.places.canonical(d.original, index) };
-  }
-
-  /**
-   * Of `paths`, the ones that are documents in the session's context, each in
-   * the context's own form, by the rule `linkSubject` uses: absolute, the same
-   * file by realpath, and listed by a context entry. A path that only looks
-   * like one (`/etc/passwd`, a `..` that climbs out) is dropped. For what a page
-   * says it points at, which the agent then reads.
-   */
   /** An image the tree shows whose realpath stays inside its entry, as the file route requires. */
   private imageInside(abs: string): boolean {
     const at = this.imageNodeAt(abs);
@@ -7043,6 +6648,13 @@ export class WorkspaceSession {
     }
   }
 
+  /**
+   * Of `paths`, the ones that are documents in the session's context, each in
+   * the context's own form, by the rule `linkSubject` uses: absolute, the same
+   * file by realpath, and listed by a context entry. A path that only looks
+   * like one (`/etc/passwd`, a `..` that climbs out) is dropped. For what a page
+   * says it points at, which the agent then reads.
+   */
   contextDocs(paths: readonly unknown[]): string[] {
     const out: string[] = [];
     for (const own of this.contextDocEach(paths))
@@ -7081,7 +6693,8 @@ export class WorkspaceSession {
    */
   linkGraph(opts: GraphOptions = {}): LinkGraph {
     const index = this.places.contextIndex();
-    const focus = opts.focus === undefined ? undefined : this.linkSubject(opts.focus, index).path;
+    const focus =
+      opts.focus === undefined ? undefined : this.readIndex.linkSubject(opts.focus, index).path;
     if (opts.hops !== undefined && (!Number.isInteger(opts.hops) || opts.hops < 0 || opts.hops > 3))
       throw new SessionError(`graph: hops must be 0 to 3, not ${String(opts.hops)}`, 400);
     if (opts.limit !== undefined && (!Number.isInteger(opts.limit) || opts.limit < 1))
@@ -7092,15 +6705,15 @@ export class WorkspaceSession {
       opts.within === undefined ? undefined : this.places.canonical(opts.within, index);
     const inside = (p: string) =>
       within === undefined || p === focus || p === within || p.startsWith(within + sep);
-    const all = this.markdownCandidates().filter((c) => inside(c.path));
+    const all = this.readIndex.markdownCandidates().filter((c) => inside(c.path));
     const read = new Set<string>();
     const facts = new Map<string, DocFacts>();
     const sources = all.map((c) => {
-      const got = this.readOf(c, read);
+      const got = this.readIndex.readOf(c, read);
       facts.set(c.path, got?.facts ?? NO_FACTS);
       return { path: c.path, links: got?.links ?? [], edges: got?.edges ?? [] };
     });
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     // Boards as nodes of their own kind (`bundles`, off by default): a bundle
     // whose type reads references, of its type's kind, labelled by its noun,
     // not canon (a board is not canon), with an edge to each document,
@@ -7108,7 +6721,7 @@ export class WorkspaceSession {
     const bundleDocs: GraphDoc[] = [];
     const referenceEdges: { from: string; to: string }[] = [];
     if (opts.bundles === true)
-      for (const c of this.referenceCandidates()) {
+      for (const c of this.readIndex.referenceCandidates()) {
         if (!inside(c.path)) continue;
         const rb = referencingBundle(c.path) as NonNullable<ReturnType<typeof referencingBundle>>;
         const noun = rb.references.noun;
@@ -7119,13 +6732,13 @@ export class WorkspaceSession {
           canon: false,
           bundle: { noun },
         });
-        for (const ref of this.readOf(c, read)?.refs ?? []) {
-          const r = this.resolveReference(ref.raw, c.path, entryOf(c.path), index);
+        for (const ref of this.readIndex.readOf(c, read)?.refs ?? []) {
+          const r = this.readIndex.resolveReference(ref.raw, c.path, entryOf(c.path), index);
           if (r.state === "in-context") referenceEdges.push({ from: c.path, to: r.path });
         }
       }
     // Only after a pass that read every candidate: a folder's graph read some.
-    if (within === undefined) this.pruneLinkCache(read);
+    if (within === undefined) this.readIndex.pruneLinkCache(read);
     const limit = Math.min(opts.limit ?? GRAPH_CAP, GRAPH_CAP);
     const profiles = this.profilePass(index);
     // Relations are matched case-folded, as the CLI's `--rel` folds them: a wire
@@ -7246,10 +6859,10 @@ export class WorkspaceSession {
     // that 644 of 2,500 documents link to took about 490 ms an ask, on every
     // snapshot while it was open. Built once here, each question is a lookup.
     const index = this.places.contextIndex();
-    const target = this.linkSubject(key, index, { images: true });
-    const all = this.markdownCandidates();
+    const target = this.readIndex.linkSubject(key, index, { images: true });
+    const all = this.readIndex.markdownCandidates();
     const read = new Set<string>();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const keep = edgeKeeps(opts.edge);
     const found = backlinksTo(
       target.path,
@@ -7257,7 +6870,9 @@ export class WorkspaceSession {
         path: c.path,
         // Belt and braces: a scheme link could never land here anyway, since
         // `resolveTarget` answers `missing` for one; filtering just skips the ask.
-        links: keep(BODY_LINKS) ? this.linksOf(c, read).filter((l) => l.scheme === undefined) : [],
+        links: keep(BODY_LINKS)
+          ? this.readIndex.linksOf(c, read).filter((l) => l.scheme === undefined)
+          : [],
       })),
       // ⛔ As written in a DOCUMENT: no chat fallback (see `backlinksTo`).
       (raw, from, kind) => this.resolveFrom(raw, from, entryOf(from), "document", index, kind),
@@ -7266,13 +6881,13 @@ export class WorkspaceSession {
     // links: Scriptorium's frontmatter references are a claim about the
     // document, a body link a citation in prose. Sifted by name as links are.
     const edges: EdgeBacklinkView[] = [];
-    if (this.appEdges) {
+    if (this.readIndex.appEdges) {
       const want = landingName(target.path);
       for (const e of edgeBacklinksTo(
         target.path,
         all.map((c) => ({
           path: c.path,
-          edges: (this.readOf(c, read)?.edges ?? []).filter((x) => keep(x.kind)),
+          edges: (this.readIndex.readOf(c, read)?.edges ?? []).filter((x) => keep(x.kind)),
         })),
         (raw) => landingName(splitTarget(raw).path) === want,
         (raw, from) => {
@@ -7306,16 +6921,16 @@ export class WorkspaceSession {
     const tb = bundleOf(target.path);
     const wantName = landing(tb && tb.inner === tb.type.main ? tb.root : target.path);
     const bundles: ReferenceBacklinkView[] = [];
-    for (const c of this.referenceCandidates()) {
+    for (const c of this.readIndex.referenceCandidates()) {
       if (c.path === target.path) continue;
       const refs: ReferenceView[] = [];
       let head: Omit<ReferenceBacklinkView, "refs"> | null = null;
-      for (const ref of this.readOf(c, read)?.refs ?? []) {
+      for (const ref of this.readIndex.readOf(c, read)?.refs ?? []) {
         const name = landing(ref.raw);
         if (name !== wantName && name !== landing(target.path)) continue;
-        const r = this.resolveReference(ref.raw, c.path, entryOf(c.path), index);
+        const r = this.readIndex.resolveReference(ref.raw, c.path, entryOf(c.path), index);
         if (r.state !== "in-context" || r.path !== target.path) continue;
-        const v = this.referenceView(c.path, ref, entryOf);
+        const v = this.readIndex.referenceView(c.path, ref, entryOf);
         const { source, bundle, name: title, shown, noun, part, ...one } = v;
         head ??= { source, bundle, name: title, shown, noun, part };
         refs.push(one);
@@ -7323,7 +6938,7 @@ export class WorkspaceSession {
       if (head) bundles.push({ ...head, refs });
     }
     bundles.sort((a, b) => a.name.localeCompare(b.name) || a.shown.localeCompare(b.shown));
-    this.pruneLinkCache(read);
+    this.readIndex.pruneLinkCache(read);
     const views: BacklinkView[] = found.map((b) => {
       const entry = entryOf(b.source);
       return {
@@ -7370,7 +6985,7 @@ export class WorkspaceSession {
       relations,
       bare,
       bundles,
-      ...(this.appEdges ? { edges: keptEdges, edgeCount: edges.length } : {}),
+      ...(this.readIndex.appEdges ? { edges: keptEdges, edgeCount: edges.length } : {}),
       ...(views.length > kept.length || edges.length > keptEdges.length
         ? { truncated: true as const }
         : {}),
@@ -7409,8 +7024,8 @@ export class WorkspaceSession {
    */
   linksAmong(paths: readonly string[]): { from: string; to: string; anchor?: string }[] {
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
-    const byPath = new Map(this.markdownCandidates().map((c) => [c.path, c]));
+    const entryOf = this.readIndex.entryFinder(index);
+    const byPath = new Map(this.readIndex.markdownCandidates().map((c) => [c.path, c]));
     const want = new Set<string>();
     for (const p of paths) if (isAbsolute(p)) want.add(this.places.canonical(p, index));
     const read = new Set<string>();
@@ -7419,7 +7034,7 @@ export class WorkspaceSession {
     for (const from of want) {
       const c = byPath.get(from);
       if (!c) continue;
-      for (const l of this.linksOf(c, read)) {
+      for (const l of this.readIndex.linksOf(c, read)) {
         if (l.scheme !== undefined) continue;
         // ⛔ As written in a DOCUMENT: no chat fallback, as backlinks reads them.
         const r = this.resolveFrom(l.raw, from, entryOf(from), "document", index, l.kind);
@@ -7437,9 +7052,9 @@ export class WorkspaceSession {
 
   private summariesOf(paths: readonly string[], card: boolean): DocSummary[] {
     const index = this.places.contextIndex();
-    const entryOf = this.entryFinder(index);
+    const entryOf = this.readIndex.entryFinder(index);
     const profiles = this.profilePass(index);
-    const byPath = new Map(this.markdownCandidates().map((c) => [c.path, c]));
+    const byPath = new Map(this.readIndex.markdownCandidates().map((c) => [c.path, c]));
     const read = new Set<string>();
     const out: DocSummary[] = [];
     const seen = new Set<string>();
@@ -7449,7 +7064,7 @@ export class WorkspaceSession {
       const c = byPath.get(own);
       if (!c || seen.has(own)) continue;
       seen.add(own);
-      const facts = this.readOf(c, read)?.facts ?? NO_FACTS;
+      const facts = this.readIndex.readOf(c, read)?.facts ?? NO_FACTS;
       const k = this.kindView(own, facts, profiles);
       const entry = entryOf(own);
       const name = basename(own);
@@ -7462,7 +7077,7 @@ export class WorkspaceSession {
         label: k.kind === null ? null : (k.label ?? k.kind),
         canon: k.canon,
         ...(facts.status !== null ? { status: facts.status } : {}),
-        ...(card ? cardFacts(facts, this.linksOf(c, read)) : {}),
+        ...(card ? cardFacts(facts, this.readIndex.linksOf(c, read)) : {}),
       });
     }
     return out;
@@ -7486,9 +7101,9 @@ export class WorkspaceSession {
       this.versionOrDie(d, version);
       return { text: readFileSync(this.core.versionPath(d, version), "utf8"), version };
     }
-    const c = this.candidates().find((x) => x.path === subject.path);
+    const c = this.readIndex.candidates().find((x) => x.path === subject.path);
     if (!c) throw new SessionError(`no document ${subject.path} in this session`, 404);
-    return { text: this.candidateText(c), version: c.version };
+    return { text: this.readIndex.candidateText(c), version: c.version };
   }
 
   /**
@@ -7499,9 +7114,9 @@ export class WorkspaceSession {
    */
   documentText(key?: string, version?: number): DocText {
     const index = this.places.contextIndex();
-    const subject = this.linkSubject(key, index);
+    const subject = this.readIndex.linkSubject(key, index);
     const got = this.subjectText(subject, version);
-    const entry = this.entryFinder(index)(subject.path);
+    const entry = this.readIndex.entryFinder(index)(subject.path);
     return {
       path: subject.path,
       shown: entry ? toPosix(relative(entry.root, subject.path)) : basename(subject.path),
@@ -7519,8 +7134,8 @@ export class WorkspaceSession {
    */
   outlinks(key?: string, version?: number): Outlinks {
     const index = this.places.contextIndex();
-    const subject = this.linkSubject(key, index);
-    const entryOf = this.entryFinder(index);
+    const subject = this.readIndex.linkSubject(key, index);
+    const entryOf = this.readIndex.entryFinder(index);
     let links: LinkRef[];
     let read: number | null;
     if (version !== undefined) {
@@ -7528,8 +7143,8 @@ export class WorkspaceSession {
       links = docFormat(subject.path) === "json" ? [] : extractLinks(got.text, { schemes: true });
       read = got.version;
     } else {
-      const c = this.markdownCandidates().find((x) => x.path === subject.path);
-      links = c ? this.linksOf(c, new Set()) : [];
+      const c = this.readIndex.markdownCandidates().find((x) => x.path === subject.path);
+      links = c ? this.readIndex.linksOf(c, new Set()) : [];
       read = c?.version ?? null;
     }
     const entry = entryOf(subject.path);

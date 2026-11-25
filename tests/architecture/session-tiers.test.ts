@@ -54,6 +54,8 @@ export const TIERS: Record<string, number> = {
   chats: 2,
   // Tier 3: documents (S4 built `tasks`, which needs only the core).
   tasks: 3,
+  // Tier 4: what reads across documents (S5 builds the read side).
+  readIndex: 4,
 };
 
 /**
