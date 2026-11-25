@@ -34,15 +34,20 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import {
-  answeringPort,
   DATA_DIR,
+  daemonStuck,
+  discoverDaemon,
   HOLD_FILE,
   holdActive,
+  livePortOrRefuse,
   otherDaemonsThan,
   type RootInfo,
   reapDaemons,
   releaseHold,
+  type StuckDaemon,
+  stuckAct,
   untilDaemonGone,
+  waitOnStuck,
 } from "./daemonDiscovery.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
@@ -354,13 +359,10 @@ function kindForStatus(status: number): ErrKind {
   return "internal";
 }
 
-/** The answering daemon's port (or null), with the version-mismatch warning. */
-async function readDaemonPort(): Promise<number | null> {
-  const port = await answeringPort();
-  // Fire-and-forget mismatch check (won't block the verb).
-  if (port) maybeWarnOnVersionMismatch(port);
-  return port;
-}
+/** The answering daemon's port, a stuck daemon (pid alive, no answer), or null. */
+const findDaemon = () => discoverDaemon(maybeWarnOnVersionMismatch);
+/** The answering daemon's port, or null; a stuck daemon is refused (`daemon_stuck`). */
+const readDaemonPort = async () => livePortOrRefuse(await findDaemon());
 
 /**
  * The running daemon's port, spawning one if none answers.
@@ -375,6 +377,7 @@ async function readDaemonPort(): Promise<number | null> {
 async function ensureDaemon(opts: { overHold?: boolean } = {}): Promise<number> {
   const r = await daemonUnlessHeld(opts);
   if (typeof r === "number") return r;
+  if ("stuck" in r) daemonStuck(r.stuck);
   const prefix = invocationPrefix();
   die(
     `daemon is held (respawn suppressed until ${new Date(r.heldUntil).toISOString()}) — ` +
@@ -384,13 +387,14 @@ async function ensureDaemon(opts: { overHold?: boolean } = {}): Promise<number> 
   );
 }
 
-/** `ensureDaemon`, except that an active hold is ANSWERED (with when it lapses)
- *  rather than raised: a tail waits it out instead of exiting. */
+/** `ensureDaemon`, except that an active hold (with when it lapses) or a stuck
+ *  daemon is ANSWERED rather than raised: a tail waits it out instead of
+ *  exiting. Never spawns beside a stuck daemon. */
 async function daemonUnlessHeld(
   opts: { overHold?: boolean } = {},
-): Promise<number | { heldUntil: number }> {
-  let port = await readDaemonPort();
-  if (port) return port;
+): Promise<number | { heldUntil: number } | { stuck: StuckDaemon }> {
+  const found = await findDaemon();
+  if (found !== null) return found;
   if (!opts.overHold) {
     const heldUntil = holdActive();
     if (heldUntil !== null) return { heldUntil };
@@ -422,7 +426,7 @@ async function daemonUnlessHeld(
   const deadline = Date.now() + 3000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
-    port = await readDaemonPort();
+    const port = await readDaemonPort();
     if (port) return port;
   }
   die("daemon failed to start within 3s", "internal", {
@@ -908,6 +912,9 @@ async function cmdTail(
       resolve: async () => {
         const r = await daemonUnlessHeld();
         if (typeof r === "number") return `http://127.0.0.1:${r}`;
+        // ⛔ A STUCK DAEMON IS WAITED ON TOO, SAID ONCE: no spawn beside it, no
+        // silent spin. The tail resumes on it once it answers.
+        if ("stuck" in r) return waitOnStuck(r.stuck);
         if (heldNoted !== r.heldUntil) {
           heldNoted = r.heldUntil;
           process.stderr.write(
@@ -1609,8 +1616,11 @@ async function cmdDoctor() {
   // Read-only diagnostic. Reports the authoritative daemon (if any), other
   // grapevine daemon processes visible on the machine, channel files on
   // disk, and surfaces hints. Does NOT take destructive action — cleanup
-  // is the operator's call, with stock unix tools.
-  const port = await readDaemonPort();
+  // is the operator's call, with stock unix tools. A stuck daemon (pid alive,
+  // no answer) is reported as this HOME's, with the act that clears it.
+  const found = await findDaemon();
+  const port = typeof found === "number" ? found : null;
+  const stuck = found !== null && typeof found !== "number" ? found.stuck : null;
   let authoritative: Record<string, unknown> | null = null;
   // Per-channel subscriber summary — answers "is it safe to restart the
   // daemon right now?" without needing to also run `list` and read the
@@ -1650,7 +1660,9 @@ async function cmdDoctor() {
     }
   }
 
-  const otherDaemons = await otherDaemonsThan(authoritative?.pid as number | undefined);
+  const otherDaemons = await otherDaemonsThan(
+    (authoritative?.pid as number | undefined) ?? stuck?.pid,
+  );
 
   // Channels on disk under this HOME.
   const channelsOnDisk: string[] = [];
@@ -1665,7 +1677,9 @@ async function cmdDoctor() {
 
   // Hints — surface the most actionable signals.
   const hints: string[] = [];
-  if (!authoritative) {
+  if (stuck)
+    hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
+  else if (!authoritative) {
     hints.push(
       "No authoritative daemon running for this HOME. Run any verb (e.g. `cli.ts list`) to spawn one.",
     );
@@ -1723,6 +1737,7 @@ async function cmdDoctor() {
     home: DATA_DIR,
     cli_version: PLUGIN_VERSION,
     authoritative,
+    ...(stuck ? { stuck: { ...stuck, hint: `try: kill -CONT ${stuck.pid}` } } : {}),
     active_subscribers: {
       total: totalSubscribers,
       busy_channels: busyChannels,
@@ -1744,8 +1759,9 @@ async function cmdInfo() {
 }
 
 async function cmdReap(opts: { force?: boolean; dryRun?: boolean }) {
-  const selfPort = await readDaemonPort(); // current HOME authoritative (never reap)
-  let selfPid: number | null = null;
+  const self = await findDaemon(); // current HOME authoritative (never reap), stuck or not
+  const selfPort = typeof self === "number" ? self : null;
+  let selfPid = self !== null && typeof self !== "number" ? self.stuck.pid : null;
   if (selfPort) {
     try {
       selfPid = (await api<RootInfo>(selfPort, "GET", "/")).data?.pid ?? null;

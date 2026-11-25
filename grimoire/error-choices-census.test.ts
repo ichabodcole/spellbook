@@ -188,8 +188,13 @@ const EXPECTED: Record<
   // grapevine 53 -> 54 (2026-11-24, item grapevine-hold-has-no-way-out): a cold
   // `roll` that cannot start the daemon re-raises saying the hold still stands.
   // No closed set there, so no `choices`.
+  // grapevine 54 -> 56 (2026-11-24, item grapevine-paused-daemon-reads-as-gone):
+  // a daemon whose pid lives but that does not answer is refused as
+  // `daemon_stuck` (`daemonStuck`, in backend/daemonDiscovery.ts: its raise, and
+  // its one call from `livePortOrRefuse`) instead of being taken for gone. No
+  // closed set there, so no `choices`; the hint names `kill -CONT <pid>`.
   glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
-  grapevine: { sites: 54, choices: 1, verbRoster: true, flagMap: true },
+  grapevine: { sites: 56, choices: 1, verbRoster: true, flagMap: true },
   // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
   // kit. The enumerated `context <kind>` and `--link` rejections stay here.

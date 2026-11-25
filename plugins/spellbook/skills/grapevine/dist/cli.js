@@ -1079,24 +1079,66 @@ import { spawn } from "child_process";
 import { existsSync, readFileSync, unlinkSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+
+// src/kit/wire/discovery.ts
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0)
+    return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === "EPERM";
+  }
+}
+
+// src/grapevine/backend/daemonDiscovery.ts
 var DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 var PORT_FILE = join(DATA_DIR, "daemon.port");
 var PID_FILE = join(DATA_DIR, "daemon.pid");
 var HOLD_FILE = join(DATA_DIR, "daemon.hold");
-async function answeringPort() {
+function daemonStuck({ pid, port }) {
+  die(`the daemon (pid ${pid}, port ${port}) is alive but did not answer within 3 s \u2014 paused ` + "(SIGSTOP) or wedged \u2014 so it was neither taken for gone nor joined by a second daemon: " + `${stuckAct(pid)}.`, "conflict", { token: "daemon_stuck", hint: `try: kill -CONT ${pid}` });
+}
+function stuckAct(pid) {
+  return `resume it with \`kill -CONT ${pid}\`; if it still does not answer, end it with ` + `\`kill -KILL ${pid}\`, and the next verb (or a waiting tail) starts a fresh daemon`;
+}
+function livePortOrRefuse(found) {
+  if (found !== null && typeof found !== "number")
+    daemonStuck(found.stuck);
+  return found;
+}
+async function ping(port, ms) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(ms) });
+    return res.ok ? "ok" : "other";
+  } catch (e) {
+    return e?.name === "TimeoutError" ? "silent" : "other";
+  }
+}
+async function discoverDaemon(onLive) {
   if (!existsSync(PORT_FILE))
     return null;
   const raw = readFileSync(PORT_FILE, "utf-8").trim();
   const port = parseInt(raw, 10);
   if (!port)
     return null;
-  try {
-    const res = await fetch(`http://127.0.0.1:${port}/`, {
-      signal: AbortSignal.timeout(500)
-    });
-    if (res.ok)
-      return port;
-  } catch {}
+  let answer = await ping(port, 500);
+  if (answer === "silent") {
+    let pid = 0;
+    try {
+      pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || 0;
+    } catch {}
+    if (pidAlive(pid) && await isGrapevineDaemon(pid)) {
+      answer = await ping(port, 2500);
+      if (answer === "silent")
+        return { stuck: { pid, port } };
+    }
+  }
+  if (answer === "ok") {
+    onLive?.(port);
+    return port;
+  }
   try {
     unlinkSync(PORT_FILE);
   } catch {}
@@ -1105,18 +1147,48 @@ async function answeringPort() {
   } catch {}
   return null;
 }
+var stuckNoted = null;
+function waitOnStuck({ pid }) {
+  if (stuckNoted !== pid) {
+    stuckNoted = pid;
+    process.stderr.write(`# daemon (pid ${pid}) is alive but not answering; waiting \u2014 ${stuckAct(pid)}
+`);
+  }
+  return null;
+}
+async function isGrapevineDaemon(pid) {
+  return await new Promise((resolve) => {
+    try {
+      const proc = spawn("ps", ["-p", String(pid), "-o", "command="], {
+        stdio: ["ignore", "pipe", "ignore"]
+      });
+      const chunks = [];
+      proc.stdout?.on("data", (b) => chunks.push(b));
+      proc.on("error", () => resolve(true));
+      proc.on("close", (code) => {
+        const line = Buffer.concat(chunks).toString("utf-8").trim();
+        resolve(line === "" ? code !== 0 && code !== 1 : isGrapevineDaemonCommand(line));
+      });
+    } catch {
+      resolve(true);
+    }
+  });
+}
+function isGrapevineDaemonCommand(line) {
+  return line.includes("daemon.ts") && line.toLowerCase().includes("grapevine");
+}
 async function untilDaemonGone(verb, prefix) {
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
-    if (await answeringPort() === null)
+    if (await discoverDaemon() === null)
       return;
   }
   let pid = null;
   try {
     pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || null;
   } catch {}
-  die(`${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers after 5 s, ` + `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` + `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`, "internal", {
+  die(`${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers (or its pid lives) after 5 s, ` + `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` + `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`, "internal", {
     token: "daemon_still_running",
     hint: prefix ? `try: ${prefix} doctor` : "try the `doctor` verb"
   });
@@ -1154,9 +1226,7 @@ async function listGrapevineDaemonPids() {
     const out = Buffer.concat(chunks).toString("utf-8");
     for (const line of out.split(`
 `)) {
-      if (!line.includes("daemon.ts"))
-        continue;
-      if (!line.toLowerCase().includes("grapevine"))
+      if (!isGrapevineDaemonCommand(line))
         continue;
       const digits = line.match(/^\s*(\d+)\s+/)?.[1];
       if (digits === undefined)
@@ -1353,23 +1423,21 @@ function kindForStatus(status) {
     return "usage";
   return "internal";
 }
-async function readDaemonPort() {
-  const port = await answeringPort();
-  if (port)
-    maybeWarnOnVersionMismatch(port);
-  return port;
-}
+var findDaemon = () => discoverDaemon(maybeWarnOnVersionMismatch);
+var readDaemonPort = async () => livePortOrRefuse(await findDaemon());
 async function ensureDaemon(opts = {}) {
   const r = await daemonUnlessHeld(opts);
   if (typeof r === "number")
     return r;
+  if ("stuck" in r)
+    daemonStuck(r.stuck);
   const prefix = invocationPrefix();
   die2(`daemon is held (respawn suppressed until ${new Date(r.heldUntil).toISOString()}) \u2014 ` + "wait for the hold to lapse, or run `roll`, which ends the hold and starts the daemon", "conflict", { hint: prefix ? `try: ${prefix} roll` : "try the `roll` verb" });
 }
 async function daemonUnlessHeld(opts = {}) {
-  let port = await readDaemonPort();
-  if (port)
-    return port;
+  const found = await findDaemon();
+  if (found !== null)
+    return found;
   if (!opts.overHold) {
     const heldUntil = holdActive();
     if (heldUntil !== null)
@@ -1389,7 +1457,7 @@ async function daemonUnlessHeld(opts = {}) {
   const deadline = Date.now() + 3000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
-    port = await readDaemonPort();
+    const port = await readDaemonPort();
     if (port)
       return port;
   }
@@ -1671,6 +1739,8 @@ async function cmdTail(name, opts) {
       const r = await daemonUnlessHeld();
       if (typeof r === "number")
         return `http://127.0.0.1:${r}`;
+      if ("stuck" in r)
+        return waitOnStuck(r.stuck);
       if (heldNoted !== r.heldUntil) {
         heldNoted = r.heldUntil;
         process.stderr.write(`# daemon held until ${new Date(r.heldUntil).toISOString()} (stop --hold); ` + "waiting \u2014 this tail resumes when `roll` starts the daemon or the hold lapses\n");
@@ -2165,7 +2235,9 @@ async function cmdWatch(name) {
   printJson2({ ok: true, channel, url });
 }
 async function cmdDoctor() {
-  const port = await readDaemonPort();
+  const found = await findDaemon();
+  const port = typeof found === "number" ? found : null;
+  const stuck = found !== null && typeof found !== "number" ? found.stuck : null;
   let authoritative = null;
   let totalSubscribers = 0;
   const busyChannels = [];
@@ -2188,7 +2260,7 @@ async function cmdDoctor() {
       }
     } catch {}
   }
-  const otherDaemons = await otherDaemonsThan(authoritative?.pid);
+  const otherDaemons = await otherDaemonsThan(authoritative?.pid ?? stuck?.pid);
   const channelsOnDisk = [];
   try {
     const channelsDir = join2(DATA_DIR, "channels");
@@ -2200,7 +2272,9 @@ async function cmdDoctor() {
     }
   } catch {}
   const hints = [];
-  if (!authoritative) {
+  if (stuck)
+    hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
+  else if (!authoritative) {
     hints.push("No authoritative daemon running for this HOME. Run any verb (e.g. `cli.ts list`) to spawn one.");
   }
   if (otherDaemons.length > 0) {
@@ -2234,6 +2308,7 @@ async function cmdDoctor() {
     home: DATA_DIR,
     cli_version: PLUGIN_VERSION,
     authoritative,
+    ...stuck ? { stuck: { ...stuck, hint: `try: kill -CONT ${stuck.pid}` } } : {},
     active_subscribers: {
       total: totalSubscribers,
       busy_channels: busyChannels
@@ -2253,8 +2328,9 @@ async function cmdInfo() {
   printJson2({ ok: true, daemon: true, ...data });
 }
 async function cmdReap(opts) {
-  const selfPort = await readDaemonPort();
-  let selfPid = null;
+  const self = await findDaemon();
+  const selfPort = typeof self === "number" ? self : null;
+  let selfPid = self !== null && typeof self !== "number" ? self.stuck.pid : null;
   if (selfPort) {
     try {
       selfPid = (await api(selfPort, "GET", "/")).data?.pid ?? null;

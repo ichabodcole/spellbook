@@ -1,14 +1,15 @@
 // Daemon discovery for the grapevine CLI: where this HOME's daemon says it is
-// (the singleton `daemon.port` + `daemon.pid` pair), the upgrade hold beside
-// them, the wait for a stopped daemon to go, and the classifier `doctor` and
-// `reap` use for every grapevine daemon on the machine. Moved out of `cli.ts`
-// whole (behaviour unchanged) to keep that file under its frozen line count;
+// (the singleton `daemon.port` + `daemon.pid` pair) and whether it answers or
+// is stuck, the upgrade hold beside them, the wait for a stopped daemon to go,
+// and the classifier `doctor` and `reap` use for every grapevine daemon on the
+// machine. Moved out of `cli.ts` to keep that file under its frozen line count;
 // `cli.ts` imports everything back.
 
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { pidAlive } from "../../kit/wire/discovery.ts";
 import { die as raise } from "../../kit/wire/errors.ts";
 
 export const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
@@ -27,22 +28,92 @@ export type RootInfo = {
   error?: string;
 };
 
+/** A daemon whose pid is alive but that did not answer `GET /` in time. */
+export type StuckDaemon = { pid: number; port: number };
+
 /**
- * The port in this HOME's port file, if a daemon answers `GET /` on it within
- * 500 ms. Otherwise the pair is stale: both files are removed and the answer is
- * null. (`cli.ts`'s `readDaemonPort` adds the version-mismatch warning.)
+ * Refuse, naming the stuck daemon's pid and the act that clears it. A verb that
+ * reads the daemon's port lands here rather than reporting "no daemon" (which
+ * `stop` used to) or spawning a second one (which `start`, `restart` and `roll`
+ * did).
  */
-export async function answeringPort(): Promise<number | null> {
+export function daemonStuck({ pid, port }: StuckDaemon): never {
+  raise(
+    `the daemon (pid ${pid}, port ${port}) is alive but did not answer within 3 s — paused ` +
+      "(SIGSTOP) or wedged — so it was neither taken for gone nor joined by a second daemon: " +
+      `${stuckAct(pid)}.`,
+    "conflict",
+    { token: "daemon_stuck", hint: `try: kill -CONT ${pid}` },
+  );
+}
+
+/** The act that clears a stuck daemon, as one sentence every report shares. */
+export function stuckAct(pid: number): string {
+  return (
+    `resume it with \`kill -CONT ${pid}\`; if it still does not answer, end it with ` +
+    `\`kill -KILL ${pid}\`, and the next verb (or a waiting tail) starts a fresh daemon`
+  );
+}
+
+/** The live port from `discoverDaemon`, or null; a stuck daemon is refused. */
+export function livePortOrRefuse(found: number | { stuck: StuckDaemon } | null): number | null {
+  if (found !== null && typeof found !== "number") daemonStuck(found.stuck);
+  return found;
+}
+
+/** `GET /` on `port` within `ms`: answered ok, SILENT (took the connection,
+ *  said nothing — a paused or wedged process), or anything else (refused). */
+async function ping(port: number, ms: number): Promise<"ok" | "silent" | "other"> {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(ms) });
+    return res.ok ? "ok" : "other";
+  } catch (e) {
+    return (e as Error)?.name === "TimeoutError" ? "silent" : "other";
+  }
+}
+
+/**
+ * What this HOME's port and pid files say: the port of a daemon that answers
+ * `GET /` (handed to `onLive` too), a STUCK daemon, or null.
+ *
+ * ⛔ A DAEMON THAT DOES NOT ANSWER IS NOT GONE WHILE ITS PID LIVES. This used to
+ * remove both files whenever the ping timed out, so a paused (SIGSTOP) or
+ * wedged daemon read as absent and `start` / `restart --force` spawned a second
+ * daemon beside it (item grapevine-paused-daemon-reads-as-gone). Stuck means
+ * SILENT: the port took the connection and never answered (the kernel accepts
+ * for a stopped process), and the pid file names a live grapevine daemon. A
+ * refused port, a dead pid, or a pid that is not a grapevine daemon (reused) is
+ * a stale pair, removed as before. When `ps` cannot say, the pid is taken for
+ * the daemon: refusing a spawn is the safe side of that doubt.
+ *
+ * ⚠ AND A LIVE PID GETS 3 S, NOT 500 MS, before it is called stuck. Once a
+ * stuck daemon refuses every verb, a merely BUSY one must not read as stuck:
+ * measured, the full suite's parallel load put a healthy daemon past 500 ms and
+ * failed a dozen verbs. The fast path is unchanged — an answer in 500 ms — and
+ * only a daemon that misses it, with its pid alive, waits the extra 2.5 s.
+ */
+export async function discoverDaemon(
+  onLive?: (port: number) => void,
+): Promise<number | { stuck: StuckDaemon } | null> {
   if (!existsSync(PORT_FILE)) return null;
   const raw = readFileSync(PORT_FILE, "utf-8").trim();
   const port = parseInt(raw, 10);
   if (!port) return null;
-  try {
-    const res = await fetch(`http://127.0.0.1:${port}/`, {
-      signal: AbortSignal.timeout(500),
-    });
-    if (res.ok) return port;
-  } catch {}
+  let answer = await ping(port, 500);
+  if (answer === "silent") {
+    let pid = 0;
+    try {
+      pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || 0;
+    } catch {}
+    if (pidAlive(pid) && (await isGrapevineDaemon(pid))) {
+      answer = await ping(port, 2500);
+      if (answer === "silent") return { stuck: { pid, port } };
+    }
+  }
+  if (answer === "ok") {
+    onLive?.(port);
+    return port;
+  }
   // Stale — clean up.
   try {
     unlinkSync(PORT_FILE);
@@ -51,6 +122,44 @@ export async function answeringPort(): Promise<number | null> {
     unlinkSync(PID_FILE);
   } catch {}
   return null;
+}
+
+let stuckNoted: number | null = null;
+/** A waiting tail's answer to a stuck daemon: say so once per pid, then retry (null). */
+export function waitOnStuck({ pid }: StuckDaemon): null {
+  if (stuckNoted !== pid) {
+    stuckNoted = pid;
+    process.stderr.write(
+      `# daemon (pid ${pid}) is alive but not answering; waiting — ${stuckAct(pid)}\n`,
+    );
+  }
+  return null;
+}
+
+/** Whether `pid` runs a grapevine daemon, by its command line; true when `ps` cannot say. */
+async function isGrapevineDaemon(pid: number): Promise<boolean> {
+  return await new Promise<boolean>((resolve) => {
+    try {
+      const proc = spawn("ps", ["-p", String(pid), "-o", "command="], {
+        stdio: ["ignore", "pipe", "ignore"],
+      });
+      const chunks: Buffer[] = [];
+      proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
+      proc.on("error", () => resolve(true));
+      proc.on("close", (code) => {
+        const line = Buffer.concat(chunks).toString("utf-8").trim();
+        // No line: exit 1 is "no such process"; any other failure cannot say.
+        resolve(line === "" ? code !== 0 && code !== 1 : isGrapevineDaemonCommand(line));
+      });
+    } catch {
+      resolve(true);
+    }
+  });
+}
+
+/** A `ps` command line that runs grapevine's daemon. */
+function isGrapevineDaemonCommand(line: string): boolean {
+  return line.includes("daemon.ts") && line.toLowerCase().includes("grapevine");
 }
 
 /**
@@ -68,14 +177,15 @@ export async function untilDaemonGone(
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
-    if ((await answeringPort()) === null) return;
+    // A dying daemon that stops answering while its pid lives is not gone yet.
+    if ((await discoverDaemon()) === null) return;
   }
   let pid: number | null = null;
   try {
     pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || null;
   } catch {}
   raise(
-    `${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers after 5 s, ` +
+    `${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers (or its pid lives) after 5 s, ` +
       `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` +
       `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`,
     "internal",
@@ -119,8 +229,7 @@ export async function listGrapevineDaemonPids(): Promise<number[]> {
     await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
     const out = Buffer.concat(chunks).toString("utf-8");
     for (const line of out.split("\n")) {
-      if (!line.includes("daemon.ts")) continue;
-      if (!line.toLowerCase().includes("grapevine")) continue;
+      if (!isGrapevineDaemonCommand(line)) continue;
       // The pid group is mandatory; an unmatched line is skipped, as before.
       const digits = line.match(/^\s*(\d+)\s+/)?.[1];
       if (digits === undefined) continue;

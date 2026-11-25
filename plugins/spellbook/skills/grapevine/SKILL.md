@@ -362,6 +362,13 @@ start it; `start` does, with no channel side-effect.
   `error.token: "daemon_still_running"`, a message naming the pid to `kill`, and
   a `hint` pointing at `doctor`. `restart` and `roll` start nothing in that
   case. Kill the named pid, then run the verb again.
+- **A daemon whose pid is alive but that doesn't answer is stuck, not gone**
+  (paused with SIGSTOP, or wedged). Every verb that needs it refuses with exit
+  6, `error.token: "daemon_stuck"`, the pid, and
+  `hint: "try: kill -CONT <pid>"`; `start`, `restart` and `roll` never start a
+  second daemon beside it. `doctor` reports it under `stuck`. A waiting `tail`
+  says so once and resumes when it answers. If `kill -CONT` doesn't bring it
+  back, `kill -KILL <pid>`, and the next verb starts a fresh one.
 - **`stop` has no live-subscriber guard**, unlike `restart` and `roll`, and it
   doesn't stay stopped while anyone is tailing: a connected `tail` logs
   `stream dropped`, reconnects, and that respawns the daemon. Check `doctor`
