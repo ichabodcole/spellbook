@@ -7,7 +7,7 @@ description:
   Biome's 1,200-line limit applies to src/**/*.{ts,tsx} outside tests, with 15
   overrides frozen at today's counts, and a ported tier test and a new
   start-path test fail any step that breaks the split's rules.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a20f86-8ba5-7686-8775-15ef37334619
 kind: chore
