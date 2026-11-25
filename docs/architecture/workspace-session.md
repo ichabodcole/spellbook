@@ -228,7 +228,8 @@ that finds the same in our code records our instance under it.
   in the chain (their `names` kept `entryAt` and `tilde` rather than importing
   `paths`). Ours does the same at S2: `copyName` in `names` uses `entryAt` and
   `tilde`, so both live in `names`, and `paths` imports `names` (`contentHash`
-  for `treeHash`, `bundleNameAt` for the bundle refusals), never the reverse.
+  for `treeHash`, `bundleNameAt` for the bundle refusals, `tilde` for the paths
+  it shows), never the reverse.
 - **A write the session makes is the daemon's own only if `writes` knows it.**
   `owned` is private to `writes`: a write that does not go through `writeOwned`
   is remembered with `writes.own(path, text)` before it lands, and a file the

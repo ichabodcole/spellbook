@@ -21,13 +21,12 @@ export function isFolder(p: string): boolean {
   }
 }
 
-/** A path's realpath, or the path itself when it cannot be resolved (gone). */
 /** An entry's root realpath, as it was when the entry was added. */
-
 export function rootReal(e: ContextEntry): string {
   return e.realRoot ?? realOr(e.root);
 }
 
+/** A path's realpath, or the path itself when it cannot be resolved (gone). */
 export function realOr(p: string): string {
   try {
     return realpathSync(p);
