@@ -137,7 +137,8 @@ describe("a manifest cannot name a path outside its session", () => {
 
   test("a slug or ext changed under a live session is refused where its path is built", () => {
     const s = withDoc();
-    const live = (s as unknown as { m: { docs: { ext: string; slug: string }[] } }).m.docs[0];
+    const live = (s as unknown as { core: { m: { docs: { ext: string; slug: string }[] } } }).core.m
+      .docs[0];
     if (!live) throw new Error("no doc");
     live.ext = climbingExt(s, live.slug, victim);
     // A read through it is refused where the path is built: it never reads the file.

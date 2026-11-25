@@ -101,7 +101,7 @@ import {
 } from "../lib/sidecar.ts";
 import { type Anchor, anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
 import { applyHunks, diffText } from "./diff";
-import { type Disk, sessionDisk, worldDisk } from "./disk";
+import { type Disk, worldDisk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
 import { IMAGE_MAX_BYTES, openNoFollow, readAllFd, readHeadFd, stampOf } from "./images";
@@ -239,7 +239,6 @@ import {
   type TypedEdge,
   type Vocabulary,
 } from "./relations";
-import { safeExt, safeSlug } from "./safeNames";
 import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
 import {
@@ -296,6 +295,7 @@ import {
   shownOverlap,
   treeHash,
 } from "./session/paths.ts";
+import { refuseWrite, State } from "./session/state.ts";
 import {
   type AppDeclaration,
   type ContextIndex,
@@ -403,7 +403,8 @@ function guardLoaded(): NonNullable<typeof noteGuard> {
 
 export class WorkspaceSession {
   readonly dir: string;
-  private m: Session;
+  /** Tier 1 (docs/architecture/workspace-session.md): the core every part takes, built first. */
+  private readonly core: State;
   /** path to hash of the daemon's last write to it. */
   private owned = new Map<string, string>();
   /**
@@ -482,8 +483,8 @@ export class WorkspaceSession {
     readonly app: AppDeclaration,
     manifest: Session,
   ) {
-    this.m = manifest;
-    this.dir = join(sessionsRoot, manifest.sessionId);
+    this.core = new State(sessionsRoot, app, manifest);
+    this.dir = this.core.dir;
   }
 
   /**
@@ -543,7 +544,7 @@ export class WorkspaceSession {
       app: { ...app.slot.migrate({}, 0), version: app.slot.version },
     });
     s.own.mkdir(join(s.dir, "docs"), { recursive: true });
-    s.pinDir();
+    s.core.pinDir();
     s.persist();
     return s;
   }
@@ -644,7 +645,7 @@ export class WorkspaceSession {
     s.restoreReport = report;
     s.setAppHome(opts.appHome);
     s.own.mkdir(join(s.dir, "docs"), { recursive: true });
-    s.pinDir();
+    s.core.pinDir();
     // ⛔ A SET FROM AN OLDER MANIFEST NEVER SHOWS THE APP'S OWN PLACES. One
     // that lies among the sessions or in the app home is dropped; one that
     // holds them in plain sight is kept, narrowed by the scan's guard, which
@@ -652,15 +653,15 @@ export class WorkspaceSession {
     s.settleOwnPlaceSets(report);
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
-    for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
+    for (const e of s.core.m.context) if (e.membership === "mirrored") s.rescan(e.id);
     // A manifest from before entries kept their root's realpath: taken now.
-    for (const e of s.m.context) if (!e.realRoot) e.realRoot = realOr(e.root);
+    for (const e of s.core.m.context) if (!e.realRoot) e.realRoot = realOr(e.root);
     if (storedWorkspace !== undefined) {
       const added = s.keepDroppedWorkspace(storedWorkspace);
       if (added) report.workspaceAdded = added;
     }
-    for (const d of s.m.docs) {
-      const p = s.versionPath(d, d.active);
+    for (const d of s.core.m.docs) {
+      const p = s.core.versionPath(d, d.active);
       const text = existsSync(p) ? readFileSync(p, "utf8") : "";
       s.adoptActive(d, text);
       // An original changed while the session was closed was invisible here, so
@@ -694,7 +695,7 @@ export class WorkspaceSession {
     // running one failed, a queued one is cancelled (re-running it unasked could
     // spend money). The agent outlives the daemon, so an agent task is left as
     // it was, and so is a human task.
-    for (const t of s.m.tasks) {
+    for (const t of s.core.m.tasks) {
       if (t.by !== "daemon") continue;
       const was = t.status;
       if (was === "running") {
@@ -738,14 +739,6 @@ export class WorkspaceSession {
     }
   }
 
-  get id(): string {
-    return this.m.sessionId;
-  }
-
-  get docsDir(): string {
-    return join(this.dir, "docs");
-  }
-
   /**
    * A restored no-home session's dropped workspace folder, added as an
    * ordinary set when it still holds files (as the converter adds the shipped
@@ -765,7 +758,7 @@ export class WorkspaceSession {
     if (!names.some((n) => !n.startsWith("."))) return undefined;
     const real = realOr(folder);
     if (
-      this.m.context.some(
+      this.core.m.context.some(
         (e) =>
           e.membership === "mirrored" &&
           (real === realOr(e.root) || real.startsWith(realOr(e.root) + sep)),
@@ -782,19 +775,9 @@ export class WorkspaceSession {
       this.scanGuard(),
     );
     if (entry.membership !== "mirrored") return undefined;
-    this.m.context.push(entry);
+    this.core.m.context.push(entry);
     this.relink();
     return folder;
-  }
-
-  /** Whether the app keeps a home workspace (`AppDeclaration.homeWorkspace`). */
-  get hasHome(): boolean {
-    return hasHomeWorkspace(this.app);
-  }
-
-  /** The folder dropped files and new top-level documents land in. */
-  get workspace(): string {
-    return this.m.workspace ?? join(this.dir, IMPORTED_DIR);
   }
 
   /**
@@ -846,14 +829,14 @@ export class WorkspaceSession {
     } catch {
       throw new SessionError(`the workspace must be a folder you can write to: ${abs}`, 400);
     }
-    const overlap = overlapOf(abs, this.m.context);
+    const overlap = overlapOf(abs, this.core.m.context);
     if (overlap)
       throw new SessionError(
         `the workspace cannot be ${overlap.same ? "the folder of" : "inside"} the set ${overlap.label} (${tilde(overlap.root)}): a file there would belong to both. Choose a folder outside it, such as ${tilde(dirname(overlap.root))}, or remove ${overlap.label} from the context first`,
         409,
       );
     const from = this.workspace;
-    this.m.workspace = abs;
+    this.core.m.workspace = abs;
     this.persist();
     return { path: abs, from };
   }
@@ -865,7 +848,7 @@ export class WorkspaceSession {
    */
   workspaceOverlap(): Overlap | null {
     if (!this.hasHome) return null;
-    return overlapOf(this.workspace, this.m.context);
+    return overlapOf(this.workspace, this.core.m.context);
   }
 
   /**
@@ -876,9 +859,9 @@ export class WorkspaceSession {
   overlapToSay(): (Overlap & { workspace: string }) | null {
     const o = this.workspaceOverlap();
     const key = o ? `${this.workspace}\n${o.root}` : undefined;
-    if (key === this.m.overlapSaid) return null;
-    if (key === undefined) delete this.m.overlapSaid;
-    else this.m.overlapSaid = key;
+    if (key === this.core.m.overlapSaid) return null;
+    if (key === undefined) delete this.core.m.overlapSaid;
+    else this.core.m.overlapSaid = key;
     this.persist();
     return o ? shownOverlap(o, this.workspace) : null;
   }
@@ -890,16 +873,16 @@ export class WorkspaceSession {
   }
 
   get openDocSlug(): string | null {
-    return this.m.openDoc;
+    return this.core.m.openDoc;
   }
 
   get context(): readonly ContextEntry[] {
-    return this.m.context;
+    return this.core.m.context;
   }
 
   /** The app's slot data, without its `version` (a copy: change it through `updateApp`). */
   get appSlot(): Record<string, unknown> {
-    const { version: _version, ...data } = this.m.app;
+    const { version: _version, ...data } = this.core.m.app;
     return structuredClone(data);
   }
 
@@ -908,7 +891,7 @@ export class WorkspaceSession {
     const slot = this.appSlot;
     change(slot);
     if ("version" in slot) throw new Error("`version` is reserved in the app slot");
-    this.m.app = { ...slot, version: this.app.slot.version };
+    this.core.m.app = { ...slot, version: this.app.slot.version };
     this.persist();
   }
 
@@ -925,7 +908,7 @@ export class WorkspaceSession {
     const roots: { path: string; watch: string; recursive: boolean; entryId?: string }[] = [
       { path: this.docsDir, watch: realOr(this.docsDir), recursive: true },
     ];
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       roots.push({
         path: e.root,
         watch: realOr(e.root),
@@ -945,7 +928,7 @@ export class WorkspaceSession {
       if (e.membership !== "mirrored" && isFolder(profiles))
         roots.push({ path: profiles, watch: realOr(profiles), recursive: false });
     }
-    for (const d of this.m.docs) {
+    for (const d of this.core.m.docs) {
       const realDir = dirname(realOr(d.original));
       if (
         !roots.some((r) => r.watch === realDir && r.recursive === false) &&
@@ -960,35 +943,38 @@ export class WorkspaceSession {
 
   // ── persistence ────────────────────────────────────────────────────────
 
-  /** Record who ended the session; the daemon's close persists it next. */
+  // The core's public members, delegated (`session/state.ts`, `places.ts`, `writes.ts`).
+  get id(): string {
+    return this.core.id;
+  }
+
+  get docsDir(): string {
+    return this.core.docsDir;
+  }
+
+  get hasHome(): boolean {
+    return this.core.hasHome;
+  }
+
+  get workspace(): string {
+    return this.core.workspace;
+  }
+
+  get own(): Disk {
+    return this.core.own;
+  }
+
   markEnded(by: ClosedBy): void {
-    this.m.ended = { by, at: nowIso() };
+    this.core.markEnded(by);
   }
 
-  /** Write the manifest, atomically. Call it on status changes, never on progress ticks. */
   persist(): void {
-    this.own.mkdir(this.dir, { recursive: true });
-    this.dirStillOrDie();
-    this.own.writeAtomic(join(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}\n`);
+    this.core.persist();
   }
-
-  /**
-   * Where the session folder really was when it was opened (its realpath),
-   * taken once the folder exists (`pinDir`). Every write to the session's own
-   * files checks the folder still leads there.
-   */
-  private realDir: string | undefined;
-
-  /**
-   * The app's own folder, where its sessions, settings and logs live, when the
-   * daemon names one (`WorkspaceDaemonOptions.appHome`). Without it only the
-   * sessions root is guarded.
-   */
-  private appHome: string | undefined;
 
   /** Name the app's own folder (`appHome`): guarded as the sessions root is. */
   setAppHome(appHome: string | undefined): void {
-    this.appHome = appHome === undefined ? undefined : resolve(appHome);
+    this.core.appHome = appHome === undefined ? undefined : resolve(appHome);
   }
 
   /**
@@ -999,21 +985,20 @@ export class WorkspaceSession {
   private get ownPlaces(): OwnPlaces {
     return {
       sessionsRoot: this.sessionsRoot,
-      ...(this.appHome !== undefined ? { appHome: this.appHome } : {}),
+      ...(this.core.appHome !== undefined ? { appHome: this.core.appHome } : {}),
       ...(this.hasHome
         ? {
             except: join(this.dir, IMPORTED_DIR),
             // Only where the session folder really was at the open: an
             // `imported/` that is a link, or a session folder swapped since,
             // is no exception (`exceptionOf` in `./noHome.ts`).
-            ...(this.realDir !== undefined ? { exceptReal: join(this.realDir, IMPORTED_DIR) } : {}),
+            ...(this.core.realDir !== undefined
+              ? { exceptReal: join(this.core.realDir, IMPORTED_DIR) }
+              : {}),
           }
         : {}),
     };
   }
-
-  /** A refusal at the write: the session's 409. */
-  private static refuseWrite = (message: string): Error => new SessionError(message, 409);
 
   /**
    * ⛔ THE WORLD'S WRITER: every write to a file or folder the sets show (a
@@ -1021,17 +1006,7 @@ export class WorkspaceSession {
    * the sessions or in the app home, as written or as the disk resolves it,
    * checked at the syscall (`worldDisk` in `./disk.ts`).
    */
-  private readonly world: Disk = worldDisk(() => this.ownPlaces, WorkspaceSession.refuseWrite);
-
-  /**
-   * ⛔ THE SESSION'S OWN WRITER: its manifest, versions and the folders for
-   * them. Only inside the session folder, as written and as the disk resolves
-   * it against the folder's realpath at open (`sessionDisk` in `./disk.ts`).
-   */
-  readonly own: Disk = sessionDisk(
-    () => ({ dir: this.dir, ...(this.realDir !== undefined ? { realDir: this.realDir } : {}) }),
-    WorkspaceSession.refuseWrite,
-  );
+  private readonly world: Disk = worldDisk(() => this.ownPlaces, refuseWrite);
 
   /**
    * An app verb's write of a file the context shows (an app's own edit of a
@@ -1087,7 +1062,7 @@ export class WorkspaceSession {
   private settleOwnPlaceSets(report: RestoreReport): void {
     const own = this.ownPlaces;
     const out: NonNullable<RestoreReport["ownPlaceSets"]> = [];
-    this.m.context = this.m.context.filter((e) => {
+    this.core.m.context = this.core.m.context.filter((e) => {
       const paths =
         e.membership === "mirrored"
           ? [e.root]
@@ -1115,27 +1090,6 @@ export class WorkspaceSession {
     }
   }
 
-  /** Take the session folder's realpath, once: called as a session is made or restored. */
-  private pinDir(): void {
-    if (this.realDir === undefined) this.realDir = realpathSync(this.dir);
-  }
-
-  /**
-   * ⛔ THE SESSION'S FILES ARE WRITTEN WHERE THE SESSION WAS OPENED. A sessions
-   * folder (or one session's) swapped for a link after the open would carry
-   * every later write to wherever the link leads: someone else's sessions, a
-   * real home a dry run was kept away from. Refused, and nothing is written.
-   */
-  private dirStillOrDie(): void {
-    if (this.realDir === undefined) return;
-    const now = realOr(this.dir);
-    if (now !== this.realDir)
-      throw new SessionError(
-        `the session folder ${this.dir} now leads to ${now}, not where this session was opened (${this.realDir}): nothing was written`,
-        409,
-      );
-  }
-
   /**
    * A version file's path, refused unless it is in the session's own `docs/`
    * folder as written and as the disk resolves it (a slug or extension that
@@ -1143,9 +1097,9 @@ export class WorkspaceSession {
    * such a slug or extension on restore; this is the backstop at every write.
    */
   private ownFileOrDie(path: string): string {
-    this.dirStillOrDie();
+    this.core.dirStillOrDie();
     const docs = this.docsDir;
-    const real = this.realDir !== undefined ? join(this.realDir, "docs") : diskPath(docs);
+    const real = this.core.realDir !== undefined ? join(this.core.realDir, "docs") : diskPath(docs);
     if (!within(resolve(path), docs) || resolve(path) === docs || !within(diskPath(path), real))
       throw new SessionError(
         `${path} is not inside this session's docs folder (${docs}): nothing was written`,
@@ -1163,7 +1117,7 @@ export class WorkspaceSession {
   private writeOwned(path: string, text: string, disk: Disk): void {
     // Checked before anything: a refused write leaves no hash behind.
     const why = disk.refusal(path);
-    if (why !== null) throw WorkspaceSession.refuseWrite(why);
+    if (why !== null) throw refuseWrite(why);
     disk.mkdir(dirname(path), { recursive: true });
     // Remember before writing: the watcher's event can arrive before this
     // function returns, and it must find the hash already there.
@@ -1172,14 +1126,14 @@ export class WorkspaceSession {
   }
 
   private adoptActive(d: Doc, text: string): void {
-    const p = this.versionPath(d, d.active);
+    const p = this.core.versionPath(d, d.active);
     this.owned.set(p, contentHash(text));
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
 
   private writeActive(d: Doc, text: string): void {
-    this.writeVersion(this.versionPath(d, d.active), text);
+    this.writeVersion(this.core.versionPath(d, d.active), text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
@@ -1198,9 +1152,9 @@ export class WorkspaceSession {
       outside: true,
     };
     d.versions.push(rec);
-    this.writeVersion(this.versionPath(d, n), text);
+    this.writeVersion(this.core.versionPath(d, n), text);
     this.persist();
-    return { ...rec, path: this.versionPath(d, n) };
+    return { ...rec, path: this.core.versionPath(d, n) };
   }
 
   /** True iff `text` at `path` is exactly what the daemon last wrote there. */
@@ -1216,7 +1170,7 @@ export class WorkspaceSession {
     const id = `c-${randHex(3)}`;
     // The app's filter sees a new set from its first scan.
     const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
-    const same = this.m.context.find(
+    const same = this.core.m.context.find(
       (e) =>
         e.root === probe.root &&
         e.membership === probe.membership &&
@@ -1233,13 +1187,13 @@ export class WorkspaceSession {
         } the workspace folder (${tilde(this.workspace)}), so a file there would belong to both. Set the workspace to a folder outside it first, such as ${tilde(dirname(probe.root))} (the pencil in the sidebar, or \`workspace <dir>\`)`,
         409,
       );
-    this.m.context.push(probe);
+    this.core.m.context.push(probe);
     // A loose image comes with its description, when one is beside it: listed
     // too, and folded into the image's row by the surface.
     const only = listedFile(probe);
     const sidecar = only?.kind === "image" ? this.sidecarFileOf(only.abs) : null;
     if (sidecar && !this.itemAt(sidecar))
-      this.m.context.push(entryForPath(sidecar, `c-${randHex(3)}`));
+      this.core.m.context.push(entryForPath(sidecar, `c-${randHex(3)}`));
     this.relink();
     this.persist();
     return { entry: probe, added: true };
@@ -1250,18 +1204,18 @@ export class WorkspaceSession {
    * entry and where it stood, which `restoreContext` takes to put it back.
    */
   removeContext(id: string): { entry: ContextEntry; index: number } {
-    const i = this.m.context.findIndex((e) => e.id === id);
+    const i = this.core.m.context.findIndex((e) => e.id === id);
     if (i < 0)
       throw new SessionError(
         `no context entry ${id}`,
         404,
-        this.m.context.map((e) => e.id),
+        this.core.m.context.map((e) => e.id),
       );
-    const [entry] = this.m.context.splice(i, 1) as [ContextEntry];
+    const [entry] = this.core.m.context.splice(i, 1) as [ContextEntry];
     this.relink();
     this.closeOrphanedOpenDoc();
     // An open image the context no longer shows is put away, as `closeImage` does.
-    if (this.m.openImage && !this.imageNodeAt(this.m.openImage)) this.closeImage();
+    if (this.core.m.openImage && !this.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
     return { entry, index: i };
   }
@@ -1277,8 +1231,8 @@ export class WorkspaceSession {
    * `addContext` refuses it. Persists. For an app's undo of a removal
    * (Scriptorium's `hide` of a whole entry).
    */
-  restoreContext(entry: ContextEntry, index = this.m.context.length): ContextEntry {
-    if (this.m.context.some((e) => e.id === entry.id))
+  restoreContext(entry: ContextEntry, index = this.core.m.context.length): ContextEntry {
+    if (this.core.m.context.some((e) => e.id === entry.id))
       throw new GoneError(`${entry.label} (${entry.id}) is in the context already`, 409);
     const only = entry.membership === "listed" ? entry.nodes[0] : undefined;
     const path =
@@ -1304,7 +1258,7 @@ export class WorkspaceSession {
     if (fresh.membership !== entry.membership || fresh.root !== entry.root)
       throw new GoneError(`${tilde(path)} is no longer what ${entry.label} was`, 409);
     if (
-      this.m.context.some(
+      this.core.m.context.some(
         (e) =>
           e.root === fresh.root &&
           e.membership === fresh.membership &&
@@ -1323,7 +1277,7 @@ export class WorkspaceSession {
       label: entry.label,
       ...(entry.realRoot ? { realRoot: entry.realRoot } : {}),
     };
-    this.m.context.splice(Math.max(0, Math.min(index, this.m.context.length)), 0, back);
+    this.core.m.context.splice(Math.max(0, Math.min(index, this.core.m.context.length)), 0, back);
     this.relink();
     this.persist();
     return back;
@@ -1335,13 +1289,15 @@ export class WorkspaceSession {
    * bringing it back and opening it again finds them.
    */
   private closeOrphanedOpenDoc(): void {
-    const open = this.m.openDoc ? this.m.docs.find((d) => d.slug === this.m.openDoc) : undefined;
-    if (open && open.entryId === null) this.m.openDoc = null;
+    const open = this.core.m.openDoc
+      ? this.core.m.docs.find((d) => d.slug === this.core.m.openDoc)
+      : undefined;
+    if (open && open.entryId === null) this.core.m.openDoc = null;
   }
 
   /** Re-mirror a folder entry. Returns whether its nodes changed. */
   rescan(entryId: string): boolean {
-    const e = this.m.context.find((x) => x.id === entryId);
+    const e = this.core.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
     const { nodes, truncated } = scanTree(
       e.root,
@@ -1379,7 +1335,7 @@ export class WorkspaceSession {
   private filteredOut(): (abs: string) => boolean {
     const rules: { root: string; skip: ScanSkip }[] = [];
     if (this.app.scan)
-      for (const e of this.m.context) {
+      for (const e of this.core.m.context) {
         if (e.membership !== "mirrored") continue;
         const skip = this.scanSkip(e.id, e.root);
         if (skip) rules.push({ root: e.root, skip });
@@ -1401,18 +1357,18 @@ export class WorkspaceSession {
    * tree changed.
    */
   refilter(entryId?: string): boolean {
-    if (entryId !== undefined && !this.m.context.some((e) => e.id === entryId))
+    if (entryId !== undefined && !this.core.m.context.some((e) => e.id === entryId))
       throw new SessionError(
         `no context entry ${entryId}`,
         404,
-        this.m.context.map((e) => e.id),
+        this.core.m.context.map((e) => e.id),
       );
     let changed = false;
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       if ((entryId === undefined || e.id === entryId) && this.rescan(e.id)) changed = true;
     this.relink();
     this.closeOrphanedOpenDoc();
-    if (this.m.openImage && !this.imageNodeAt(this.m.openImage)) this.closeImage();
+    if (this.core.m.openImage && !this.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
     return changed;
   }
@@ -1434,8 +1390,8 @@ export class WorkspaceSession {
   }
 
   private relink(): void {
-    for (const d of this.m.docs) {
-      const at = locate(this.m.context, d.original);
+    for (const d of this.core.m.docs) {
+      const at = locate(this.core.m.context, d.original);
       d.entryId = at?.entryId ?? null;
       d.rel = at?.rel ?? null;
     }
@@ -1444,29 +1400,14 @@ export class WorkspaceSession {
   // ── documents and versions ─────────────────────────────────────────────
 
   /**
-   * `<docs>/<slug>/v<n><ext>`. ⛔ Refused unless the slug is one safe name and
-   * the extension a plain one (`safeSlug`, `safeExt`): the manifest check
-   * refuses both on restore, so this only fires on a manifest changed under a
-   * live session. Writes also check where the path really leads (`ownFileOrDie`).
-   */
-  private versionPath(d: Doc, n: number): string {
-    if (safeSlug(d.slug) !== null || safeExt(d.ext) !== null)
-      throw new SessionError(
-        `${JSON.stringify(d.slug)} (${JSON.stringify(d.ext)}) does not name a version file inside this session`,
-        409,
-      );
-    return join(this.docsDir, d.slug, `v${n}${d.ext}`);
-  }
-
-  /**
    * `takesPath`: the verb asking takes the absolute path of any document in
    * the context, open or not (`version-new` and `show` open it; the link
    * questions read it), so such a path is a choice too.
    */
   private docOrDie(slug?: string, opts: { takesPath?: boolean } = {}): Doc {
-    const want = slug ?? this.m.openDoc ?? undefined;
+    const want = slug ?? this.core.m.openDoc ?? undefined;
     // A document's alias names it too (`--doc touchstones`), so it is a choice.
-    const opened = this.m.docs.flatMap((d) => {
+    const opened = this.core.m.docs.flatMap((d) => {
       const alias = this.docAlias(d);
       return alias === undefined ? [d.slug] : [d.slug, alias];
     });
@@ -1475,7 +1416,7 @@ export class WorkspaceSession {
     // open, and says how: a filename only resolves for a document that is
     // already open; a path always opens one.
     const choices =
-      opened.length > 0 ? opened : this.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
+      opened.length > 0 ? opened : this.core.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
     const hint =
       opened.length > 0
         ? undefined
@@ -1510,9 +1451,9 @@ export class WorkspaceSession {
    * At most 20, in context order.
    */
   private unopenedNamed(name: string): string[] {
-    const held = new Set(this.m.docs.map((d) => d.original));
+    const held = new Set(this.core.m.docs.map((d) => d.original));
     const out: string[] = [];
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       for (const p of docPaths(e)) {
         if (held.has(p) || out.includes(p)) continue;
         if (basename(p) === name || toPosix(relative(e.root, p)) === name) out.push(p);
@@ -1534,25 +1475,25 @@ export class WorkspaceSession {
    * way of naming a document for every one.
    */
   heldPaths(): Map<string, string> {
-    return new Map(this.m.docs.map((d) => [d.original, d.slug]));
+    return new Map(this.core.m.docs.map((d) => [d.original, d.slug]));
   }
 
   findDoc(key: string): Doc | undefined {
-    const bySlug = this.m.docs.find((d) => d.slug === key);
+    const bySlug = this.core.m.docs.find((d) => d.slug === key);
     if (bySlug) return bySlug;
     // Only an absolute key is a path: resolving a relative one here would
     // resolve it against the daemon's cwd. The CLI resolves against its own cwd
     // and sends an absolute path.
     if (isAbsolute(key)) {
       const path = this.mainOf(key.length > 1 ? key.replace(/\/+$/, "") : key);
-      const byPath = this.m.docs.find(
+      const byPath = this.core.m.docs.find(
         (d) => d.original === path || realOr(d.original) === realOr(path),
       );
       if (byPath) return byPath;
     }
-    const byAlias = this.m.docs.find((d) => this.docAlias(d) === key);
+    const byAlias = this.core.m.docs.find((d) => this.docAlias(d) === key);
     if (byAlias) return byAlias;
-    const byName = this.m.docs.filter((d) => basename(d.original) === key || d.rel === key);
+    const byName = this.core.m.docs.filter((d) => basename(d.original) === key || d.rel === key);
     return byName.length === 1 ? byName[0] : undefined;
   }
 
@@ -1568,8 +1509,8 @@ export class WorkspaceSession {
     const b = bundleOf(d.original);
     if (!b) return undefined;
     const alias = slugBase(bundleNameAt(b.root));
-    if (alias === d.slug || this.m.docs.some((x) => x.slug === alias)) return undefined;
-    const others = this.m.docs.filter(
+    if (alias === d.slug || this.core.m.docs.some((x) => x.slug === alias)) return undefined;
+    const others = this.core.m.docs.filter(
       (x) => x !== d && isBundleMain(x.original) && slugBase(this.docName(x)) === alias,
     );
     return others.length === 0 ? alias : undefined;
@@ -1634,7 +1575,7 @@ export class WorkspaceSession {
     const named = bundle && bundle.inner === bundle.type.main ? bundleStem(bundle.root) : null;
     const stem = slugBase(named ?? basename(original, extname(original)));
     let slug = stem;
-    for (let i = 2; this.m.docs.some((d) => d.slug === slug); i++) slug = `${stem}-${i}`;
+    for (let i = 2; this.core.m.docs.some((d) => d.slug === slug); i++) slug = `${stem}-${i}`;
     return slug;
   }
 
@@ -1654,7 +1595,7 @@ export class WorkspaceSession {
     // (/private/var/... for /var/...) names the same file differently, and it
     // must land on the same doc. A bundle opens as its main file.
     const abs = this.canonical(this.mainOf(resolve(rawPath)));
-    const existing = this.m.docs.find((d) => d.original === abs);
+    const existing = this.core.m.docs.find((d) => d.original === abs);
     if (existing) {
       if (focus) this.focusDoc(existing.slug);
       this.persist();
@@ -1662,7 +1603,7 @@ export class WorkspaceSession {
     }
     if (!isDocName(abs) && !isBundleMain(abs))
       throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
-    const at = locate(this.m.context, abs);
+    const at = locate(this.core.m.context, abs);
     if (!at)
       throw new SessionError(
         `${abs} is not in this session's context: add it (or its folder) first`,
@@ -1696,7 +1637,7 @@ export class WorkspaceSession {
       admitted: true,
       outsideChanged: false,
     };
-    this.m.docs.push(d);
+    this.core.m.docs.push(d);
     this.writeActive(d, text);
     if (focus) this.focusDoc(d.slug);
     this.persist();
@@ -1705,9 +1646,9 @@ export class WorkspaceSession {
 
   /** The centre shows one thing: a document coming on screen puts the open image away. */
   private focusDoc(slug: string): void {
-    this.m.openDoc = slug;
-    this.m.openImage = null;
-    this.m.docAside = null;
+    this.core.m.openDoc = slug;
+    this.core.m.openImage = null;
+    this.core.m.docAside = null;
   }
 
   /**
@@ -1722,7 +1663,7 @@ export class WorkspaceSession {
     const entryOf = new Map<string, string>();
     const images = new Set<string>();
     const sidecars = new Set<string>();
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       for (const p of docPaths(e)) if (!entryOf.has(p)) entryOf.set(p, e.id);
       for (const p of imagePaths(e)) images.add(p);
       for (const p of sidecarPaths(e)) sidecars.add(p);
@@ -1731,7 +1672,7 @@ export class WorkspaceSession {
       entryOf,
       images,
       sidecars,
-      realRoots: this.m.context.map((e) => ({ root: e.root, real: realOr(e.root) })),
+      realRoots: this.core.m.context.map((e) => ({ root: e.root, real: realOr(e.root) })),
     };
   }
 
@@ -1756,13 +1697,17 @@ export class WorkspaceSession {
   readVersion(slug: string, n: number): { text: string; path: string } {
     const d = this.docOrDie(slug);
     this.versionOrDie(d, n);
-    const path = this.versionPath(d, n);
+    const path = this.core.versionPath(d, n);
     return { text: readFileSync(path, "utf8"), path };
   }
 
   activePath(slug?: string): string | null {
-    const d = slug ? this.findDoc(slug) : this.m.openDoc ? this.findDoc(this.m.openDoc) : undefined;
-    return d ? this.versionPath(d, d.active) : null;
+    const d = slug
+      ? this.findDoc(slug)
+      : this.core.m.openDoc
+        ? this.findDoc(this.core.m.openDoc)
+        : undefined;
+    return d ? this.core.versionPath(d, d.active) : null;
   }
 
   /**
@@ -1789,7 +1734,7 @@ export class WorkspaceSession {
         409,
       );
     const before = this.isDirty(d);
-    const path = this.versionPath(d, n);
+    const path = this.core.versionPath(d, n);
     // The edit is staged in a sibling file first, so the check below and the
     // rename that lands the edit are adjacent syscalls: the window in which an
     // outside write could slip between them is microseconds, not the length of
@@ -1848,7 +1793,7 @@ export class WorkspaceSession {
     const d = this.docOrDie(slug);
     const was = d.versions.find((v) => v.n === n);
     if (was) {
-      const path = this.versionPath(d, n);
+      const path = this.core.versionPath(d, n);
       let onDisk: string | null = null;
       try {
         onDisk = readFileSync(path, "utf8");
@@ -1869,7 +1814,7 @@ export class WorkspaceSession {
       label: `edit to v${n} after a switch`,
     };
     d.versions.push(rec);
-    const path = this.versionPath(d, v);
+    const path = this.core.versionPath(d, v);
     this.writeVersion(path, text);
     this.persist();
     return { saved: v, kept: was ? "changed" : "deleted", path };
@@ -1887,7 +1832,7 @@ export class WorkspaceSession {
     const d = this.docOrDie(opts.doc, { takesPath: true });
     const from = opts.from ?? d.active;
     this.versionOrDie(d, from);
-    const text = opts.body ?? readFileSync(this.versionPath(d, from), "utf8");
+    const text = opts.body ?? readFileSync(this.core.versionPath(d, from), "utf8");
     const n = this.takeVersion(d);
     const rec: Version = {
       n,
@@ -1897,9 +1842,9 @@ export class WorkspaceSession {
       ...(opts.label ? { label: opts.label } : {}),
     };
     d.versions.push(rec);
-    this.writeVersion(this.versionPath(d, n), text);
+    this.writeVersion(this.core.versionPath(d, n), text);
     this.persist();
-    return { slug: d.slug, version: { ...rec, path: this.versionPath(d, n) } };
+    return { slug: d.slug, version: { ...rec, path: this.core.versionPath(d, n) } };
   }
 
   /**
@@ -1938,7 +1883,7 @@ export class WorkspaceSession {
     // ⛔ Only a file inside the session's own docs/, as the disk resolves it:
     // a version folder swapped for a link deletes nothing outside. Refused
     // before the record changes.
-    const path = this.ownFileOrDie(this.versionPath(d, opts.version));
+    const path = this.ownFileOrDie(this.core.versionPath(d, opts.version));
     d.versions = d.versions.filter((x) => x.n !== opts.version);
     try {
       this.own.rm(path);
@@ -1969,7 +1914,7 @@ export class WorkspaceSession {
       this.refuseInvalidJson(
         d,
         opts.version,
-        readFileSync(this.versionPath(d, opts.version), "utf8"),
+        readFileSync(this.core.versionPath(d, opts.version), "utf8"),
         "activated",
       );
     const previous = d.active;
@@ -1979,7 +1924,7 @@ export class WorkspaceSession {
     d.active = opts.version;
     // The new active version's text as it is now is the baseline the next
     // check-before-write compares against.
-    this.adoptActive(d, readFileSync(this.versionPath(d, d.active), "utf8"));
+    this.adoptActive(d, readFileSync(this.core.versionPath(d, d.active), "utf8"));
     this.persist();
     return { slug: d.slug, previous };
   }
@@ -1995,7 +1940,7 @@ export class WorkspaceSession {
   private sideText(d: Doc, side: DiffSide): string {
     if (side === "original") return readFileSync(d.original, "utf8");
     this.versionOrDie(d, side);
-    return readFileSync(this.versionPath(d, side), "utf8");
+    return readFileSync(this.core.versionPath(d, side), "utf8");
   }
 
   /**
@@ -2009,7 +1954,7 @@ export class WorkspaceSession {
    */
   compare(opts: { doc?: string; against: DiffSide; pick?: boolean }): DiffPayload {
     const d = this.docOrDie(opts.doc);
-    const left = readFileSync(this.versionPath(d, d.active), "utf8");
+    const left = readFileSync(this.core.versionPath(d, d.active), "utf8");
     if (opts.pick) {
       const sides: DiffSide[] = [
         "original",
@@ -2076,7 +2021,7 @@ export class WorkspaceSession {
           `the text changed under the numbers.`,
         409,
       );
-    const before = readFileSync(this.versionPath(d, d.active), "utf8");
+    const before = readFileSync(this.core.versionPath(d, d.active), "utf8");
     const text = applyHunks(before, payload.diff.hunks, opts.hunks);
     // The agent's merge must leave a JSON document parsing; the human's may not,
     // since they can see the text and fix it.
@@ -2104,7 +2049,7 @@ export class WorkspaceSession {
 
   /** The active version's text: what every note is anchored against. */
   private activeText(d: Doc): string {
-    return readFileSync(this.versionPath(d, d.active), "utf8");
+    return readFileSync(this.core.versionPath(d, d.active), "utf8");
   }
 
   /** Place every note in the active text as it stands now (re-anchoring after edits). */
@@ -2196,7 +2141,7 @@ export class WorkspaceSession {
 
   /** The slug of the document that holds note `id`, or undefined when no document does. */
   noteDoc(id: string): string | undefined {
-    return this.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
+    return this.core.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
   }
 
   /** Notes on a document, placed; `all` includes the resolved ones. */
@@ -2222,7 +2167,7 @@ export class WorkspaceSession {
    * attention tick asks this every second, and `view()` would place every note.
    */
   noteFacts(): { slug: string; notes: readonly Note[] }[] {
-    return this.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
+    return this.core.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
   }
 
   /**
@@ -2324,7 +2269,7 @@ export class WorkspaceSession {
     const d = this.docOrDie(slug);
     if (docFormat(d.original) !== "json") return null;
     this.versionOrDie(d, version);
-    return jsonProblem(readFileSync(this.versionPath(d, version), "utf8"));
+    return jsonProblem(readFileSync(this.core.versionPath(d, version), "utf8"));
   }
 
   /** Refuse, saying where and why, when `text` (a JSON document's) does not parse. */
@@ -2380,7 +2325,7 @@ export class WorkspaceSession {
           409,
         );
     }
-    const text = readFileSync(this.versionPath(d, d.active), "utf8");
+    const text = readFileSync(this.core.versionPath(d, d.active), "utf8");
     // A JSON document is a contract other things read: one that does not parse
     // never reaches the file. The text stays in the version, to be fixed there.
     this.refuseInvalidJson(d, d.active, text, "saved");
@@ -2452,7 +2397,7 @@ export class WorkspaceSession {
    */
   closeDoc(slug: string): { slug: string } {
     const d = this.docOrDie(slug);
-    if (this.m.openDoc === d.slug) this.m.openDoc = null;
+    if (this.core.m.openDoc === d.slug) this.core.m.openDoc = null;
     this.persist();
     return { slug: d.slug };
   }
@@ -2478,8 +2423,8 @@ export class WorkspaceSession {
       original: d.original,
       versions: d.versions.length,
     };
-    this.m.docs = this.m.docs.filter((x) => x.slug !== d.slug);
-    if (this.m.openDoc === d.slug) this.m.openDoc = this.m.docs[0]?.slug ?? null;
+    this.core.m.docs = this.core.m.docs.filter((x) => x.slug !== d.slug);
+    if (this.core.m.openDoc === d.slug) this.core.m.openDoc = this.core.m.docs[0]?.slug ?? null;
     this.relink();
     this.closeOrphanedOpenDoc();
     this.persist();
@@ -2502,7 +2447,7 @@ export class WorkspaceSession {
    * sibling beside a loose image is no image this session shows.
    */
   private imageNodeAt(abs: string): { entry: ContextEntry; rel: string } | null {
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership === "listed") {
         const only = listedFile(e);
         if (only?.kind === "image" && only.abs === abs) return { entry: e, rel: only.rel };
@@ -2526,7 +2471,7 @@ export class WorkspaceSession {
     if (!b?.inner || b.inner === b.type.main) return null;
     // In a set only: a listed entry's guard admits its one file and nothing
     // beneath it, so a listed bundle's assets are not served.
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership === "listed" || !b.root.startsWith(e.root + sep)) continue;
       if (findNode(e.nodes, toPosix(relative(e.root, b.root)))?.kind === "bundle")
         return { entry: e, rel: toPosix(relative(e.root, abs)) };
@@ -2686,9 +2631,9 @@ export class WorkspaceSession {
     this.realInsideOrDie(abs, at.entry, "not opened");
     // The document on screen is put aside, not forgotten: closing the image
     // brings it back. A second image opened over the first keeps the same one.
-    if (this.m.openDoc) this.m.docAside = this.m.openDoc;
-    this.m.openImage = abs;
-    this.m.openDoc = null;
+    if (this.core.m.openDoc) this.core.m.docAside = this.core.m.openDoc;
+    this.core.m.openImage = abs;
+    this.core.m.openDoc = null;
     this.persist();
     return { path: abs };
   }
@@ -2698,17 +2643,17 @@ export class WorkspaceSession {
    * when that document is still held (closed or gone, nothing comes back).
    */
   closeImage(): void {
-    const back = this.m.docAside;
-    this.m.openImage = null;
-    this.m.docAside = null;
-    if (back && this.m.docs.some((d) => d.slug === back)) this.m.openDoc = back;
+    const back = this.core.m.docAside;
+    this.core.m.openImage = null;
+    this.core.m.docAside = null;
+    if (back && this.core.m.docs.some((d) => d.slug === back)) this.core.m.openDoc = back;
     this.persist();
   }
 
   /** The stamp of every image the context shows now: the thumbnails worth keeping. */
   imageStamps(): Set<string> {
     const out = new Set<string>();
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       // A set's images and a loose image's alike: a listed entry's nodes hold
       // only its own file, never a sibling.
       for (const p of imagePaths(e)) {
@@ -2724,7 +2669,7 @@ export class WorkspaceSession {
 
   /** The open image's path, or null. */
   get openImagePath(): string | null {
-    return this.m.openImage ?? null;
+    return this.core.m.openImage ?? null;
   }
 
   /**
@@ -2732,7 +2677,7 @@ export class WorkspaceSession {
    * has left the tree. Reads its size and first bytes, never more.
    */
   imageView(): ImageView | null {
-    const abs = this.m.openImage;
+    const abs = this.core.m.openImage;
     if (!abs) return null;
     const at = this.imageNodeAt(abs);
     if (!at) return null;
@@ -2790,7 +2735,7 @@ export class WorkspaceSession {
 
   /** A sidecar's text as the session holds it: its active version, else the file. */
   private sidecarText(path: string): string | null {
-    const d = this.m.docs.find((x) => x.original === path);
+    const d = this.core.m.docs.find((x) => x.original === path);
     try {
       return d ? this.activeText(d) : readFileSync(path, "utf8");
     } catch {
@@ -2867,7 +2812,7 @@ export class WorkspaceSession {
         `${this.display(path)} has been written into since it was ${dir ? "made" : "started"}, so undo leaves it: delete it from the sidebar if it should go`,
         409,
       );
-    const held = this.m.docs.find(
+    const held = this.core.m.docs.find(
       (d) => (d.original === path || d.original.startsWith(path + sep)) && !d.missing,
     );
     if (held && this.isDirty(held))
@@ -2937,12 +2882,12 @@ export class WorkspaceSession {
       /* today, then */
     }
     // A converted image's description records the name it came in with.
-    const cameAs = this.m.importedAs?.[abs];
+    const cameAs = this.core.m.importedAs?.[abs];
     const text = sidecarSkeleton(cameAs ?? basename(abs), source, added);
     this.world.writeFile(path, text, { flag: "wx" });
-    if (cameAs !== undefined && this.m.importedAs) {
-      delete this.m.importedAs[abs];
-      if (Object.keys(this.m.importedAs).length === 0) delete this.m.importedAs;
+    if (cameAs !== undefined && this.core.m.importedAs) {
+      delete this.core.m.importedAs[abs];
+      if (Object.keys(this.core.m.importedAs).length === 0) delete this.core.m.importedAs;
     }
     if (!this.itemAt(path)) this.adoptNew(path);
     this.persist();
@@ -2979,14 +2924,14 @@ export class WorkspaceSession {
    */
   rememberImportName(abs: string, given: string): void {
     const at = this.contextForm(resolve(abs));
-    const names = { ...(this.m.importedAs ?? {}) };
+    const names = { ...(this.core.m.importedAs ?? {}) };
     delete names[at];
     if (given !== basename(at)) names[at] = given;
     const keys = Object.keys(names);
     // Bounded: a name nobody describes is dropped, oldest first.
     for (const k of keys.slice(0, Math.max(0, keys.length - IMPORT_NAMES_MAX))) delete names[k];
-    if (Object.keys(names).length > 0) this.m.importedAs = names;
-    else delete this.m.importedAs;
+    if (Object.keys(names).length > 0) this.core.m.importedAs = names;
+    else delete this.core.m.importedAs;
     this.persist();
   }
 
@@ -3084,7 +3029,7 @@ export class WorkspaceSession {
     const b = bundleOf(abs);
     if (!b || b.root !== abs || b.inner !== "")
       throw new SessionError(`${this.display(abs)} is not a bundle's folder`, 400);
-    const entry = this.m.context.find(
+    const entry = this.core.m.context.find(
       (e) =>
         e.membership === "mirrored" &&
         abs.startsWith(e.root + sep) &&
@@ -3409,7 +3354,7 @@ export class WorkspaceSession {
     // Never a set's own folder (one nested in this set counts too), and never
     // the workspace or the session's own store.
     const holds = (p: string) => within(p, item.abs) || within(realOr(p), real);
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.id === item.entry.id) continue;
       if (e.membership === "mirrored" && holds(e.root))
         throw new SessionError(
@@ -3468,14 +3413,14 @@ export class WorkspaceSession {
     if (sidecar) files++;
     const inside = (p: string) =>
       p === item.abs || p.startsWith(item.abs + sep) || (sidecar !== null && p === sidecar);
-    const docs = this.m.docs
+    const docs = this.core.m.docs
       .filter((d) => inside(d.original) && !d.missing)
       .map((d) => ({
         slug: d.slug,
         name: this.docName(d),
         unsaved: this.isDirty(d),
         versions: d.versions.length,
-        open: this.m.openDoc === d.slug,
+        open: this.core.m.openDoc === d.slug,
       }));
     return {
       path: item.abs,
@@ -3508,18 +3453,18 @@ export class WorkspaceSession {
     const inside = (p: string) => p === path || p.startsWith(path + sep);
     const docs: string[] = [];
     let closed: string | null = null;
-    for (const d of this.m.docs) {
+    for (const d of this.core.m.docs) {
       if (!inside(d.original)) continue;
       d.missing = true;
       docs.push(d.slug);
-      if (this.m.openDoc === d.slug) {
-        this.m.openDoc = null;
+      if (this.core.m.openDoc === d.slug) {
+        this.core.m.openDoc = null;
         closed = d.slug;
       }
     }
     // An image has no record to keep: its viewer simply closes.
-    if (this.m.openImage && inside(this.m.openImage)) this.m.openImage = null;
-    for (const e of [...this.m.context]) {
+    if (this.core.m.openImage && inside(this.core.m.openImage)) this.core.m.openImage = null;
+    for (const e of [...this.core.m.context]) {
       const only = listedFile(e);
       if (only && inside(only.abs)) this.removeContext(e.id);
     }
@@ -3546,7 +3491,7 @@ export class WorkspaceSession {
 
   /** Re-mirror the sets that hold `abs`, after a file there came or went. */
   private rescanAround(abs: string): void {
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       if (e.membership === "mirrored" && abs.startsWith(e.root + sep)) this.rescan(e.id);
     const listed = this.listedBundleHolding(abs);
     if (listed) this.refreshListed(listed);
@@ -3574,7 +3519,7 @@ export class WorkspaceSession {
    */
   originalsUnder(abs: string): FileEvent[] {
     const out: FileEvent[] = [];
-    for (const d of this.m.docs) {
+    for (const d of this.core.m.docs) {
       if (d.original !== abs && !d.original.startsWith(abs + sep)) continue;
       const there = existsSync(d.original);
       if (!d.missing && !there) {
@@ -3621,7 +3566,7 @@ export class WorkspaceSession {
     const ev = this.onFileEvent(abs);
     const out = ev ? [ev] : [];
     if (ev?.kind === "bundle" || ev?.kind === "tree" || !isBundleMember(abs)) return out;
-    if (!this.m.docs.some((d) => d.original === abs)) return out;
+    if (!this.core.m.docs.some((d) => d.original === abs)) return out;
     const bundle = this.shownBundleOf(abs);
     if (bundle && existsSync(abs)) out.push({ kind: "bundle", path: bundle, file: abs });
     return out;
@@ -3637,7 +3582,7 @@ export class WorkspaceSession {
       const rest = abs.slice(this.docsDir.length + 1).split(sep);
       if (rest.length !== 2) return null;
       const [slug, file] = rest as [string, string];
-      const d = this.m.docs.find((x) => x.slug === slug);
+      const d = this.core.m.docs.find((x) => x.slug === slug);
       const match = /^v(\d+)(\.[a-z]+)$/.exec(file);
       if (!d || !match || match[2] !== d.ext) return null;
       const n = Number(match[1]);
@@ -3657,7 +3602,7 @@ export class WorkspaceSession {
         // notes point at a different document, so the file is renumbered.
         if (n < d.nextVersion) {
           const next = this.takeVersion(d);
-          const to = this.versionPath(d, next);
+          const to = this.core.versionPath(d, next);
           this.owned.set(to, contentHash(text));
           this.own.rename(abs, this.ownFileOrDie(to));
           d.versions.push({ n: next, by: "agent", createdAt: nowIso() });
@@ -3692,7 +3637,7 @@ export class WorkspaceSession {
     }
 
     // An opened original: by its stored path, or by realpath for a symlink.
-    const d = this.m.docs.find((x) => x.original === abs || realOr(x.original) === abs);
+    const d = this.core.m.docs.find((x) => x.original === abs || realOr(x.original) === abs);
     if (d) {
       let text: string;
       try {
@@ -3759,7 +3704,7 @@ export class WorkspaceSession {
     }
 
     // Something under a mirrored root: the tree may have changed.
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep))) {
         return this.rescan(e.id) ? { kind: "tree", entryId: e.id } : null;
       }
@@ -3779,7 +3724,7 @@ export class WorkspaceSession {
   private shownBundleOf(abs: string): string | null {
     const b = bundleOf(abs);
     if (!b) return null;
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       for (const { abs: at } of bundlesIn(e)) if (at === b.root) return at;
     return null;
   }
@@ -3807,14 +3752,14 @@ export class WorkspaceSession {
     // In the innermost set that holds it: a linked folder opened as a set of
     // its own sits under the set holding its link, and is named as itself.
     let set: ContextEntry | undefined;
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership !== "mirrored") continue;
       if (abs !== e.root && !abs.startsWith(e.root + sep)) continue;
       if (!set || e.root.length > set.root.length) set = e;
     }
     if (set)
       return abs === set.root ? set.label : `${set.label}/${toPosix(relative(set.root, abs))}`;
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       if (e.membership !== "mirrored" && e.nodes.some((n) => join(e.root, n.rel) === abs))
         return e.label;
     if (abs.startsWith(this.dir + sep)) return toPosix(relative(this.dir, abs));
@@ -3843,9 +3788,9 @@ export class WorkspaceSession {
    * place differently, and it must land on the same node.
    */
   private contextForm(abs: string): string {
-    if (this.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep))) return abs;
+    if (this.core.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep))) return abs;
     const real = realOr(abs);
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       const realRoot = realOr(e.root);
       if (real === realRoot) return e.root;
       if (real.startsWith(realRoot + sep)) return join(e.root, relative(realRoot, real));
@@ -3855,7 +3800,7 @@ export class WorkspaceSession {
 
   /** The mirrored entry that covers `abs` (its root, or anything under it), if any. */
   private coveringEntry(abs: string, except?: string): ContextEntry | undefined {
-    return this.m.context.find(
+    return this.core.m.context.find(
       (e) =>
         e.id !== except &&
         e.membership === "mirrored" &&
@@ -3880,8 +3825,9 @@ export class WorkspaceSession {
     // folder added as a set of its own (what a link row's refusal says to do)
     // is also a link's row in the set that holds it, and must take things as
     // the set it now is.
-    if (this.m.context.some((e) => e.membership === "mirrored" && abs === e.root)) return shown();
-    for (const e of this.m.context) {
+    if (this.core.m.context.some((e) => e.membership === "mirrored" && abs === e.root))
+      return shown();
+    for (const e of this.core.m.context) {
       // A listed entry is no place to put things, but for a folder inside an
       // expandable bundle listed on its own (a stage's `docs/`), which is
       // shown under its row as a set's folder is.
@@ -3976,7 +3922,7 @@ export class WorkspaceSession {
     }
     const asBundle = (node: ContextNode | undefined) =>
       node?.kind === "bundle" ? bundleTypeOf(abs) : null;
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership === "listed") {
         const only = listedFile(e);
         // A member's file in an expandable bundle listed on its own.
@@ -4035,7 +3981,7 @@ export class WorkspaceSession {
     const within = (p: string, root: string): boolean => p === root || p.startsWith(root + sep);
     const known = (() => {
       const roots: { root: string; only?: string }[] = [{ root: this.dir }];
-      for (const e of this.m.context) {
+      for (const e of this.core.m.context) {
         if (e.membership === "mirrored") roots.push({ root: e.root });
         else
           for (const n of e.nodes)
@@ -4088,7 +4034,7 @@ export class WorkspaceSession {
     if (this.moves.length > MOVES_KEPT) this.moves.splice(0, this.moves.length - MOVES_KEPT);
     const moved = (p: string): string | null =>
       p === from ? to : p.startsWith(from + sep) ? to + p.slice(from.length) : null;
-    for (const d of this.m.docs) {
+    for (const d of this.core.m.docs) {
       const now = moved(d.original);
       if (now) {
         d.original = now;
@@ -4096,21 +4042,21 @@ export class WorkspaceSession {
       }
     }
     // The open image follows a rename or a move, as an open document does.
-    const image = this.m.openImage ? moved(this.m.openImage) : null;
-    if (image) this.m.openImage = image;
+    const image = this.core.m.openImage ? moved(this.core.m.openImage) : null;
+    if (image) this.core.m.openImage = image;
     // A converted image's remembered name follows it; one left by a file that
     // was where the moved thing now is goes.
-    if (this.m.importedAs) {
+    if (this.core.m.importedAs) {
       const names: Record<string, string> = {};
-      for (const [p, n] of Object.entries(this.m.importedAs)) {
+      for (const [p, n] of Object.entries(this.core.m.importedAs)) {
         const now = moved(p);
         if (now) names[now] = n;
         else if (p !== to && !p.startsWith(to + sep)) names[p] = n;
       }
-      this.m.importedAs = names;
+      this.core.m.importedAs = names;
     }
     const drop = new Set<string>();
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       if (e.membership === "listed") {
         const only = listedFile(e);
         if (!only) continue;
@@ -4141,8 +4087,8 @@ export class WorkspaceSession {
         }
       }
     }
-    this.m.context = this.m.context.filter((e) => !drop.has(e.id));
-    for (const e of this.m.context) if (e.membership === "mirrored") this.rescan(e.id);
+    this.core.m.context = this.core.m.context.filter((e) => !drop.has(e.id));
+    for (const e of this.core.m.context) if (e.membership === "mirrored") this.rescan(e.id);
     this.refreshListedContents();
     this.relink();
   }
@@ -4155,7 +4101,7 @@ export class WorkspaceSession {
     // as a set of its own sits under the set holding its link, which shows it
     // only as a link's row, and the thing made is shown by the other one.
     if (set) {
-      for (const e of this.m.context) {
+      for (const e of this.core.m.context) {
         const holds = abs === e.root || abs.startsWith(e.root + sep);
         if (e.membership === "mirrored" && holds) this.rescan(e.id);
       }
@@ -4168,7 +4114,7 @@ export class WorkspaceSession {
       // takes the one set guard.
       this.mayBeASetOrDie(abs);
       const id = `c-${randHex(3)}`;
-      this.m.context.push(
+      this.core.m.context.push(
         entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard()),
       );
     }
@@ -4179,7 +4125,7 @@ export class WorkspaceSession {
   private listedBundleHolding(abs: string): string | null {
     const b = bundleOf(abs);
     if (!b || b.inner === "") return null;
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       const only = listedFile(e);
       if (only?.kind === "bundle" && only.abs === b.root) return b.root;
     }
@@ -4188,7 +4134,7 @@ export class WorkspaceSession {
 
   /** Read every listed bundle of an expandable type again: its contents follow what moved. */
   private refreshListedContents(): void {
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       const only = listedFile(e);
       if (only?.kind === "bundle" && bundleTypeOf(only.abs)?.expand) this.refreshListed(only.abs);
     }
@@ -4551,7 +4497,7 @@ export class WorkspaceSession {
    */
   private planWorld(world: MovedWorld, adopted: readonly string[]): PlanWorld {
     const entries: EntryAfter[] = [];
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       const only = e.membership === "listed" ? listedFile(e) : null;
       if (e.membership === "listed" && !only) continue;
       const was = only ? only.abs : e.root;
@@ -4854,7 +4800,7 @@ export class WorkspaceSession {
 
   /** Read a listed bundle's node again (its title changed), as a set's rescan does for one inside it. */
   private refreshListed(abs: string): void {
-    for (const e of this.m.context) {
+    for (const e of this.core.m.context) {
       const only = listedFile(e);
       if (only?.kind !== "bundle" || only.abs !== abs) continue;
       const type = bundleTypeOf(abs);
@@ -4885,7 +4831,7 @@ export class WorkspaceSession {
       return null;
     }
     const text = "{}\n";
-    const d = this.m.docs.find((x) => x.original === to);
+    const d = this.core.m.docs.find((x) => x.original === to);
     if (d && this.activeText(d) !== "") return null;
     this.writeOwned(to, text, this.world);
     if (!d) return null;
@@ -5051,7 +4997,7 @@ export class WorkspaceSession {
     dest: string,
     copies?: ReadonlyMap<string, string>,
   ): { text: string; count: number } {
-    const holders = this.m.context.filter((e) => src.startsWith(e.root + sep));
+    const holders = this.core.m.context.filter((e) => src.startsWith(e.root + sep));
     const root = holders.sort((a, b) => b.root.length - a.root.length)[0]?.root ?? null;
     const stat = (p: string) => {
       try {
@@ -5146,7 +5092,7 @@ export class WorkspaceSession {
           return null;
         }
       };
-      const d = this.m.docs.find((x) => x.original === edit.path);
+      const d = this.core.m.docs.find((x) => x.original === edit.path);
       if (d) {
         if (!d.missing && !d.outsideChanged) {
           const now = read(d.original);
@@ -5295,7 +5241,7 @@ export class WorkspaceSession {
    */
   private forgetPath(abs: string): void {
     const inside = (p: string) => p === abs || p.startsWith(abs + sep);
-    for (const e of [...this.m.context]) {
+    for (const e of [...this.core.m.context]) {
       if (e.membership === "mirrored" && !inside(e.root)) {
         this.rescan(e.id);
         continue;
@@ -5309,10 +5255,10 @@ export class WorkspaceSession {
       e.nodes = prune(e.nodes);
       if (e.nodes.length === 0 || inside(e.root)) this.removeContext(e.id);
     }
-    this.m.docs = this.m.docs.filter((d) => !inside(d.original));
-    if (this.m.openImage && inside(this.m.openImage)) this.m.openImage = null;
-    if (this.m.openDoc && !this.m.docs.some((d) => d.slug === this.m.openDoc))
-      this.m.openDoc = this.m.docs[0]?.slug ?? null;
+    this.core.m.docs = this.core.m.docs.filter((d) => !inside(d.original));
+    if (this.core.m.openImage && inside(this.core.m.openImage)) this.core.m.openImage = null;
+    if (this.core.m.openDoc && !this.core.m.docs.some((d) => d.slug === this.core.m.openDoc))
+      this.core.m.openDoc = this.core.m.docs[0]?.slug ?? null;
     this.relink();
     this.closeOrphanedOpenDoc();
     this.persist();
@@ -5415,7 +5361,7 @@ export class WorkspaceSession {
   unmakeSet(rawPath: string): { path: string; from: string; folder: string; entry: string } {
     const abs = this.contextForm(resolve(rawPath));
     const folder = dirname(abs);
-    const e = this.m.context.find((x) => x.membership === "mirrored" && x.root === folder);
+    const e = this.core.m.context.find((x) => x.membership === "mirrored" && x.root === folder);
     let left: string[] | null = null;
     try {
       left = statSync(abs).isFile() ? readdirSync(folder) : null;
@@ -5528,7 +5474,7 @@ export class WorkspaceSession {
     // listed on its own whose member folder it was made in.
     const e =
       this.coveringEntry(abs) ??
-      this.m.context.find((x) => {
+      this.core.m.context.find((x) => {
         const only = listedFile(x);
         return only?.kind === "bundle" && abs.startsWith(only.abs + sep);
       });
@@ -5584,14 +5530,14 @@ export class WorkspaceSession {
       ...(input.via ? { via: input.via } : {}),
       ts: nowIso(),
     };
-    this.m.chat.push(msg);
+    this.core.m.chat.push(msg);
     this.persist();
     return msg;
   }
 
   /** The conversation, without building a snapshot around it. */
   messages(): readonly Message[] {
-    return this.m.chat;
+    return this.core.m.chat;
   }
 
   // ── tasks ──────────────────────────────────────────────────────────────
@@ -5606,7 +5552,7 @@ export class WorkspaceSession {
     if (input.parent !== undefined) this.taskOrDie(input.parent);
     const at = nowIso();
     let id = `t-${randHex(4)}`;
-    while (this.m.tasks.some((t) => t.id === id)) id = `t-${randHex(4)}`;
+    while (this.core.m.tasks.some((t) => t.id === id)) id = `t-${randHex(4)}`;
     const task: Task = {
       id,
       title,
@@ -5620,18 +5566,18 @@ export class WorkspaceSession {
       createdAt: at,
       updatedAt: at,
     };
-    this.m.tasks.push(task);
+    this.core.m.tasks.push(task);
     this.persist();
     return task;
   }
 
   private taskOrDie(id: string): Task {
-    const task = this.m.tasks.find((t) => t.id === id);
+    const task = this.core.m.tasks.find((t) => t.id === id);
     if (!task)
       throw new SessionError(
         `no task ${id} in this session`,
         404,
-        this.m.tasks.filter((t) => !isFinished(t.status)).map((t) => t.id),
+        this.core.m.tasks.filter((t) => !isFinished(t.status)).map((t) => t.id),
       );
     return task;
   }
@@ -5679,23 +5625,23 @@ export class WorkspaceSession {
     const task = this.taskOrDie(id);
     if (!isFinished(task.status))
       throw new SessionError(`task ${id} is ${task.status}: cancel it before removing it`, 409);
-    this.m.tasks = this.m.tasks.filter((t) => t.id !== id);
+    this.core.m.tasks = this.core.m.tasks.filter((t) => t.id !== id);
     this.persist();
     return task;
   }
 
   /** Forget every finished task. Outstanding ones are untouched. */
   clearFinishedTasks(): number {
-    const before = this.m.tasks.length;
-    this.m.tasks = this.m.tasks.filter((t) => !isFinished(t.status));
-    const cleared = before - this.m.tasks.length;
+    const before = this.core.m.tasks.length;
+    this.core.m.tasks = this.core.m.tasks.filter((t) => !isFinished(t.status));
+    const cleared = before - this.core.m.tasks.length;
     if (cleared > 0) this.persist();
     return cleared;
   }
 
   /** Newest first: a queue is read from the top. */
   tasks(): Task[] {
-    return [...this.m.tasks].reverse();
+    return [...this.core.m.tasks].reverse();
   }
 
   // ── views ──────────────────────────────────────────────────────────────
@@ -5703,7 +5649,7 @@ export class WorkspaceSession {
   docView(d: Doc): DocView {
     let hash = "";
     try {
-      hash = contentHash(readFileSync(this.versionPath(d, d.active), "utf8"));
+      hash = contentHash(readFileSync(this.core.versionPath(d, d.active), "utf8"));
     } catch {
       hash = "";
     }
@@ -5718,7 +5664,7 @@ export class WorkspaceSession {
       entryId: d.entryId,
       rel: d.rel,
       ext: d.ext,
-      versions: d.versions.map((v) => ({ ...v, path: this.versionPath(d, v.n) })),
+      versions: d.versions.map((v) => ({ ...v, path: this.core.versionPath(d, v.n) })),
       active: d.active,
       hash,
       dirty: !d.missing && this.isDirty(d),
@@ -5824,11 +5770,11 @@ export class WorkspaceSession {
         version: d?.active ?? null,
       });
     };
-    for (const entry of this.m.context)
+    for (const entry of this.core.m.context)
       for (const path of docPaths(entry))
         add(
           path,
-          this.m.docs.find((d) => d.original === path),
+          this.core.m.docs.find((d) => d.original === path),
         );
     // A document the session keeps but no entry lists (opened, then its entry
     // left) is still one the human has, unless a set's folder holds it and the
@@ -5836,7 +5782,7 @@ export class WorkspaceSession {
     // search and links as it is out of the tree. Its record stays, versions
     // and unsaved text, for when the filter lets it back.
     const filtered = this.filteredOut();
-    for (const d of this.m.docs)
+    for (const d of this.core.m.docs)
       if (!(d.entryId === null && filtered(d.original))) add(d.original, d);
     return candidates;
   }
@@ -5855,7 +5801,7 @@ export class WorkspaceSession {
 
   /** A candidate's text: its ACTIVE VERSION when the session holds it, else the file. */
   private candidateText(c: Candidate): string {
-    const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
+    const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
     return d ? this.activeText(d) : readFileSync(c.path, "utf8");
   }
 
@@ -5874,8 +5820,8 @@ export class WorkspaceSession {
    */
   private headingsAt(path: string): Heading[] | null {
     if (docFormat(path) === "json") return [];
-    const d = this.m.docs.find((x) => x.original === path);
-    const file = d ? this.versionPath(d, d.active) : path;
+    const d = this.core.m.docs.find((x) => x.original === path);
+    const file = d ? this.core.versionPath(d, d.active) : path;
     let stamp: string;
     try {
       const st = statSync(file);
@@ -5905,7 +5851,7 @@ export class WorkspaceSession {
     this.docOrDie(slug);
     const index = this.contextIndex();
     const own = this.canonical(path, index);
-    const listed = index.entryOf.has(own) || this.m.docs.some((d) => d.original === own);
+    const listed = index.entryOf.has(own) || this.core.m.docs.some((d) => d.original === own);
     if (!listed || isImageName(own)) return { path: own, headings: [] };
     const hs = this.headingsAt(own) ?? [];
     const headings: HeadingOffer[] = hs.map((h, i) => ({
@@ -5921,7 +5867,7 @@ export class WorkspaceSession {
     const from = this.docOrDie(slug).original;
     const all = this.markdownCandidates();
     const shownOf = (path: string) => {
-      const entry = this.m.context.find((e) => path.startsWith(e.root + sep));
+      const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep));
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
     };
     const index = this.contextIndex();
@@ -5938,7 +5884,7 @@ export class WorkspaceSession {
     // And every image the tree shows (kit-image-embeds), by name only: an
     // image's bytes are never read here.
     const seen = new Set(targets.map((t) => t.path));
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       for (const path of imagePaths(e)) {
         if (seen.has(path)) continue;
         seen.add(path);
@@ -6175,8 +6121,10 @@ export class WorkspaceSession {
     const d = from === null ? undefined : this.docOrDie(from);
     const src = d?.original ?? null;
     const entry =
-      (d?.entryId ? this.m.context.find((e) => e.id === d.entryId) : undefined) ??
-      (src ? this.m.context.find((e) => src.startsWith(e.root + sep)) : this.m.context[0]);
+      (d?.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
+      (src
+        ? this.core.m.context.find((e) => src.startsWith(e.root + sep))
+        : this.core.m.context[0]);
     return this.resolveFrom(target, src, entry, origin, this.contextIndex());
   }
 
@@ -6214,8 +6162,8 @@ export class WorkspaceSession {
     const index = this.contextIndex();
     // The entry the document is read in: its own, else the first that holds it.
     const home =
-      (d.entryId ? this.m.context.find((e) => e.id === d.entryId) : undefined) ??
-      this.m.context.find((e) => from.startsWith(e.root + sep));
+      (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
+      this.core.m.context.find((e) => from.startsWith(e.root + sep));
     const out: DroppedLink[] = [];
     for (const raw of new Set(paths)) {
       const path = this.canonical(raw, index);
@@ -6257,8 +6205,8 @@ export class WorkspaceSession {
     const d = this.docOrDie(slug);
     const src = d.original;
     const entry =
-      (d.entryId ? this.m.context.find((e) => e.id === d.entryId) : undefined) ??
-      this.m.context.find((e) => src.startsWith(e.root + sep));
+      (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
+      this.core.m.context.find((e) => src.startsWith(e.root + sep));
     const index = this.contextIndex();
     const notShown = (target: string, reason: string): EmbedView => ({
       target,
@@ -6422,8 +6370,8 @@ export class WorkspaceSession {
     // A document gone from disk (deleted outside, or moved to the Trash)
     // is held only as a record: a link to it answers nothing.
     return (
-      this.m.docs.find((x) => !x.missing && (x.original === p || x.original === own))?.original ??
-      null
+      this.core.m.docs.find((x) => !x.missing && (x.original === p || x.original === own))
+        ?.original ?? null
     );
   }
 
@@ -6543,8 +6491,8 @@ export class WorkspaceSession {
     edges: AppEdge[];
     edgeAt?: (EdgeSpot | undefined)[];
   } | null {
-    const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
-    const file = d ? this.versionPath(d, version ?? d.active) : c.path;
+    const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
+    const file = d ? this.core.versionPath(d, version ?? d.active) : c.path;
     read.add(file);
     let stamp: string;
     try {
@@ -6871,7 +6819,7 @@ export class WorkspaceSession {
     const shown = (p: string) => (entry ? toPosix(relative(entry.root, p)) : basename(p));
     // The version the facts were read from, for a held document: the header
     // shows an answer only for the version on screen.
-    const held = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
+    const held = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
     const base = {
       doc: subject.doc,
       ...(held ? { version: held.active } : {}),
@@ -7011,12 +6959,12 @@ export class WorkspaceSession {
    * it, else (a document opened by path) the one whose folder it is in.
    */
   private entryFinder(index: ContextIndex): (path: string) => ContextEntry | undefined {
-    const byId = new Map(this.m.context.map((e) => [e.id, e]));
+    const byId = new Map(this.core.m.context.map((e) => [e.id, e]));
     return (path) => {
       const id = index.entryOf.get(path);
       return (
         (id !== undefined ? byId.get(id) : undefined) ??
-        this.m.context.find((e) => path.startsWith(e.root + sep))
+        this.core.m.context.find((e) => path.startsWith(e.root + sep))
       );
     };
   }
@@ -7108,7 +7056,7 @@ export class WorkspaceSession {
     // through `entryOf`, so the check follows a link as a click does.
     const setEntry = (path: string): ContextEntry | undefined => {
       let best = entryOf(path);
-      for (const e of this.m.context)
+      for (const e of this.core.m.context)
         if (
           e.membership === "mirrored" &&
           path.startsWith(e.root + sep) &&
@@ -7308,7 +7256,7 @@ export class WorkspaceSession {
     const proposed: ProposedLinkView[] = [];
     if (keep(BODY_LINKS))
       for (const c of all) {
-        const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
+        const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
         if (!d || d.versions.length < 2) continue;
         const entry = entryOf(c.path);
         // Where the document was before the moves this daemon made: a link
@@ -7599,7 +7547,7 @@ export class WorkspaceSession {
       ...(wantLeaving ? { leaving: { count: leavingLinks.length, links: cut(leavingLinks) } } : {}),
       ...(this.linkCheckOpts.noun !== undefined ? { noun: this.linkCheckOpts.noun } : {}),
       // Only the sets the answer names, in the context's order.
-      sets: this.m.context
+      sets: this.core.m.context
         .filter((e) => named.has(e.id))
         .map((e) => ({ id: e.id, label: e.label, total: totals.get(e.id) ?? 0 })),
       ...(truncated ? { truncated: true as const } : {}),
@@ -8086,7 +8034,7 @@ export class WorkspaceSession {
           404,
         );
       this.versionOrDie(d, version);
-      return { text: readFileSync(this.versionPath(d, version), "utf8"), version };
+      return { text: readFileSync(this.core.versionPath(d, version), "utf8"), version };
     }
     const c = this.candidates().find((x) => x.path === subject.path);
     if (!c) throw new SessionError(`no document ${subject.path} in this session`, 404);
@@ -8192,7 +8140,7 @@ export class WorkspaceSession {
    */
   checkup(): Finding[] {
     const nodes: { entry: string; path: string; shown: string; exists: boolean }[] = [];
-    for (const e of this.m.context)
+    for (const e of this.core.m.context)
       for (const p of docPaths(e))
         nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
     const check = this.linkCheck();
@@ -8215,7 +8163,7 @@ export class WorkspaceSession {
         headings: check.headings.count,
         proposed: check.proposed?.count ?? 0,
       },
-      docs: this.m.docs.map((d) => ({
+      docs: this.core.m.docs.map((d) => ({
         slug: d.slug,
         name: d.name,
         original: d.original,
@@ -8243,14 +8191,14 @@ export class WorkspaceSession {
     tasks: Task[];
   } {
     return {
-      sessionId: this.m.sessionId,
+      sessionId: this.core.m.sessionId,
       dir: this.dir,
       workspace: this.workspace,
-      context: this.m.context,
-      docs: this.m.docs.map((d) => this.docView(d)),
-      openDoc: this.m.openDoc,
+      context: this.core.m.context,
+      docs: this.core.m.docs.map((d) => this.docView(d)),
+      openDoc: this.core.m.openDoc,
       openImage: this.imageView(),
-      chat: this.m.chat,
+      chat: this.core.m.chat,
       tasks: this.tasks(),
     };
   }
