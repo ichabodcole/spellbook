@@ -3,8 +3,8 @@ type: item
 title: Move WorkspaceShell's column and pane-key hooks out
 description:
   The column layout and pane keys move to useShellColumns.ts and usePaneKeys.ts.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-99c2-7649-9db8-4e29977b8dfc
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
