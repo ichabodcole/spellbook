@@ -54,7 +54,7 @@ export const TIERS: Record<string, number> = {
   chats: 2,
   // Tier 3: documents (S4 built `tasks`, which needs only the core).
   tasks: 3,
-  // Tier 4: what reads across documents (S5 builds the read side).
+  // Tier 4: what reads across documents (S5 built the read side).
   // Within it, one way: `linkResolve`, `profiles` and `search` take
   // `readIndex`; `relations` takes `readIndex`, `linkResolve` and `profiles`.
   // The picker's relations (`linkResolve.linkTargets`) reach `relations`
@@ -64,6 +64,10 @@ export const TIERS: Record<string, number> = {
   profiles: 4,
   relations: 4,
   search: 4,
+  // Tier 5: across the tree and the whole view (S5 built the link check and
+  // the link reports).
+  linkCheck: 5,
+  linkReports: 5,
 };
 
 /**
