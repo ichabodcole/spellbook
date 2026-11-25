@@ -6,7 +6,7 @@ description:
   at a still-running board, so unpinned verbs exit 5; list reads titles from the
   discovery file and misses init --title.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a176ad-1bd5-71a6-834c-2a18ecd6382e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
