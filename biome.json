@@ -154,21 +154,6 @@
       }
     },
     {
-      "includes": ["src/kit/shell/WorkspaceShell.tsx"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noExcessiveLinesPerFile": {
-              "level": "error",
-              "options": {
-                "maxLines": 1217
-              }
-            }
-          }
-        }
-      }
-    },
-    {
       "includes": ["src/kit/workspace/verbs.ts"],
       "linter": {
         "rules": {
