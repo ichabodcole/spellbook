@@ -84,4 +84,4 @@ _Written at close._
 - fix/grapevine-small-hint-miscounts (landed 2026-11-24)
 - fix/glamour-daemon-holds-cli-stderr (landed 2026-11-24)
 - fix/bounty-latest-pointer-and-list-title (landed 2026-11-24)
-- chore/kit-split-w1 (open)
+- chore/kit-split-w1 (landed 2026-11-25)
