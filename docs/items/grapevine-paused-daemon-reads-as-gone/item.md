@@ -6,7 +6,7 @@ description:
   within 500 ms, so start or restart --force spawns a second daemon beside a
   stopped (SIGSTOP) one.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a176ad-1aaa-77b5-960e-775139c32393
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
@@ -29,11 +29,11 @@ keeps answering.
 
 ## Definition of done
 
-- [ ] A daemon whose pid is alive but doesn't answer is reported as stuck (with
+- [x] A daemon whose pid is alive but doesn't answer is reported as stuck (with
       its pid and the act that clears it), not removed from discovery.
-- [ ] `start` and `restart` refuse to spawn beside a live pid.
-- [ ] Tested with a SIGSTOPped daemon of the test's own.
+- [x] `start` and `restart` refuse to spawn beside a live pid.
+- [x] Tested with a SIGSTOPped daemon of the test's own.
 
 ## Related Documents
 
-- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./_archive/bounty-grapevine-skill-review.md)
+- [Review bounty + grapevine SKILL.md for accuracy and usefulness](../_archive/bounty-grapevine-skill-review.md)

@@ -56,7 +56,7 @@ no test's expectations changed.
 **Fixes alongside** (none touches a file the split moves):
 
 - [grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out/item.md),
-  [grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone.md),
+  [grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone/item.md),
   [grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts.md):
   the grapevine spell, all `ready`.
 - [bounty-latest-pointer-and-list-title](../items/bounty-latest-pointer-and-list-title.md)
@@ -80,4 +80,4 @@ _Written at close._
 - chore/kit-split-g0 (landed 2026-11-24)
 - fix/grapevine-hold-has-no-way-out (landed 2026-11-24)
 - chore/kit-split-g1 (landed 2026-11-24)
-- fix/grapevine-paused-daemon-reads-as-gone (open)
+- fix/grapevine-paused-daemon-reads-as-gone (landed 2026-11-24)
