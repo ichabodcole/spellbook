@@ -4,7 +4,7 @@ title: Move session.ts's chats and tasks out
 description:
   The chat and the task verbs move to session/chats.ts and session/tasks.ts.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-8d4d-71ee-826d-c0c379a47214
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
