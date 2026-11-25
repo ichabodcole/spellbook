@@ -52,6 +52,11 @@ How subsystems are built and why. — see
 - [scriptorium](./architecture/spells/scriptorium.md) — How scriptorium's
   document editor daemon, browser surface and CLI share one session, with the
   invariants and test cells that guard them
+- [The workspace session](./architecture/workspace-session.md) — How
+  WorkspaceSession and the workspace daemon are to be split into parts in
+  workspace/session/ and workspace/daemon/: the tiers, which part owns which
+  state, the parts Spellbook has that Story Studio does not, and the checks that
+  keep it split.
 
 ## Specifications
 
@@ -86,6 +91,10 @@ Repeatable procedures for work that recurs. — see
   slow test gate fast without losing what it catches: measure, run the files in
   parallel and fix each parallel-only failure at its cause, remove waits, then
   cut tests that do not earn their time.
+- [Splitting an oversized module](./playbooks/splitting-a-module-playbook.md) —
+  Keeping source files under the 1,200-line limit by splitting a module along
+  what owns which state, as a pure move with no behaviour change: the ownership
+  rule, the tiers, and the lessons Story Studio's split paid for.
 
 ## Lessons learned
 

@@ -77,6 +77,10 @@ that bite if unknown; for full Bun API docs read
   added, a document opened) uses `writeUntilSeen`
   (`src/kit/workspace/fixtures/harness.ts`): a macOS watch isn't live the moment
   it's armed, and a parallel run makes a write in that gap likely.
+- **No source file under `src/` passes 1,200 lines as Biome counts them**
+  (`biome.json`; the files already over it are frozen at their size and may not
+  grow): split by what owns which state, never by line count, following
+  [the splitting playbook](./docs/playbooks/splitting-a-module-playbook.md).
 - **Not every spell ships.** Everything under `plugins/spellbook/` reaches every
   install (the marketplace copies the whole folder; there is no exclude list). A
   spell whose app isn't finished deploys to `plugins/unreleased/skills/`
