@@ -46,7 +46,7 @@ first time a change would push one past its number.
 - No test's expectations change. A test changes only where it reached into
   private state that moved, and then only to reach the same state at its new
   address.
-- The gate passes (`bun run gate`, plus the kit typecheck G0 adds).
+- The gate passes (`bun run gate`, whose type-check ward typechecks the kit).
 - Two lanes at most. S3, S9, D2 and D4 run alone, and S9 and D4 wait for a green
   Linux CI before the next step. The daemon steps (D2 on) wait for S11.
 - Step names follow Story Studio's numbering, so "after S7" means the same tree

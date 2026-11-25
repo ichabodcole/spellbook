@@ -275,12 +275,12 @@ where the role matches is what makes a later port a file-to-file diff.
 component that closes over a parent variable it was not passed fails to
 typecheck, which is the point"). Ours does too:
 `grimoire/type-check-ward.test.ts` (Cole, 2026-09-10, type-debt T37) runs
-`tsc --noEmit` over every area of the repo inside `bun test`, each spell under
-its own `tsconfig.json`, and fails on any error or on any file left unexamined.
-`src/kit` and `src/scriptorium` are in it. _Corrected at G0, 2026-11-24: this
-section first said our gate ran no typecheck, and G0 planned a separate kit
-`tsc` step; the ward's header argues against exactly that step (an exit 0 cannot
-tell clean from unexamined), so G0 added none._
+`tsc --noEmit` over every area of the repo inside `bun test`, each spell that
+has its own `tsconfig.json` under it, and fails on any error or on any file left
+unexamined. `src/kit` and `src/scriptorium` are in it. _Corrected at G0,
+2026-11-24: this section first said our gate ran no typecheck, and G0 planned a
+separate kit `tsc` step; the ward's header argues against exactly that step (an
+exit 0 cannot tell clean from unexamined), so G0 added none._
 
 ### The proposed module map: session.ts
 
@@ -488,7 +488,7 @@ address.
 
 | #     | Step                                                                                                                                                                                                                                                                                                                                                                                            | Proves it, beyond the gate                                                                                                                | Risks, and the lesson that applies                                                                                                                                                                                                                              |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| G0    | **Tooling.** Biome to 2.5.x (Story Studio's 2.5.15), where `noExcessiveLinesPerFile` is a `style` rule; in our 2.4.16 it exists only in `nursery`. A `typecheck` script over `src/kit` and `src/scriptorium`, in the gate.                                                                                                                                                                      | The gate passes; Biome's new findings, if any, fixed in the same step.                                                                    | A Biome minor can bring new lint findings across every spell. Keep it its own step so they don't mix with the guard.                                                                                                                                            |
+| G0    | **Tooling.** Biome to 2.5.x (Story Studio's 2.5.15), where `noExcessiveLinesPerFile` is a `style` rule; in our 2.4.16 it exists only in `nursery`. The gate's type-check ward already covers `src/kit` and `src/scriptorium` (found at G0); no separate step.                                                                                                                                   | The gate passes; Biome's new findings, if any, fixed in the same step.                                                                    | A Biome minor can bring new lint findings across every spell. Keep it its own step so they don't mix with the guard.                                                                                                                                            |
 | G1    | **The guard.** The 1,200-line limit on `src/**/*.{ts,tsx}` except tests, with 15 overrides frozen at today's Biome counts; `session-tiers.test.ts` (copied from their develop, with an empty table until S2); a start-path test; the ownership rule and the lessons as a playbook; Story Studio's `workspace-session.md` architecture page, copied from their develop; one line in `AGENTS.md`. | Grow a listed file by one line and the lint fails; revert. The start-path test passes today.                                              | Lanes that grow a listed file stop at the limit. Intended.                                                                                                                                                                                                      |
 | S2    | **Tier 0 out**: `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_. `session.ts` re-exports every name.                                                                                                                                                                                                                                                                                 | `session.test.ts`, `manifest.test.ts`, `manifestMigrate.test.ts`, `index.ts`'s exports by typecheck.                                      | `instanceof SessionError` still works (one class). An import cycle if a helper imports back from `session.ts`.                                                                                                                                                  |
 | S3    | **The core**: `state`, `places` (with our own-places guards), `writes`. `this.m` becomes `this.core.m` at about 200 sites. **Alone.**                                                                                                                                                                                                                                                           | `session.test.ts`, `ownPlaces.test.ts` (repointed from `m.docs` to `core.m.docs`), `noHome.*`, `diskGuard.test.ts`, `saveUnseen.test.ts`. | The widest diff. A missed `owned` path makes the daemon's own write look foreign, which shows only as a watcher announcing it.                                                                                                                                  |
@@ -640,7 +640,8 @@ Cole, 2026-11-24: all eight decisions as recommended.
 2. Keep Story Studio's names, even where the noun doesn't fit us.
 3. The limit is 1,200 lines as Biome counts them, tests left out, with 15 frozen
    overrides.
-4. Biome to 2.5.x and a kit typecheck in the gate come first, as G0.
+4. Biome to 2.5.x and a kit typecheck in the gate come first, as G0. _(At G0 the
+   gate turned out to typecheck already; see "The gate already typechecks".)_
 5. The end state is public parts, callers moved, delegates retired.
 6. `yaml` comes off the CLI's start path, as its own small item.
 7. The bounty, grapevine, mind-mapper and imago files stay whole under frozen

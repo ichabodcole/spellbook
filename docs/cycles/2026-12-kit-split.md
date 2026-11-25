@@ -36,7 +36,7 @@ each blocked by the one before in its chain.
 
 **Lane A, the session and the daemon (in order):**
 
-- **G0, G1**: Biome 2.5.x and a kit typecheck in the gate, then the 1,200-line
+- **G0, G1**: Biome 2.5.x (the gate already typechecks), then the 1,200-line
   guard with frozen overrides. Everything else waits on G1.
 - **S2 to S11**: `session.ts` into parts, tier by tier. **S3 and S9 land
   alone**, and S9 needs Linux CI green before S10.
@@ -76,4 +76,5 @@ _Written at close._
 ## Sessions
 
 <!-- One line per branch: `- <type>/<slug> (open)`, then `(landed YYYY-MM-DD)`. -->
+
 - chore/kit-split-g0 (open)
