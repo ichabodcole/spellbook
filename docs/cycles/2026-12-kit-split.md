@@ -82,3 +82,4 @@ _Written at close._
 - chore/kit-split-g1 (landed 2026-11-24)
 - fix/grapevine-paused-daemon-reads-as-gone (landed 2026-11-24)
 - fix/grapevine-small-hint-miscounts (landed 2026-11-24)
+- fix/glamour-daemon-holds-cli-stderr (open)

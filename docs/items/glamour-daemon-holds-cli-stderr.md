@@ -6,7 +6,7 @@ description:
   the CLI's stderr to EOF (spawnSync with pipes, Python capture_output) blocks
   until the daemon exits.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a177a1-fa57-736f-a5d5-cfd3936fc570
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
