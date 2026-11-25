@@ -2,8 +2,8 @@
 // with a stand-in toast while the context column is collapsed), a link that did
 // not open closing on Escape, a session that has ended, and what the daemon has
 // done for this viewer (a document made, a row moved). A hook of `ShellBody`'s,
-// called where this section sat in it, right after `useReveal`, so the hooks
-// keep their order.
+// called where this section sat in it, after `useReveal` and the open image's
+// backlinks, so the hooks keep their order.
 
 import { type RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Collapsed } from "../context/columns.ts";

@@ -26,6 +26,12 @@ Detail, risks and the lessons that apply:
 [the write-up](./kit-split-oversized-modules/write-up.md#the-other-files), and
 its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 
+Note from W4 (2026-11-25): W4 moved only the notices. The rest of the span the
+write-up gives W4 (1129–1392 before W1) stays in `ShellBody` on purpose: the
+`workspace` context memo, `activeDoc`, `askDescribe`, the tree-selection pruning
+effect and the `contextBody` JSX. None of it is notice logic, and none of it is
+the right column either, so W5 leaves it in place too.
+
 ## Definition of done
 
 - [ ] The 17 `WorkspaceShell*.test.tsx` pass.
