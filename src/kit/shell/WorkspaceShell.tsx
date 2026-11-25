@@ -37,18 +37,8 @@
 // `chat` is its whole job, which `ui` must not do.
 
 import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
-import {
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { type Layout, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { type Attachable, ChatComposer, type ChatComposerProps } from "../chat/ChatComposer.tsx";
 import { pathLabel } from "../chat/ChatMessageView.tsx";
 import { ChatSidebar } from "../chat/ChatSidebar.tsx";
@@ -97,16 +87,9 @@ import {
   revealAfter,
   type SelectionEvent,
 } from "../context/selection.ts";
-import {
-  type Columns,
-  type PaneName,
-  type PointedDocs,
-  type Workspace,
-  WorkspaceContext,
-} from "../context/workspace.ts";
+import { type PointedDocs, type Workspace, WorkspaceContext } from "../context/workspace.ts";
 import { bundleOf, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
-import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
@@ -114,7 +97,6 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
-  QUIET_FADE,
   QUIET_GROUP,
   ResizableHandle,
   ResizablePanel,
@@ -134,37 +116,30 @@ import type {
   TrashPreview,
 } from "../workspace/protocol";
 import { ChatColumn } from "./ChatColumn.tsx";
-import { COLUMN_INPUT, ColumnButton, FLOAT_INPUT, Rail } from "./ColumnChrome.tsx";
+import { COLUMN_INPUT, ColumnButton, Rail } from "./ColumnChrome.tsx";
 import {
-  type Collapsed,
-  collapsedFrom,
-  collapsedSides,
   DEFAULT_SIZE,
   decodeFloatClosed,
-  decodeOpenSizes,
   encodeFloatClosed,
-  encodeOpenSizes,
   FLOAT_KEY,
   floatOnRail,
   floatShown,
   MIN_SIZE,
-  OPEN_KEY,
   RAIL_PX,
   readKept,
-  rememberOpen,
-  reopenSize,
-  type Side,
 } from "./columns.ts";
 import { ImageDescriptionPanel } from "./ImageDescription.tsx";
 import { ImageLinkedFrom } from "./ImageLinkedFrom.tsx";
 import { ImageViewer } from "./ImageViewer.tsx";
 import { messageParts } from "./messageRefs.ts";
-import { lastMessageId, unseenFromAgent, waitingOnAgent } from "./rail.ts";
+import { waitingOnAgent } from "./rail.ts";
 import { type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
 import { StatusBar } from "./StatusBar.tsx";
-import { keptTheme, localShellStorage, type ShellStorage, THEME_KEY } from "./storage.ts";
+import { keptTheme, type ShellStorage, THEME_KEY } from "./storage.ts";
 import { TopBar } from "./TopBar.tsx";
+import { usePaneKeys } from "./usePaneKeys.ts";
+import { useShellColumns } from "./useShellColumns.ts";
 
 /** A tab an app adds to the right column. */
 export type ShellPanel = { id: string; label: string; node: ReactNode };
@@ -266,11 +241,7 @@ export type WorkspaceShellProps = {
   endWarning?: (state: PublicState) => string | null;
 };
 
-/** The pane ids are the persisted layout's keys: renaming one forgets a viewer's sizes. */
-export const PANES = ["context", "centre", "chat"] as const;
-
-/** How far either side of a handle's drawn line a double-click still reaches it: the library's own reach for a drag. */
-const HANDLE_REACH = 6;
+export { PANES } from "./useShellColumns.ts";
 
 /** Why End session did not end it: the close never reached the daemon. */
 const UNREACHABLE =
@@ -417,197 +388,26 @@ function ShellBody({
   }, [themeKept]);
 
   // ── the side columns ────────────────────────────────────────────────────
-  // Collapsed is the library's (`columns.ts`): a collapsed column is a panel at its
-  // collapsed size, a 40 px rail, persisted by the same layout as every other size.
-  // The panels are asked on every layout change, so the button, a drag shut and a
-  // reload all agree by construction.
-  const storage = useMemo(
-    () => storageProp ?? localShellStorage(storageKey),
-    [storageProp, storageKey],
-  );
-  // The library parses the saved layout during render, unguarded: read through the
-  // guard, so a corrupt one opens the default layout rather than a blank page.
-  const layoutStorage = useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
-  const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
-  // Set from the library's own callback and never written back. Before the panels
-  // exist (the first render) it is the saved layout's guess.
-  const [collapsed, setCollapsed] = useState<Collapsed>(() => collapsedSides(layout.defaultLayout));
-  const collapsedRef = useRef(collapsed);
-  collapsedRef.current = collapsed;
-  /** The columns the shell itself is reopening: the only non-human way a rail opens. */
-  const reopening = useRef(new Set<Side>());
-  const openSizesRef = useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
-  const contextPanel = usePanelRef();
-  const chatPanel = usePanelRef();
-  const panelFor = useCallback(
-    (side: Side) => (side === "context" ? contextPanel : chatPanel).current,
-    [contextPanel, chatPanel],
-  );
-  /** Collapse `side`; false when there was nothing to do (already shut). */
-  const collapse = useCallback(
-    (side: Side) => {
-      const panel = panelFor(side);
-      if (!panel || panel.isCollapsed()) return false;
-      panel.collapse();
-      return true;
-    },
-    [panelFor],
-  );
-  // Not the library's `expand()`: it reopens to a width it keeps in memory, so
-  // after a reload a column came back at its minimum. The width it reopens to is
-  // the one remembered beside the layout, capped so it never pushes the other
-  // column shut.
-  const expand = useCallback(
-    (side: Side) => {
-      const panel = panelFor(side);
-      if (!panel?.isCollapsed()) return false;
-      const other = panelFor(side === "context" ? "chat" : "context");
-      const around = other
-        ? { [side === "context" ? "chat" : "context"]: other.getSize().asPercentage }
-        : undefined;
-      reopening.current.add(side);
-      panel.resize(`${reopenSize(openSizesRef.current, side, around)}%`);
-      return true;
-    },
-    [panelFor],
-  );
-  /**
-   * A double-click on a handle: a rail reopens through the shell's own reopen (the
-   * remembered width, and the mark that lets it past the rail guard below); an
-   * open column goes back to its default width, as the library's own did. The
-   * library's double-click is off, because its reopen carried no such mark.
-   */
-  const handleDoubleClick = (side: Side) => {
-    if (collapsed[side]) expand(side);
-    else panelFor(side)?.resize(`${DEFAULT_SIZE[side]}%`);
-  };
-  /**
-   * Caught on the whole group, in the capture phase, because the library's handle
-   * takes a drag a few pixels either side of the drawn line and a double-click
-   * must reach as far. Which handle is meant: the one pressed, else the one the
-   * library marks as under the pointer.
-   */
-  const onGroupDoubleClick = (e: ReactMouseEvent<HTMLDivElement>) => {
-    const target = e.target as Element | null;
-    const handles = [
-      ...e.currentTarget.querySelectorAll<HTMLElement>('[data-slot="resizable-handle"]'),
-    ];
-    // The first press of a double-click focuses the handle, so by the second its
-    // state says "focus", not "hover": where the pointer is decides, within the
-    // library's few pixels either side of the line.
-    const near = handles.find((h) => {
-      const r = h.getBoundingClientRect();
-      return (
-        r.width > 0 && e.clientX >= r.left - HANDLE_REACH && e.clientX <= r.right + HANDLE_REACH
-      );
-    });
-    const handle =
-      target?.closest('[data-slot="resizable-handle"]') ??
-      near ??
-      handles.find((h) => ["hover", "active"].includes(h.getAttribute("data-separator") ?? ""));
-    if (!handle) return;
-    const side: Side | undefined = ({ context: "context", chat: "chat" } as const)[
-      handle.getAttribute("data-handle-for") ?? ""
-    ];
-    if (!side) return;
-    e.preventDefault();
-    e.stopPropagation();
-    handleDoubleClick(side);
-  };
-  /** The handle's Enter goes through the same two acts, in the capture phase. */
-  const handleEnter = (side: Side) => (e: ReactKeyboardEvent) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (collapsed[side]) expand(side);
-    else collapse(side);
-  };
-  /**
-   * Where focus goes when a column's control takes itself away: collapsing hides
-   * the column's body (and its collapse button) behind the rail, and reopening
-   * removes the rail's reopen button, so focus would fall to the body. The twin
-   * control is where the next act is.
-   */
-  /** A selector for where focus goes once it is drawn; null for nowhere pending. */
-  const focusNext = useRef<string | null>(null);
-  const toggleFrom = useCallback(
-    (side: Side, act: "collapse" | "expand", then?: string) => {
-      const acted = act === "collapse" ? collapse(side) : expand(side);
-      // A no-op leaves nothing pending: a stale hand-off would otherwise grab
-      // focus the next time that control happened to render.
-      focusNext.current = acted
-        ? (then ?? `[data-column-control="${side}-${act === "collapse" ? "reopen" : "collapse"}"]`)
-        : null;
-    },
-    [collapse, expand],
-  );
-  useEffect(() => {
-    const sel = focusNext.current;
-    if (!sel) return;
-    const el = document.querySelector<HTMLElement>(sel);
-    if (!el || el.closest("[inert]")) return;
-    focusNext.current = null;
-    el.focus();
-  });
-  const onLayoutChanged = useCallback(
-    (next: Layout, meta: Parameters<typeof layout.onLayoutChanged>[1]) => {
-      layout.onLayoutChanged(next, meta);
-      const panels = { context: contextPanel.current, chat: chatPanel.current };
-      const now = collapsedFrom(next, panels);
-      // A RAIL STAYS A RAIL WHEN THE WINDOW GROWS. The library keeps a collapsed
-      // panel's share of the group in percent, so a rail collapsed in a narrow
-      // window (40 px of 640 is 6.25%) comes back past its threshold in a wide one
-      // and is opened at its minimum. Only the human (a drag, a key on a handle)
-      // and the shell's own reopen open a column; anything else is put back.
-      for (const side of ["context", "chat"] as const) {
-        if (!collapsedRef.current[side] || now[side]) continue;
-        // A reopen asked for is spent once the column is seen open; several can
-        // be in flight at once (leaving reader mode reopens both).
-        if (reopening.current.delete(side) || meta.isUserInteraction) continue;
-        panels[side]?.collapse();
-        now[side] = true;
-      }
-      collapsedRef.current = now;
-      setCollapsed((prev) => (prev.context === now.context && prev.chat === now.chat ? prev : now));
-      const remembered = rememberOpen(openSizesRef.current, next, meta.isUserInteraction, now);
-      if (remembered !== openSizesRef.current) {
-        openSizesRef.current = remembered;
-        storage.setItem(OPEN_KEY, encodeOpenSizes(remembered));
-      }
-    },
-    [layout, storage, contextPanel, chatPanel],
-  );
-
-  /** The columns as the centre sees them: what reader mode reads and acts on. */
-  const columns = useMemo<Columns>(
-    () => ({
-      collapsed: { context: collapsed.context, chat: collapsed.chat },
-      collapse: (side) => void collapse(side),
-      expand: (side) => void expand(side),
-    }),
-    [collapsed.context, collapsed.chat, collapse, expand],
-  );
-  /**
-   * The centre is in a quiet reading mode (reader mode), so the shell's own chrome
-   * fades with it. The centre derives it and says so; the shell only follows.
-   */
-  const [quietWanted, setQuiet] = useState(false);
-  // The image viewer has no reading mode: a reader mode left on by the document
-  // it replaced does not fade the chrome around an image.
-  const quiet = quietWanted && !state.openImage;
-  const fade = quiet ? QUIET_FADE : undefined;
-
-  /**
-   * The chat rail's mark: the agent has said something since the column was last
-   * open. What was seen is the newest message while it is open; reopening it is
-   * seeing it, which clears the mark. A reload starts from what is already there.
-   */
-  const newestMessage = lastMessageId(state.chat);
-  const [seenMessage, setSeenMessage] = useState(newestMessage);
-  useEffect(() => {
-    if (!collapsed.chat && seenMessage !== newestMessage) setSeenMessage(newestMessage);
-  }, [collapsed.chat, newestMessage, seenMessage]);
-  const chatUnseen = collapsed.chat && unseenFromAgent(state.chat, seenMessage);
+  const {
+    storage,
+    layout,
+    collapsed,
+    collapsedRef,
+    contextPanel,
+    chatPanel,
+    collapse,
+    expand,
+    onGroupDoubleClick,
+    handleEnter,
+    focusNext,
+    toggleFrom,
+    onLayoutChanged,
+    columns,
+    setQuiet,
+    quiet,
+    fade,
+    chatUnseen,
+  } = useShellColumns({ storageProp, storageKey, state });
 
   // ── the composer, wherever it is drawn ──────────────────────────────────
   /**
@@ -649,94 +449,14 @@ function ShellBody({
   const sessionLabel = `session ${state.sessionId}${daemon.connection === "ended" ? " (ended)" : ""}`;
 
   // ── pane focus and keys ─────────────────────────────────────────────────
-  const focusPane = useCallback(
-    (pane: PaneName) => {
-      if (pane === "context" && collapsed.context) expand("context");
-      if (pane === "chat" && collapsed.chat) expand("chat");
-      requestAnimationFrame(() =>
-        document.querySelector<HTMLElement>(`[data-pane="${pane}"]`)?.focus(),
-      );
-    },
-    [collapsed.context, collapsed.chat, expand],
-  );
-  /** Brings the chat tab forward; set below, where the tabs are. */
-  const showChatTab = useRef<() => void>(() => {});
-  const focusComposer = useCallback(() => {
-    // Talking to the agent never needs the column: a float on screen takes it.
-    if (floating) {
-      requestAnimationFrame(() => document.querySelector<HTMLElement>(FLOAT_INPUT)?.focus());
-      return;
-    }
-    if (collapsed.chat) expand("chat");
-    showChatTab.current();
-    // Twice: once for the column to open, once for the tab to draw its composer.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() =>
-        document
-          .querySelector<HTMLElement>('[data-pane="chat"] [data-slot="composer-input"]')
-          ?.focus(),
-      ),
-    );
-  }, [collapsed.chat, expand, floating]);
-  const rootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const root = rootRef.current;
-      if (!root) return;
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && !e.shiftKey && !e.altKey) {
-        const pane = ({ "1": "context", "2": "centre", "3": "chat" } as const)[
-          e.key as "1" | "2" | "3"
-        ];
-        if (pane) {
-          e.preventDefault();
-          focusPane(pane);
-          return;
-        }
-        if (e.key === "[" || e.key === "]") {
-          e.preventDefault();
-          const side: Side = e.key === "[" ? "context" : "chat";
-          // Where focus is on the control that goes away (inside the column being
-          // collapsed, or on the rail being reopened) it is handed on, as the
-          // buttons do; from anywhere else focus stays where it is.
-          const holds = document.activeElement?.closest(
-            collapsed[side]
-              ? `[data-column-control="${side}-reopen"]${side === "chat" ? ", [data-slot=chat-unseen]" : ""}`
-              : `[data-pane="${side}"]`,
-          );
-          const act = collapsed[side] ? "expand" : "collapse";
-          // From the floating composer, the column's composer is where typing goes on.
-          const inFloat =
-            side === "chat" && document.activeElement?.closest('[data-slot="floating-composer"]');
-          // From the column's composer, typing goes on in the float. (An open
-          // column always clears a closed float, so the float will show; the
-          // guard only keeps the hand-off honest if that ever changes.)
-          const inColumnInput = side === "chat" && document.activeElement?.closest(COLUMN_INPUT);
-          if (inFloat && act === "expand") toggleFrom(side, act, COLUMN_INPUT);
-          else if (inColumnInput && act === "collapse" && !floatClosed)
-            toggleFrom(side, act, FLOAT_INPUT);
-          else if (holds) toggleFrom(side, act);
-          else if (act === "expand") expand(side);
-          else collapse(side);
-          return;
-        }
-      }
-      // Escape from inside a sidebar, with nothing open to close, returns to the
-      // centre. Dialogs, menus and tooltips close on Escape themselves (and stop
-      // the event), so this only sees an Escape nobody else took.
-      if (e.key === "Escape" && !e.defaultPrevented && !mod) {
-        const t = e.target as HTMLElement | null;
-        const typing = t?.matches?.("input, textarea, select, [contenteditable='true']");
-        const inSide = t?.closest?.('[data-pane="context"], [data-pane="chat"]');
-        const popup = document.querySelector(
-          '[role="dialog"], [role="alertdialog"], [role="menu"]',
-        );
-        if (inSide && !typing && !popup && root.contains(t)) focusPane("centre");
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [collapsed, collapse, expand, focusPane, toggleFrom, floatClosed]);
+  const { focusPane, showChatTab, focusComposer, rootRef } = usePaneKeys({
+    collapsed,
+    collapse,
+    expand,
+    toggleFrom,
+    floating,
+    floatClosed,
+  });
 
   // ── the open document, and the selection held against it ────────────────
   const openDoc = useMemo(
@@ -1148,6 +868,7 @@ function ShellBody({
       removeRef,
       clearRefs,
       storageProp,
+      setQuiet,
     ],
   );
 
