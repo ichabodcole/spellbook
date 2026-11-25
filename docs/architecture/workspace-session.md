@@ -39,9 +39,10 @@ the file changed. **S3 built tier 1**: `state`, `places` and `writes` (below,
 "The core"). **S4 built `chats` (tier 2) and `tasks` (tier 3)** (below, "The
 chat and the tasks"). **S5 built the read side**: `readIndex`, `linkResolve`,
 `profiles`, `relations` and `search` (tier 4), `linkCheck` and `linkReports`
-(tier 5) (below, "The read side"). The other parts are still planned. When a
-step builds a part, it adds the part's row here and in the tier test, in the
-same change.
+(tier 5) (below, "The read side"). **S6 built the small tier 2 parts**: `media`,
+`sidecars`, `placing` and `viewer` (below, "What is on screen, and the images").
+The other parts are still planned. When a step builds a part, it adds the part's
+row here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -66,14 +67,14 @@ folder says which is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5; the rest planned)                                     | Story Studio's, not ours                 |
-| ---- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                     |                                          |
-| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                  |                                          |
-| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                           | `bundleStamps`, `top`, `copyIn`          |
-| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                       | `unseen`, `audio`, `orders`              |
-| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash` | `markers`, `copyRecords`, `libraryLinks` |
-| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                        | `copySource`, `projectMeta`              |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6; the rest planned) | Story Studio's, not ours                 |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                    |                                          |
+| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                 |                                          |
+| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                          | `bundleStamps`, `top`, `copyIn`          |
+| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                      | `unseen`, `audio`, `orders`              |
+| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                | `markers`, `copyRecords`, `libraryLinks` |
+| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                       | `copySource`, `projectMeta`              |
 
 What each part owns, member by member, is in the write-up's
 [module map](../items/kit-split-oversized-modules/write-up.md#the-proposed-module-map-sessionts).
@@ -186,7 +187,7 @@ this.readIndex = new ReadIndex(this.core, this.places, {
 });
 this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, {
   docOrDie,
-  imageOfDoc,
+  imageOfDoc, // S6: these four went; it takes `media` and `sidecars`
   imageDescription,
   imageFile,
   imageNodeAt,
@@ -201,7 +202,7 @@ this.relationsPart = new Relations(
   this.linkResolve,
   this.profilesPart
 );
-this.searchPart = new Search(this.places, this.readIndex, { imageOfDoc });
+this.searchPart = new Search(this.places, this.readIndex, { imageOfDoc }); // S6: `sidecars`
 this.linkCheckPart = new LinkChecker(
   this.core,
   this.places,
@@ -264,6 +265,74 @@ Where S5 left the write-up's map, by dependency direction:
   `movedFrom` and `movedTarget` as hooks. `movedTarget` calls
   `linkResolve.resolveFrom` (tier 4), so S7 has to give `follow` that through a
   hook too, or leave `movedTarget` higher.
+
+### What is on screen, and the images (tier 2, built at S6)
+
+The facade builds the four after the chat, before the read side, which now takes
+two of them:
+
+```ts
+this.viewer = new Viewer(this.core);
+this.media = new Media(this.core, this.places);
+this.sidecars = new Sidecars(this.core, this.places, { activeText });
+this.placing = new Placing(this.core, this.places, {
+  listedBundleHolding,
+  rescan,
+  refreshListed,
+  scanSkip,
+  scanGuard,
+  relink,
+});
+// …
+this.linkResolve = new LinkResolve(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.media,
+  this.sidecars,
+  { docOrDie, docsAfter, typedLinks, relationPass }
+);
+this.searchPart = new Search(this.places, this.readIndex, this.sidecars);
+```
+
+| Part          | Tier | Owns                                                                                                                                                                                                          |
+| ------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `viewer.ts`   | 2    | `m.openDoc`, `m.openImage`, `m.docAside`, and nothing else writes them: `showDoc`, `showImage`, `closeImage`, `closeDoc`, `closeOrphaned`, `closeImageInside`, `followMove`, `docForgotten`, `docsForgotten`. |
+| `media.ts`    | 2    | `imageNodeAt`, `bundleImageAt`, `imageFile` (the file route's guard), `imageStamps`.                                                                                                                          |
+| `sidecars.ts` | 2    | `sidecarDocOf`, `imageOfDoc`, `sidecarText`, `imageDescription`, `withDescription`, `sidecarFileOf`.                                                                                                          |
+| `placing.ts`  | 2    | `adoptNew`, `freeName`, `freeImageName`, `refuseExisting`.                                                                                                                                                    |
+
+`media`, `sidecars` and `placing` moved verbatim. Their public members
+(`imageFile`, `imageStamps`, `sidecarDocOf`, `imageOfDoc`, `imageDescription`,
+`sidecarFileOf`) keep one-line delegates with their comments; the facade's own
+calls go to the parts. No tier 2 part imports another.
+
+**The viewer is the one part that is not a move.** On develop, 17 writes of the
+three keys sat in 9 facade methods (the write-up estimated 19 in 8). Each became
+a named transition that is the code it replaced, in the same order, and none
+persists: the facade's `persist` stays where it was. `focusDoc` became
+`showDoc`, `closeOrphanedOpenDoc` became `closeOrphaned`, and `openImage`,
+`closeImage`, `closeDoc`, `forgetDoc`, `trashed`, `followMove` and `forgetPath`
+call the viewer. `removeContext` and `refilter` still close an image the context
+no longer shows through the facade's `closeImage`, which brings back the
+document aside and persists. Two transitions look alike and are kept apart:
+`docForgotten(slug)` (a `forgetDoc`) moves the screen only when that document
+was on it, where `docsForgotten()` (a delete) moves it whenever the open
+document is no longer held; they differ on a record whose `openDoc` names no
+document, which a restore accepts. `viewer.session.test.ts` pins all three keys
+after each act, written against develop before the viewer was built.
+
+Where S6 left the write-up's map, by dependency direction:
+
+- **Hooks from S5, now parts.** `linkResolve` took `imageOfDoc`,
+  `imageDescription`, `imageFile` and `imageNodeAt`, and `search` took
+  `imageOfDoc`, as hooks on the facade. Both now take `media` and `sidecars`
+  (tier 2) directly.
+- **Left in the facade, reached as hooks**: `placing.adoptNew` calls `rescan`,
+  `refreshListed`, `relink` and the scan filter (`scanSkip`, `scanGuard`), which
+  the map puts in `context` (tier 2, not built), and the unlisted
+  `listedBundleHolding`, which `rescanAround` calls too. `sidecars` reaches
+  `activeText` (`documents`, tier 3) as a hook.
 
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
@@ -328,7 +397,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
   file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
-  S3 to 6,768, S4 to 6,700 and S5 to 4,649; `server.ts` is at 4,876.
+  S3 to 6,768, S4 to 6,700, S5 to 4,649 and S6 to 4,462; `server.ts` is at
+  4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -444,6 +514,10 @@ that finds the same in our code records our instance under it.
   `openImage` and `docAside`. Its methods are not one rule applied everywhere (a
   Trash or a delete closes an open image without bringing back the document
   aside); keep each as it is unless a change means to alter what the human sees.
+  Ours at S6: `closeImageInside` (Trash, delete) leaves `docAside` as it was, so
+  a later `closeImage` still brings that document back; `viewer.session.test.ts`
+  fails if it clears it, and the Close tests in `images.guards.test.ts` and
+  `images.links.test.ts` fail if `closeImage` stops bringing it back.
 - **The caches are pruned only after a pass that read every candidate**, in the
   order the facade pruned them, each by a method on the part that owns it. Ours
   at S5: every cache is one instance, held by one part (`linkCache`,
@@ -494,3 +568,7 @@ that finds the same in our code records our instance under it.
   (tier 5); where it left the write-up's map; the read-side caches' owners; the
   tier test lists the parts, and `session.ts`'s override went from 6,700 to
   4,649.
+- **2026-11-25**: S6 built `media`, `sidecars`, `placing` and `viewer` (tier 2):
+  the viewer's nine transitions for the 17 writes, the S5 hooks that became
+  parts, and where S6 left the write-up's map; the tier test lists them, and
+  `session.ts`'s override went from 4,649 to 4,462.
