@@ -22389,6 +22389,10 @@ function searchDocuments(candidates, query, read, limit = DEFAULT_LIMIT) {
   return { query: q, results, count: results.length, truncated };
 }
 
+// src/kit/workspace/session/names.ts
+import { lstatSync as lstatSync5, statSync as statSync7 } from "fs";
+import { basename as basename5, dirname as dirname7, join as join11, sep as sep6 } from "path";
+
 // src/kit/workspace/session/errors.ts
 class SessionError extends Error {
   status;
@@ -22410,6 +22414,113 @@ class UnseenChangeError extends SessionError {
   constructor(message, event, hint) {
     super(message, 409, undefined, hint);
     this.event = event;
+  }
+}
+
+// src/kit/workspace/session/names.ts
+function caseInsensitiveAt(path) {
+  const flip = (s) => {
+    const up = s.toUpperCase();
+    return up !== s ? up : s.toLowerCase();
+  };
+  for (let p = path;dirname7(p) !== p; p = dirname7(p)) {
+    const name = basename5(p);
+    const other = flip(name);
+    if (other === name)
+      continue;
+    try {
+      const a = statSync7(p);
+      const b = statSync7(join11(dirname7(p), other));
+      return a.ino === b.ino && a.dev === b.dev;
+    } catch {
+      return false;
+    }
+  }
+  return process.platform === "darwin" || process.platform === "win32";
+}
+var contentHash = (text) => Bun.hash(text).toString(16);
+var randHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n))).map((b) => b.toString(16).padStart(2, "0")).join("");
+var newSessionId = () => randHex(4);
+function checkSessionId(id) {
+  if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(id) || id.toLowerCase() === "latest")
+    throw new SessionError(`"${id}" is not a session id (letters, numbers, dashes; not "latest")`, 400);
+  return id;
+}
+var nowIso = () => new Date().toISOString();
+var NAME_MAX_BYTES = 255;
+function fitName(stem, tail) {
+  const room = NAME_MAX_BYTES - Buffer.byteLength(tail);
+  const chars = [...stem];
+  while (chars.length > 0 && Buffer.byteLength(chars.join("")) > room)
+    chars.pop();
+  return `${chars.join("").trimEnd()}${tail}`;
+}
+function tilde(abs) {
+  const home = homeDir();
+  return abs === home ? "~" : abs.startsWith(home + sep6) ? `~${abs.slice(home.length)}` : abs;
+}
+function entryAt(abs) {
+  try {
+    lstatSync5(abs);
+    return true;
+  } catch {
+    return false;
+  }
+}
+var FREE_NAME_TRIES = 1e5;
+var COPY_NAME_TRIES = 1e5;
+var COPY_SUFFIX = / copy(?: \d+)?$/;
+function uncopied(stem) {
+  return stem.replace(COPY_SUFFIX, "") || stem;
+}
+function copyName(dir, name, ext) {
+  const own = ext ? name.slice(0, name.length - ext.length) : name;
+  const stem = uncopied(own);
+  for (let i = 1;i < 1 + COPY_NAME_TRIES; i++) {
+    const suffix = i === 1 ? " copy" : ` copy ${i}`;
+    const n = fitName(stem, `${suffix}${ext}`);
+    if (!entryAt(join11(dir, n)))
+      return { name: n, suffix };
+  }
+  throw new SessionError(`no free name for a copy of ${name} is left in ${tilde(dir)}`, 409);
+}
+function slugBase(name) {
+  return name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "doc";
+}
+function bundleNameAt(abs) {
+  const title = readBundleInfo(abs)?.title;
+  return bundleDisplayName(basename5(abs), typeof title === "string" ? title : undefined);
+}
+function sideName(side, file) {
+  if (side !== "original")
+    return `v${side}`;
+  return file ?? "the saved file";
+}
+
+// src/kit/workspace/session/chats.ts
+class Chats {
+  core;
+  hooks;
+  constructor(core, hooks) {
+    this.core = core;
+    this.hooks = hooks;
+  }
+  addMessage(input) {
+    const msg = {
+      id: `m-${randHex(4)}`,
+      from: input.from,
+      type: input.type ?? (input.from === "system" ? "info" : "message"),
+      text: input.text,
+      ...input.about ? { about: input.about } : {},
+      ...input.via ? { via: input.via } : {},
+      ts: nowIso()
+    };
+    this.core.m.chat.push(msg);
+    this.hooks.persist();
+    return msg;
+  }
+  messages() {
+    return this.core.m.chat;
   }
 }
 
@@ -22646,88 +22757,6 @@ function migrateSlot(app, stored, sessionId, report) {
   if ("version" in next)
     throw new Error(`app ${app.name}: migrate() may not set \`version\``);
   return { ...next, version: app.slot.version };
-}
-
-// src/kit/workspace/session/names.ts
-import { lstatSync as lstatSync5, statSync as statSync7 } from "fs";
-import { basename as basename5, dirname as dirname7, join as join11, sep as sep6 } from "path";
-function caseInsensitiveAt(path) {
-  const flip = (s) => {
-    const up = s.toUpperCase();
-    return up !== s ? up : s.toLowerCase();
-  };
-  for (let p = path;dirname7(p) !== p; p = dirname7(p)) {
-    const name = basename5(p);
-    const other = flip(name);
-    if (other === name)
-      continue;
-    try {
-      const a = statSync7(p);
-      const b = statSync7(join11(dirname7(p), other));
-      return a.ino === b.ino && a.dev === b.dev;
-    } catch {
-      return false;
-    }
-  }
-  return process.platform === "darwin" || process.platform === "win32";
-}
-var contentHash = (text) => Bun.hash(text).toString(16);
-var randHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n))).map((b) => b.toString(16).padStart(2, "0")).join("");
-var newSessionId = () => randHex(4);
-function checkSessionId(id) {
-  if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(id) || id.toLowerCase() === "latest")
-    throw new SessionError(`"${id}" is not a session id (letters, numbers, dashes; not "latest")`, 400);
-  return id;
-}
-var nowIso = () => new Date().toISOString();
-var NAME_MAX_BYTES = 255;
-function fitName(stem, tail) {
-  const room = NAME_MAX_BYTES - Buffer.byteLength(tail);
-  const chars = [...stem];
-  while (chars.length > 0 && Buffer.byteLength(chars.join("")) > room)
-    chars.pop();
-  return `${chars.join("").trimEnd()}${tail}`;
-}
-function tilde(abs) {
-  const home = homeDir();
-  return abs === home ? "~" : abs.startsWith(home + sep6) ? `~${abs.slice(home.length)}` : abs;
-}
-function entryAt(abs) {
-  try {
-    lstatSync5(abs);
-    return true;
-  } catch {
-    return false;
-  }
-}
-var FREE_NAME_TRIES = 1e5;
-var COPY_NAME_TRIES = 1e5;
-var COPY_SUFFIX = / copy(?: \d+)?$/;
-function uncopied(stem) {
-  return stem.replace(COPY_SUFFIX, "") || stem;
-}
-function copyName(dir, name, ext) {
-  const own = ext ? name.slice(0, name.length - ext.length) : name;
-  const stem = uncopied(own);
-  for (let i = 1;i < 1 + COPY_NAME_TRIES; i++) {
-    const suffix = i === 1 ? " copy" : ` copy ${i}`;
-    const n = fitName(stem, `${suffix}${ext}`);
-    if (!entryAt(join11(dir, n)))
-      return { name: n, suffix };
-  }
-  throw new SessionError(`no free name for a copy of ${name} is left in ${tilde(dir)}`, 409);
-}
-function slugBase(name) {
-  return name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "doc";
-}
-function bundleNameAt(abs) {
-  const title = readBundleInfo(abs)?.title;
-  return bundleDisplayName(basename5(abs), typeof title === "string" ? title : undefined);
-}
-function sideName(side, file) {
-  if (side !== "original")
-    return `v${side}`;
-  return file ?? "the saved file";
 }
 
 // src/kit/workspace/session/paths.ts
@@ -23197,6 +23226,92 @@ var TASK_NEXT = {
 var FINISHED = ["done", "failed", "cancelled"];
 var isFinished = (s) => FINISHED.includes(s);
 
+// src/kit/workspace/session/tasks.ts
+class Tasks {
+  core;
+  hooks;
+  constructor(core, hooks) {
+    this.core = core;
+    this.hooks = hooks;
+  }
+  createTask(input) {
+    const title = input.title.trim();
+    if (!title)
+      throw new SessionError("a task needs to say what the work is", 400);
+    if (input.parent !== undefined)
+      this.taskOrDie(input.parent);
+    const at = nowIso();
+    let id = `t-${randHex(4)}`;
+    while (this.core.m.tasks.some((t) => t.id === id))
+      id = `t-${randHex(4)}`;
+    const task = {
+      id,
+      title,
+      by: input.by,
+      status: input.status ?? "open",
+      ...input.kind ? { kind: input.kind } : {},
+      ...input.messageId ? { messageId: input.messageId } : {},
+      ...input.parent ? { parent: input.parent } : {},
+      ...input.quiet ? { quiet: true } : {},
+      ...input.detail ? { detail: input.detail } : {},
+      createdAt: at,
+      updatedAt: at
+    };
+    this.core.m.tasks.push(task);
+    this.hooks.persist();
+    return task;
+  }
+  taskOrDie(id) {
+    const task = this.core.m.tasks.find((t) => t.id === id);
+    if (!task)
+      throw new SessionError(`no task ${id} in this session`, 404, this.core.m.tasks.filter((t) => !isFinished(t.status)).map((t) => t.id));
+    return task;
+  }
+  task(id) {
+    return this.taskOrDie(id);
+  }
+  transitionTask(id, to, patch = {}) {
+    const task = this.taskOrDie(id);
+    const from = task.status;
+    if (from === to)
+      return { task, from, changed: false };
+    if (!TASK_NEXT[from].includes(to))
+      throw new SessionError(`task ${id} is ${from}: it cannot become ${to}`, 409);
+    task.status = to;
+    task.updatedAt = nowIso();
+    if (patch.detail !== undefined)
+      task.detail = patch.detail.trim() || undefined;
+    if (patch.outcome?.trim())
+      task.outcome = patch.outcome.trim();
+    this.hooks.persist();
+    return { task, from, changed: true };
+  }
+  setTaskDetail(id, detail) {
+    const task = this.taskOrDie(id);
+    task.detail = detail.trim() || undefined;
+    return task;
+  }
+  removeTask(id) {
+    const task = this.taskOrDie(id);
+    if (!isFinished(task.status))
+      throw new SessionError(`task ${id} is ${task.status}: cancel it before removing it`, 409);
+    this.core.m.tasks = this.core.m.tasks.filter((t) => t.id !== id);
+    this.hooks.persist();
+    return task;
+  }
+  clearFinishedTasks() {
+    const before = this.core.m.tasks.length;
+    this.core.m.tasks = this.core.m.tasks.filter((t) => !isFinished(t.status));
+    const cleared = before - this.core.m.tasks.length;
+    if (cleared > 0)
+      this.hooks.persist();
+    return cleared;
+  }
+  tasks() {
+    return [...this.core.m.tasks].reverse();
+  }
+}
+
 // src/kit/workspace/session/writes.ts
 import { dirname as dirname9 } from "path";
 class Writes {
@@ -23258,6 +23373,8 @@ class WorkspaceSession {
   core;
   places;
   writes;
+  chats;
+  taskList;
   activeHash = new Map;
   lastActiveText = new Map;
   linkCache = new Map;
@@ -23276,6 +23393,8 @@ class WorkspaceSession {
     this.dir = this.core.dir;
     this.places = new Places(this.core);
     this.writes = new Writes(this.core, this.places);
+    this.chats = new Chats(this.core, { persist: () => this.persist() });
+    this.taskList = new Tasks(this.core, { persist: () => this.persist() });
   }
   setLinkSlot(slot) {
     this.linkSlot = checkLinkSlot(slot);
@@ -26139,97 +26258,31 @@ ${o.root}` : undefined;
     return { path: abs };
   }
   addMessage(input) {
-    const msg = {
-      id: `m-${randHex(4)}`,
-      from: input.from,
-      type: input.type ?? (input.from === "system" ? "info" : "message"),
-      text: input.text,
-      ...input.about ? { about: input.about } : {},
-      ...input.via ? { via: input.via } : {},
-      ts: nowIso()
-    };
-    this.core.m.chat.push(msg);
-    this.persist();
-    return msg;
+    return this.chats.addMessage(input);
   }
   messages() {
-    return this.core.m.chat;
+    return this.chats.messages();
   }
   createTask(input) {
-    const title = input.title.trim();
-    if (!title)
-      throw new SessionError("a task needs to say what the work is", 400);
-    if (input.parent !== undefined)
-      this.taskOrDie(input.parent);
-    const at = nowIso();
-    let id = `t-${randHex(4)}`;
-    while (this.core.m.tasks.some((t) => t.id === id))
-      id = `t-${randHex(4)}`;
-    const task = {
-      id,
-      title,
-      by: input.by,
-      status: input.status ?? "open",
-      ...input.kind ? { kind: input.kind } : {},
-      ...input.messageId ? { messageId: input.messageId } : {},
-      ...input.parent ? { parent: input.parent } : {},
-      ...input.quiet ? { quiet: true } : {},
-      ...input.detail ? { detail: input.detail } : {},
-      createdAt: at,
-      updatedAt: at
-    };
-    this.core.m.tasks.push(task);
-    this.persist();
-    return task;
-  }
-  taskOrDie(id) {
-    const task = this.core.m.tasks.find((t) => t.id === id);
-    if (!task)
-      throw new SessionError(`no task ${id} in this session`, 404, this.core.m.tasks.filter((t) => !isFinished(t.status)).map((t) => t.id));
-    return task;
+    return this.taskList.createTask(input);
   }
   task(id) {
-    return this.taskOrDie(id);
+    return this.taskList.task(id);
   }
   transitionTask(id, to, patch = {}) {
-    const task = this.taskOrDie(id);
-    const from = task.status;
-    if (from === to)
-      return { task, from, changed: false };
-    if (!TASK_NEXT[from].includes(to))
-      throw new SessionError(`task ${id} is ${from}: it cannot become ${to}`, 409);
-    task.status = to;
-    task.updatedAt = nowIso();
-    if (patch.detail !== undefined)
-      task.detail = patch.detail.trim() || undefined;
-    if (patch.outcome?.trim())
-      task.outcome = patch.outcome.trim();
-    this.persist();
-    return { task, from, changed: true };
+    return this.taskList.transitionTask(id, to, patch);
   }
   setTaskDetail(id, detail) {
-    const task = this.taskOrDie(id);
-    task.detail = detail.trim() || undefined;
-    return task;
+    return this.taskList.setTaskDetail(id, detail);
   }
   removeTask(id) {
-    const task = this.taskOrDie(id);
-    if (!isFinished(task.status))
-      throw new SessionError(`task ${id} is ${task.status}: cancel it before removing it`, 409);
-    this.core.m.tasks = this.core.m.tasks.filter((t) => t.id !== id);
-    this.persist();
-    return task;
+    return this.taskList.removeTask(id);
   }
   clearFinishedTasks() {
-    const before = this.core.m.tasks.length;
-    this.core.m.tasks = this.core.m.tasks.filter((t) => !isFinished(t.status));
-    const cleared = before - this.core.m.tasks.length;
-    if (cleared > 0)
-      this.persist();
-    return cleared;
+    return this.taskList.clearFinishedTasks();
   }
   tasks() {
-    return [...this.core.m.tasks].reverse();
+    return this.taskList.tasks();
   }
   docView(d) {
     let hash = "";
