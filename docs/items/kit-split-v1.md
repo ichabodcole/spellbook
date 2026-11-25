@@ -5,7 +5,7 @@ description:
   The CLI's argument parsing moves to verbs/parse.ts, importing nothing verbs.ts
   doesn't import today.
 status: draft
-lifecycle: backlog
+lifecycle: ready
 id: 01a20f86-96d1-7069-96b6-7360b05f9f0d
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
@@ -34,7 +34,7 @@ its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 - [ ] Behaviour is unchanged: no test's expectations change (a test that reached
       into moved private state is only repointed to the same state at its new
       address).
-- [ ] The gate passes (`bun run gate`, with the kit typecheck from G0).
+- [ ] The gate passes (`bun run gate`, whose type-check ward covers the kit).
 
 ## Related Documents
 

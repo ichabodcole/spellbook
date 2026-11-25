@@ -35,7 +35,7 @@ its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 - [ ] Behaviour is unchanged: no test's expectations change (a test that reached
       into moved private state is only repointed to the same state at its new
       address).
-- [ ] The gate passes (`bun run gate`, with the kit typecheck from G0).
+- [ ] The gate passes (`bun run gate`, whose type-check ward covers the kit).
 
 ## Related Documents
 

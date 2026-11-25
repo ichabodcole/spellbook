@@ -5,7 +5,7 @@ description:
   The daemon's types, rules and landing helpers move to daemon/types.ts,
   rules.ts and landings.ts, and server.ts re-exports them.
 status: draft
-lifecycle: backlog
+lifecycle: ready
 id: 01a20f86-91ca-7673-92c9-1c4284d2c0f6
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
@@ -35,7 +35,7 @@ and its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 - [ ] Behaviour is unchanged: no test's expectations change (a test that reached
       into moved private state is only repointed to the same state at its new
       address).
-- [ ] The gate passes (`bun run gate`, with the kit typecheck from G0).
+- [ ] The gate passes (`bun run gate`, whose type-check ward covers the kit).
 
 ## Related Documents
 

@@ -6,7 +6,7 @@ description:
   project.ts, reading.ts and frames.ts, and protocol.ts re-exports them, so none
   of its 67 importers changes.
 status: draft
-lifecycle: backlog
+lifecycle: ready
 id: 01a20f86-963f-72f6-9865-d50569fd5f78
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
@@ -37,7 +37,7 @@ its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 - [ ] Behaviour is unchanged: no test's expectations change (a test that reached
       into moved private state is only repointed to the same state at its new
       address).
-- [ ] The gate passes (`bun run gate`, with the kit typecheck from G0).
+- [ ] The gate passes (`bun run gate`, whose type-check ward covers the kit).
 
 ## Related Documents
 
