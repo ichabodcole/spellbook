@@ -165,6 +165,7 @@ import { LinkChecker } from "./session/linkCheck.ts";
 import { LinkReports } from "./session/linkReports.ts";
 import { LinkResolve } from "./session/linkResolve.ts";
 import { migrateSlot, refuseForeignManifest, refuseMalformedManifest } from "./session/manifest.ts";
+import { Media } from "./session/media.ts";
 import {
   bundleNameAt,
   checkSessionId,
@@ -221,7 +222,6 @@ import {
   docPaths,
   entryForPath,
   findNode,
-  imagePaths,
   isDocName,
   listedFile,
   locate,
@@ -311,6 +311,8 @@ export class WorkspaceSession {
   private readonly writes: Writes;
   /** Tier 2: the chat. */
   private readonly chats: Chats;
+  /** Tier 2: the images the session shows, as files. */
+  private readonly media: Media;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
@@ -348,6 +350,7 @@ export class WorkspaceSession {
     this.places = new Places(this.core);
     this.writes = new Writes(this.core, this.places);
     this.chats = new Chats(this.core, { persist: () => this.persist() });
+    this.media = new Media(this.core, this.places);
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.readIndex = new ReadIndex(this.core, this.places, {
       activeText: (d) => this.activeText(d),
@@ -356,12 +359,10 @@ export class WorkspaceSession {
       findDoc: (key) => this.findDoc(key),
       docOrDie: (slug, opts) => this.docOrDie(slug, opts),
     });
-    this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, {
+    this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, this.media, {
       docOrDie: (slug, opts) => this.docOrDie(slug, opts),
       imageOfDoc: (path, index) => this.imageOfDoc(path, index),
       imageDescription: (abs, index) => this.imageDescription(abs, index),
-      imageFile: (rawPath) => this.imageFile(rawPath),
-      imageNodeAt: (abs) => this.imageNodeAt(abs),
       docsAfter: (index, world) => this.docsAfter(index, world),
       typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
       relationPass: (index) => this.relationsPart.relationPass(index),
@@ -1011,7 +1012,7 @@ export class WorkspaceSession {
     this.relink();
     this.closeOrphanedOpenDoc();
     // An open image the context no longer shows is put away, as `closeImage` does.
-    if (this.core.m.openImage && !this.imageNodeAt(this.core.m.openImage)) this.closeImage();
+    if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
     return { entry, index: i };
   }
@@ -1164,7 +1165,7 @@ export class WorkspaceSession {
       if ((entryId === undefined || e.id === entryId) && this.rescan(e.id)) changed = true;
     this.relink();
     this.closeOrphanedOpenDoc();
-    if (this.core.m.openImage && !this.imageNodeAt(this.core.m.openImage)) this.closeImage();
+    if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
     return changed;
   }
@@ -2199,45 +2200,6 @@ export class WorkspaceSession {
   // them.
 
   /**
-   * The image node at `abs` (in its context form), or null: one inside a
-   * mirrored set, or the one file of a listed entry. A listed entry's root is
-   * the image's folder, but nothing else in that folder is ever its node, so a
-   * sibling beside a loose image is no image this session shows.
-   */
-  private imageNodeAt(abs: string): { entry: ContextEntry; rel: string } | null {
-    for (const e of this.core.m.context) {
-      if (e.membership === "listed") {
-        const only = listedFile(e);
-        if (only?.kind === "image" && only.abs === abs) return { entry: e, rel: only.rel };
-        continue;
-      }
-      if (!abs.startsWith(e.root + sep)) continue;
-      const rel = toPosix(relative(e.root, abs));
-      if (findNode(e.nodes, rel)?.kind === "image") return { entry: e, rel };
-    }
-    return null;
-  }
-
-  /**
-   * An image inside a bundle the tree shows (a board's `assets/`), or null.
-   * The tree shows a bundle as one row and never its insides, so a bundle's own
-   * image is shown when its bundle is: the file route serves it, so a board can
-   * draw its assets. Nothing else treats it as a node of its own.
-   */
-  private bundleImageAt(abs: string): { entry: ContextEntry; rel: string } | null {
-    const b = bundleOf(abs);
-    if (!b?.inner || b.inner === b.type.main) return null;
-    // In a set only: a listed entry's guard admits its one file and nothing
-    // beneath it, so a listed bundle's assets are not served.
-    for (const e of this.core.m.context) {
-      if (e.membership === "listed" || !b.root.startsWith(e.root + sep)) continue;
-      if (findNode(e.nodes, toPosix(relative(e.root, b.root)))?.kind === "bundle")
-        return { entry: e, rel: toPosix(relative(e.root, abs)) };
-    }
-    return null;
-  }
-
-  /**
    * ⛔ THE FILE ROUTE'S GUARD. An image this session shows, checked before a
    * byte of it is served, or a refusal that says why:
    *
@@ -2259,74 +2221,8 @@ export class WorkspaceSession {
    * Every refusal outside the context is a 404, so a probe learns nothing about
    * what exists where.
    */
-  imageFile(rawPath: string): {
-    abs: string;
-    real: string;
-    entry: ContextEntry;
-    rel: string;
-    size: number;
-    stamp: string;
-    type: ImageType;
-    /**
-     * ⛔ The file, opened ONCE and checked: every byte served or read comes
-     * from this descriptor, never from the path again, so a file swapped for a
-     * link between the check and the read cannot be served. The caller closes
-     * it (`imageResponse` does when it serves from it).
-     */
-    fd: number;
-  } {
-    if (!rawPath || !isAbsolute(rawPath))
-      throw new SessionError(`"${rawPath}" is not a full path: start it with /`, 400);
-    if (rawPath.includes("\0") || rawPath.split(/[\\/]/).includes(".."))
-      throw new SessionError("a path with a .. in it is not served: name the file itself", 400);
-    if (!isImageName(rawPath))
-      throw new SessionError(
-        `not an image the workspace shows (${IMAGE_EXTENSIONS.join(" ")}): ${rawPath}`,
-        400,
-        [...IMAGE_EXTENSIONS],
-      );
-    const abs = this.places.contextForm(resolve(rawPath));
-    const at = this.imageNodeAt(abs) ?? this.bundleImageAt(abs);
-    if (!at) throw new SessionError(`${abs} is not an image shown in this session`, 404);
-    const real = this.places.realInsideOrDie(abs, at.entry, "not served");
-    // Open the real path once, refusing a link in its last place; then make sure
-    // what was opened is a plain file, and is the very file the path inside the
-    // set names now, by device and inode. A swap at any moment either fails the
-    // open, or leaves a descriptor whose identity no longer matches, and is refused.
-    const fd = openNoFollow(real);
-    if (fd === null) throw new SessionError(`${abs} is not on disk`, 404);
-    try {
-      const st = fstatSync(fd);
-      if (!st.isFile()) throw new SessionError(`${abs} is not a file`, 404);
-      const now = this.places.realInsideOrDie(abs, at.entry, "not served");
-      let named: ReturnType<typeof statSync>;
-      try {
-        named = statSync(now);
-      } catch {
-        throw new SessionError(`${abs} is not on disk`, 404);
-      }
-      if (named.dev !== st.dev || named.ino !== st.ino)
-        throw new SessionError(`${abs} changed while it was being read: try again`, 409);
-      const type = sniffImage(readHeadFd(fd));
-      if (!type)
-        throw new SessionError(
-          `${basename(abs)} is not a PNG, JPEG, WebP, GIF or AVIF image inside, whatever its name says: not served`,
-          400,
-        );
-      return {
-        abs,
-        real: now,
-        entry: at.entry,
-        rel: at.rel,
-        size: st.size,
-        stamp: stampOf(st),
-        type,
-        fd,
-      };
-    } catch (e) {
-      closeSync(fd);
-      throw e;
-    }
+  imageFile(rawPath: string): ReturnType<Media["imageFile"]> {
+    return this.media.imageFile(rawPath);
   }
 
   /**
@@ -2338,7 +2234,7 @@ export class WorkspaceSession {
     if (!isAbsolute(rawPath))
       throw new SessionError(`"${rawPath}" is not a full path: start it with /`, 400);
     const abs = this.places.contextForm(resolve(rawPath));
-    const at = isImageName(abs) ? this.imageNodeAt(abs) : null;
+    const at = isImageName(abs) ? this.media.imageNodeAt(abs) : null;
     if (!at)
       throw new SessionError(
         `${abs} is not an image shown in this session: add its folder to the context first`,
@@ -2368,19 +2264,7 @@ export class WorkspaceSession {
 
   /** The stamp of every image the context shows now: the thumbnails worth keeping. */
   imageStamps(): Set<string> {
-    const out = new Set<string>();
-    for (const e of this.core.m.context) {
-      // A set's images and a loose image's alike: a listed entry's nodes hold
-      // only its own file, never a sibling.
-      for (const p of imagePaths(e)) {
-        try {
-          out.add(stampOf(statSync(p)));
-        } catch {
-          /* gone */
-        }
-      }
-    }
-    return out;
+    return this.media.imageStamps();
   }
 
   /** The open image's path, or null. */
@@ -2395,7 +2279,7 @@ export class WorkspaceSession {
   imageView(): ImageView | null {
     const abs = this.core.m.openImage;
     if (!abs) return null;
-    const at = this.imageNodeAt(abs);
+    const at = this.media.imageNodeAt(abs);
     if (!at) return null;
     // Nothing is read through a link that leads out of the set, not even its size.
     let real: string;
@@ -2573,7 +2457,7 @@ export class WorkspaceSession {
     if (!isAbsolute(rawImage))
       throw new SessionError(`"${rawImage}" is not a full path: start it with /`, 400);
     const abs = this.places.contextForm(resolve(rawImage));
-    if (!isImageName(abs) || !this.imageNodeAt(abs))
+    if (!isImageName(abs) || !this.media.imageNodeAt(abs))
       throw new SessionError(
         `${abs} is not an image shown in this session: add it, or its folder, first`,
         400,
@@ -2810,7 +2694,7 @@ export class WorkspaceSession {
     rawImage: string,
     rawBundle: string,
   ): { path: string; card: string; sidecar?: string } {
-    const f = this.imageFile(rawImage);
+    const f = this.media.imageFile(rawImage);
     let bytes: Uint8Array;
     try {
       bytes = readAllFd(f.fd, f.size);
@@ -2959,7 +2843,7 @@ export class WorkspaceSession {
   replaceTargetOrDie(name: string, rawDir?: string): string {
     const dir = this.imageDestinationOrDie(rawDir);
     const abs = join(dir, name);
-    if (!this.imageNodeAt(abs)) {
+    if (!this.media.imageNodeAt(abs)) {
       if (!this.places.coveringEntry(dir) && !this.places.itemAt(abs) && isImageName(abs)) {
         let st: ReturnType<typeof lstatSync> | null = null;
         try {

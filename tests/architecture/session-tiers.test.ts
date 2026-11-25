@@ -50,8 +50,10 @@ export const TIERS: Record<string, number> = {
   state: 1,
   places: 1,
   writes: 1,
-  // Tier 2: the tree, what is on screen, the conversation (S4 built `chats`).
+  // Tier 2: the tree, what is on screen, the conversation (S4 built `chats`;
+  // S6 built `media`).
   chats: 2,
+  media: 2,
   // Tier 3: documents (S4 built `tasks`, which needs only the core).
   tasks: 3,
   // Tier 4: what reads across documents (S5 built the read side).

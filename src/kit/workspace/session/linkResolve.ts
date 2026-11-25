@@ -16,7 +16,6 @@ import {
   docFormat,
   IMAGE_EXTENSIONS,
   IMAGE_HEAD_BYTES,
-  type ImageType,
   imageSize,
   isImageName,
   isSvgName,
@@ -50,6 +49,7 @@ import { type RelationsLookup, relationOffers, type Vocabulary } from "../relati
 import type { Candidate } from "../search";
 import { imagePaths, toPosix } from "../tree";
 import { docFacts, EMBED_CAP, oneLine, relationUses } from "./facts.ts";
+import type { Media } from "./media.ts";
 import type { Places } from "./places.ts";
 import type { ReadIndex } from "./readIndex.ts";
 import type { State } from "./state.ts";
@@ -60,12 +60,11 @@ export class LinkResolve {
     private readonly core: State,
     private readonly places: Places,
     private readonly readIndex: ReadIndex,
+    private readonly media: Media,
     private readonly hooks: {
       docOrDie: (slug?: string, opts?: { takesPath?: boolean }) => Doc;
       imageOfDoc: (path: string, index?: ContextIndex) => string | null;
       imageDescription: (abs: string, index?: ContextIndex) => ImageDescription | undefined;
-      imageFile: (rawPath: string) => { abs: string; stamp: string; type: ImageType; fd: number };
-      imageNodeAt: (abs: string) => { entry: ContextEntry; rel: string } | null;
       docsAfter: (index: ContextIndex, world: PlanWorld) => readonly ResolvableDocument[];
       typedLinks: (
         index: ContextIndex,
@@ -284,7 +283,7 @@ export class LinkResolve {
               `${this.places.display(r.path)} is a document, not an image: link to it with [text](…).`,
             );
           try {
-            const f = this.hooks.imageFile(r.path);
+            const f = this.media.imageFile(r.path);
             // The size from the header, through the guard's own descriptor.
             let size: PixelSize | null = null;
             try {
@@ -400,7 +399,7 @@ export class LinkResolve {
 
   /** An image the tree shows whose realpath stays inside its entry, as the file route requires. */
   private imageInside(abs: string): boolean {
-    const at = this.hooks.imageNodeAt(abs);
+    const at = this.media.imageNodeAt(abs);
     if (!at) return false;
     try {
       this.places.realInsideOrDie(abs, at.entry, "not pointed at");
