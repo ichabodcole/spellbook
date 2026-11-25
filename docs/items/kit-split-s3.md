@@ -6,7 +6,7 @@ description:
   session/state.ts, places.ts and writes.ts, and this.m becomes this.core.m
   throughout.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-8cbf-71da-8688-18de417f252e
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
