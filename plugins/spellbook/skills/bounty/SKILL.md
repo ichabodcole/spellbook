@@ -112,9 +112,10 @@ and `bounty-latest.json`, which joiners and later verbs use to find the board.
 
 ### Which board a verb targets
 
-By default a verb targets the **most recently opened** board. When more than one
-board may be open on the machine (another project, another team), pin it, or
-your verbs silently land on the other board. Precedence, highest first:
+By default a verb targets the **most recently opened** board (once that board
+closes, the newest board still running). When more than one board may be open on
+the machine (another project, another team), pin it, or your verbs silently land
+on the other board. Precedence, highest first:
 
 `--session-key <key>` · `--session <id>` · `$BOUNTY_SESSION_KEY` ·
 `$BOUNTY_SESSION` · a `.bounty-session` file found by walking up from the cwd ·

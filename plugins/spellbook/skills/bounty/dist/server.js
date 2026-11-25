@@ -10,11 +10,11 @@ import {
   constants as fsConstants,
   lstatSync as lstatSync2,
   mkdirSync as mkdirSync2,
-  readFileSync as readFileSync4,
-  statSync as statSync2
+  readFileSync as readFileSync5,
+  statSync as statSync3
 } from "fs";
 import { homedir } from "os";
-import { dirname as dirname2, join as join4, resolve } from "path";
+import { dirname as dirname3, join as join4, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
 
@@ -351,9 +351,9 @@ function sseResponse(opts) {
 }
 
 // src/bounty/backend/discovery.ts
-import { unlinkSync as unlinkSync2 } from "fs";
+import { readdirSync as readdirSync2, readFileSync as readFileSync3, statSync as statSync2, unlinkSync as unlinkSync2 } from "fs";
 import { tmpdir } from "os";
-import { join as join2 } from "path";
+import { basename, dirname, join as join2 } from "path";
 function discoveryFiles(sessionId) {
   return {
     sessionFile: join2(tmpdir(), `bounty-${sessionId}.json`),
@@ -376,10 +376,51 @@ function sessionIdOf(raw) {
     return null;
   }
 }
-function cleanupDiscovery(files, sessionId) {
+function readDiscovered(path) {
+  try {
+    const raw = readFileSync3(path, "utf8");
+    const s = JSON.parse(raw);
+    if (typeof s.session_id !== "string" || typeof s.url !== "string")
+      return null;
+    return { raw, session_id: s.session_id, url: s.url, mtimeMs: statSync2(path).mtimeMs };
+  } catch {
+    return null;
+  }
+}
+async function boardAnswers(url) {
+  try {
+    const res = await fetch(`${url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+async function newestLiveBoard(files, sessionId, answers) {
+  const dir = dirname(files.latestFile);
+  const latestName = basename(files.latestFile);
+  let names;
+  try {
+    names = readdirSync2(dir).filter((f) => f.startsWith("bounty-") && f.endsWith(".json") && f !== latestName);
+  } catch {
+    return null;
+  }
+  const candidates = names.map((f) => readDiscovered(join2(dir, f))).filter((d) => d !== null && d.session_id !== sessionId).sort((a, b) => b.mtimeMs - a.mtimeMs);
+  const live = await Promise.all(candidates.map((d) => answers(d.url)));
+  return candidates.find((_, i) => live[i]) ?? null;
+}
+async function cleanupDiscovery(files, sessionId, answers = boardAnswers) {
   try {
     unlinkSync2(files.sessionFile);
   } catch {}
+  if (readDiscovered(files.latestFile)?.session_id !== sessionId)
+    return;
+  const successor = await newestLiveBoard(files, sessionId, answers);
+  if (successor && readDiscovered(files.latestFile)?.session_id === sessionId) {
+    try {
+      writeFileAtomic(files.latestFile, successor.raw);
+      return;
+    } catch {}
+  }
   unlinkIfMatches(files.latestFile, sessionId, sessionIdOf);
 }
 
@@ -409,14 +450,14 @@ var SSE_HEARTBEAT_MS = heartbeatMs(process.env.BOUNTY_HEARTBEAT_MS, IDLE_TIMEOUT
 var TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS);
 
 // src/bounty/backend/lock.ts
-import { linkSync, mkdirSync, readFileSync as readFileSync3, renameSync as renameSync2, unlinkSync as unlinkSync3, writeFileSync as writeFileSync2 } from "fs";
-import { dirname, join as join3 } from "path";
+import { linkSync, mkdirSync, readFileSync as readFileSync4, renameSync as renameSync2, unlinkSync as unlinkSync3, writeFileSync as writeFileSync2 } from "fs";
+import { dirname as dirname2, join as join3 } from "path";
 function lockPath(home, id) {
   return join3(home, "locks", `${id}.lock`);
 }
 function readLock(path) {
   try {
-    const raw = JSON.parse(readFileSync3(path, "utf8"));
+    const raw = JSON.parse(readFileSync4(path, "utf8"));
     return typeof raw.pid === "number" ? raw : null;
   } catch {
     return null;
@@ -473,7 +514,7 @@ function unknownHolderRefusal(path, id, pid, why) {
   };
 }
 async function acquireLock(path, id, opts) {
-  mkdirSync(dirname(path), { recursive: true });
+  mkdirSync(dirname2(path), { recursive: true });
   const tmp = `${path}.${process.pid}.tmp`;
   writeFileSync2(tmp, JSON.stringify({ pid: process.pid }));
   const waitUntil = Date.now() + opts.closingWaitMs;
@@ -534,7 +575,7 @@ function releaseLock(path) {
 }
 
 // src/bounty/backend/server.ts
-var SCRIPT_DIR = dirname2(fileURLToPath(import.meta.url));
+var SCRIPT_DIR = dirname3(fileURLToPath(import.meta.url));
 var SKILL_ROOT = join4(SCRIPT_DIR, "..");
 var DIST_DIR = join4(SKILL_ROOT, "dist");
 function resolveMode2() {
@@ -575,7 +616,7 @@ function computeDuePokes(tasks, pokeState, now) {
 }
 function snapshotTaskCount(path) {
   try {
-    const parsed = JSON.parse(readFileSync4(path, "utf8"));
+    const parsed = JSON.parse(readFileSync5(path, "utf8"));
     return Array.isArray(parsed.tasks) ? parsed.tasks.length : null;
   } catch {
     return null;
@@ -590,7 +631,7 @@ function snapshotProblem(parsed) {
   return null;
 }
 function unreadableReason(path) {
-  const raw = readFileSync4(path, "utf8");
+  const raw = readFileSync5(path, "utf8");
   try {
     return snapshotProblem(JSON.parse(raw));
   } catch (e) {
@@ -647,13 +688,13 @@ function taskData(t) {
   return Object.fromEntries(Object.entries(t).filter(([k, val]) => !(NORMALISED_WHEN_EMPTY.has(k) && Array.isArray(val) && val.length === 0)));
 }
 function snapshotFix(path) {
-  const dir = dirname2(path);
+  const dir = dirname3(path);
   try {
-    if (!statSync2(dir).isDirectory())
+    if (!statSync3(dir).isDirectory())
       return `${dir} is a file where bounty keeps its snapshots folder: move it aside`;
   } catch {}
   try {
-    if (statSync2(path).isDirectory())
+    if (statSync3(path).isDirectory())
       return `remove the directory ${path} (a snapshot is a file)`;
   } catch {}
   if (existsSync3(path)) {
@@ -987,7 +1028,7 @@ async function main(argv) {
     const restoreArg = v.restore;
     const restorePath = existsSync3(restoreArg) ? restoreArg : join4(SNAPSHOTS_DIR, `${restoreArg}.json`);
     try {
-      const snap = JSON.parse(readFileSync4(restorePath, "utf8"));
+      const snap = JSON.parse(readFileSync5(restorePath, "utf8"));
       const problem = snapshotProblem(snap);
       if (problem)
         throw new Error(problem);
@@ -1088,7 +1129,7 @@ async function main(argv) {
     ];
     for (const p of candidates) {
       try {
-        mkdirSync2(dirname2(p), { recursive: true });
+        mkdirSync2(dirname3(p), { recursive: true });
         writeFileAtomic(p, JSON.stringify(state));
         return p;
       } catch {}
@@ -1217,7 +1258,7 @@ async function main(argv) {
     let parsed;
     let readable = false;
     try {
-      parsed = JSON.parse(readFileSync4(own, "utf8"));
+      parsed = JSON.parse(readFileSync5(own, "utf8"));
       readable = true;
     } catch {}
     if (!present || readable && boardHoldsSnapshot(state, parsed)) {
@@ -1837,7 +1878,7 @@ async function main(argv) {
   emitEvent({ type: "closed", reason, by: "system" });
   broadcast({ type: "message", text: `session ended: ${reason}` });
   await drainAndStop({ server, clients: sseClients, sockets });
-  cleanupDiscovery(discovery, sessionId);
+  await cleanupDiscovery(discovery, sessionId);
   if (lockFile)
     releaseLock(lockFile);
   if (shutdownWatchdog)

@@ -27,9 +27,9 @@
 // asserting a transport that does not exist.
 //
 // ⛔ TMPDIR IS SCOPED, NOT ONLY BOUNTY_HOME. The daemon writes
-// $TMPDIR/bounty-latest.json unconditionally at boot and unlinks it at close
-// iff the id is its own — an unscoped test daemon would DELETE a live user's
-// pointer. Every spawn here gets its own TMPDIR.
+// $TMPDIR/bounty-latest.json unconditionally at boot and, at close, iff the id
+// is its own, hands it to the newest board still running or unlinks it — an
+// unscoped test daemon would TAKE or DELETE a live user's pointer. Every spawn here gets its own TMPDIR.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import {
   cpSync,

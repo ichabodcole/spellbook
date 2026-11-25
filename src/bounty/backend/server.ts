@@ -2653,7 +2653,7 @@ async function main(argv: string[]): Promise<number> {
   // thing that made the old `c.close()` not leak a timer, and keeping it beside
   // a funnel that already does the job is how two registries drift apart.
   await drainAndStop({ server, clients: sseClients, sockets });
-  cleanupDiscovery(discovery, sessionId);
+  await cleanupDiscovery(discovery, sessionId);
   // AFTER the discovery cleanup: a successor writes its discovery file only
   // once it holds the lock, so this daemon's cleanup can never unlink it.
   if (lockFile) releaseLock(lockFile);

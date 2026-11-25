@@ -8,9 +8,9 @@
 //   - bounty-latest.json        (always overwritten by most recent
 //                                   host; default target for joiners)
 
-import { unlinkSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 
 export type DiscoveryFiles = { sessionFile: string; latestFile: string };
@@ -60,19 +60,97 @@ function sessionIdOf(raw: string): string | null {
   }
 }
 
+/** A discovery file's text and what it names, or null when it names no board. */
+type Discovered = { raw: string; session_id: string; url: string; mtimeMs: number };
+
+function readDiscovered(path: string): Discovered | null {
+  try {
+    const raw = readFileSync(path, "utf8");
+    const s = JSON.parse(raw) as { session_id?: unknown; url?: unknown };
+    if (typeof s.session_id !== "string" || typeof s.url !== "string") return null;
+    return { raw, session_id: s.session_id, url: s.url, mtimeMs: statSync(path).mtimeMs };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a board answers: GET /state with a short budget, the same question
+ * `list`'s probe asks, so `latest` never names a board `list` would not show.
+ */
+export async function boardAnswers(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The newest OTHER board still running: every bounty-<id>.json beside the
+ * latest pointer but our own, newest file first (a board writes its own file
+ * once, at boot), probed together. Null when none answers.
+ */
+async function newestLiveBoard(
+  files: DiscoveryFiles,
+  sessionId: string,
+  answers: (url: string) => Promise<boolean>,
+): Promise<Discovered | null> {
+  const dir = dirname(files.latestFile);
+  const latestName = basename(files.latestFile);
+  let names: string[];
+  try {
+    names = readdirSync(dir).filter(
+      (f) => f.startsWith("bounty-") && f.endsWith(".json") && f !== latestName,
+    );
+  } catch {
+    return null;
+  }
+  const candidates = names
+    .map((f) => readDiscovered(join(dir, f)))
+    .filter((d): d is Discovered => d !== null && d.session_id !== sessionId)
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  const live = await Promise.all(candidates.map((d) => answers(d.url)));
+  return candidates.find((_, i) => live[i]) ?? null;
+}
+
 /**
  * Best-effort cleanup on exit. Won't fire on SIGKILL, but stale files
  * produce a clean "session not running" error when a joiner connects.
  *
- * ⛔ THE `latest` POINTER IS ONLY REMOVED IF IT STILL NAMES US — otherwise a
+ * ⛔ THE `latest` POINTER IS ONLY TOUCHED IF IT STILL NAMES US — otherwise a
  * newer host has taken over the slot and we would delete a LIVE board's
  * pointer on our way out. `unlinkIfMatches`'s `identify` hook is what lets one
  * shared predicate serve both discovery conventions; bounty's identity is
  * `session_id`, which is what the hand-rolled version compared.
+ *
+ * ⛔ AND WHEN IT NAMES US, IT IS HANDED BACK, NOT DROPPED, while another board
+ * still runs (bounty-latest-pointer-and-list-title, 2026-11-24). Every boot
+ * takes `latest`, keyed or not, so closing a keyed board K opened over an
+ * unkeyed board A used to delete the pointer, and every unpinned verb then
+ * exited 5 "no running bounty session" while `list` showed A running. Now
+ * `latest` goes to the newest board that still answers, and is removed only
+ * when none does. The pointer is re-read just before the write, so a host that
+ * took the slot while we probed keeps it.
  */
-export function cleanupDiscovery(files: DiscoveryFiles, sessionId: string): void {
+export async function cleanupDiscovery(
+  files: DiscoveryFiles,
+  sessionId: string,
+  answers: (url: string) => Promise<boolean> = boardAnswers,
+): Promise<void> {
   try {
     unlinkSync(files.sessionFile);
   } catch {}
+  if (readDiscovered(files.latestFile)?.session_id !== sessionId) return;
+  const successor = await newestLiveBoard(files, sessionId, answers);
+  if (successor && readDiscovered(files.latestFile)?.session_id === sessionId) {
+    try {
+      writeFileAtomic(files.latestFile, successor.raw);
+      return;
+    } catch {
+      /* could not hand it over: remove it, as before, rather than leave ours */
+    }
+  }
   unlinkIfMatches(files.latestFile, sessionId, sessionIdOf);
 }
