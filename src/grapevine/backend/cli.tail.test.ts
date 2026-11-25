@@ -6,7 +6,10 @@
 // own GRAPEVINE_HOME, its own daemon, and stops both after its last test.
 
 import { afterAll, describe, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   at,
   bunRun,
@@ -41,7 +44,8 @@ describe("grapevine cli", () => {
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(2500);
     expect(payload.truncation_hint).toBeDefined();
-    expect(payload.truncation_hint).toContain("2500 chars");
+    // Nothing was cut (no --max), so no "+N" claims a loss: it gives the length.
+    expect(payload.truncation_hint).toStartWith("2500 chars");
     // Hint carries the exact recovery command: `read <channel> <id>`.
     expect(payload.truncation_hint).toContain(`read test_trunc ${payload.id}`);
     // F17: the hint must serialize BEFORE .text so a notification clip (which
@@ -145,7 +149,8 @@ describe("grapevine cli", () => {
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(200); // inline body capped to --max
     expect(payload.truncation_hint).toBeDefined();
-    expect(payload.truncation_hint).toContain("2500 chars"); // hint reports the TRUE total
+    // The hint counts what --max CUT (2500 − 200), not the body's length.
+    expect(payload.truncation_hint).toStartWith("+2300 chars cut (of 2500)");
     expect(payload.truncation_hint).toContain(`read test_max ${payload.id}`);
     // F17 order: hint serializes before .text so a downstream clip can't bury it.
     expect(line.indexOf("truncation_hint")).toBeLessThan(line.indexOf('"text"'));
@@ -250,6 +255,120 @@ describe("grapevine cli", () => {
       (c: { name: string }) => c.name === "test_doctor_ch",
     );
     expect(ownEntry).toBeUndefined();
+  });
+
+  test.each([
+    ["start", false],
+    ["roll", true],
+  ])(
+    "doctor with no daemon names `%s` (held: %p), and that line really starts one",
+    async (verb, held) => {
+      // A HOME of its own, with no daemon: the hint used to say `list` spawns one,
+      // and `list` never does. Under a hold `start` only reports it; `roll` ends it.
+      const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-"));
+      const env = { ...process.env, GRAPEVINE_HOME: home };
+      const run = (argv: string[]) => spawnSync(argv[0] as string, argv.slice(1), { env });
+      const holdFile = join(home, "daemon.hold");
+      if (held) writeFileSync(holdFile, String(Date.now() + 60_000));
+      try {
+        const before = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+        expect(before.authoritative).toBeNull();
+        const hint = must(
+          (before.hints as string[]).find((h) => h.startsWith("No authoritative daemon")),
+          "the no-daemon hint",
+        );
+        const cmd = must(hint.match(/`([^`]+)`/)?.[1], "the hint names a command in backticks");
+        expect(cmd).toBe(`bun ${CLI} ${verb}`);
+        if (held) expect(hint).toContain("a hold stands until");
+        expect(run(cmd.split(" ")).status).toBe(0);
+        const after = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+        expect(after.authoritative?.data_dir).toBe(home);
+        expect(existsSync(holdFile)).toBe(false);
+      } finally {
+        run([process.execPath, CLI, "stop"]);
+        // Only this cell's own daemon: the pid in its own temp HOME's pid file.
+        const pidFile = join(home, "daemon.pid");
+        if (existsSync(pidFile)) {
+          try {
+            process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
+          } catch {}
+        }
+        rmSync(home, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test("doctor on a stale-version daemon names `roll`, and that line really swaps it", async () => {
+    // A daemon reporting a forged version, in a HOME of its own: a stand-in
+    // served from this process (the real daemon's version comes from plugin.json
+    // and has no seam). It leaves on DELETE / like the real one, so `roll` can
+    // replace it with a real daemon of this CLI's version. The hint used to say
+    // "`stop`, then any verb", and `list`/`info`/`doctor` start nothing.
+    const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-ver-"));
+    const portFile = join(home, "daemon.port");
+    const stale = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch(req) {
+        const path = new URL(req.url).pathname;
+        if (req.method === "DELETE" && path === "/") {
+          setTimeout(() => {
+            rmSync(portFile, { force: true });
+            stale.stop(true);
+          }, 50);
+          return Response.json({ ok: true, shutting_down: true });
+        }
+        if (path === "/presence") return Response.json({ channels: [] });
+        return Response.json({ ok: true, version: "0.0.0-forged" });
+      },
+    });
+    writeFileSync(portFile, String(stale.port));
+    // No pid file and no pid: a port that answers is all discovery needs, and a
+    // forged pid could name a live process. Only `roll`'s real daemon writes one.
+    // Async: the stand-in answers from this process's event loop.
+    const run = (argv: string[]) =>
+      new Promise<{ code: number; out: string; err: string }>((resolve) => {
+        const p = spawn(argv[0] as string, argv.slice(1), {
+          env: { ...process.env, GRAPEVINE_HOME: home },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        const out: Buffer[] = [];
+        const err: Buffer[] = [];
+        p.stdout.on("data", (b) => out.push(b));
+        p.stderr.on("data", (b) => err.push(b));
+        const text = (bs: Buffer[]) => Buffer.concat(bs).toString();
+        p.on("exit", (c) => resolve({ code: c ?? -1, out: text(out), err: text(err) }));
+      });
+    try {
+      const doctor = await run([process.execPath, CLI, "doctor"]);
+      const before = JSON.parse(doctor.out);
+      expect(before.authoritative.version).toBe("0.0.0-forged");
+      // Every verb's one-shot stderr warning names the same runnable `roll`.
+      expect(doctor.err).toContain(`differs from CLI version`);
+      expect(doctor.err).toContain(`Run \`bun ${CLI} roll\` to align.`);
+      const hint = must(
+        (before.hints as string[]).find((h) => h.includes("differs from this CLI's version")),
+        "the version-mismatch hint",
+      );
+      const cmd = must(hint.match(/Run `([^`]+)`/)?.[1], "the hint names a command in backticks");
+      expect(cmd).toBe(`bun ${CLI} roll`);
+      expect((await run(cmd.split(" "))).code).toBe(0);
+      const after = JSON.parse((await run([process.execPath, CLI, "doctor"])).out);
+      expect(after.authoritative.data_dir).toBe(home);
+      expect(after.authoritative.version).toBe(after.cli_version);
+      expect(after.hints.some((h: string) => h.includes("differs"))).toBe(false);
+    } finally {
+      stale.stop(true);
+      await run([process.execPath, CLI, "stop"]);
+      // Only the daemon `roll` spawned in this cell's own temp HOME, by its pid file.
+      const pidFile = join(home, "daemon.pid");
+      if (existsSync(pidFile)) {
+        try {
+          process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
+        } catch {}
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 
   test("doctor surfaces active subscribers when present", async () => {

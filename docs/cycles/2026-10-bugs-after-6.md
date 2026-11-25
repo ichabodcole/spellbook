@@ -69,7 +69,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 15. **[item/grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out/item.md)**
 16. **[item/grapevine-stuck-daemon-refusal-gaps](../items/grapevine-stuck-daemon-refusal-gaps.md)**
 17. **[item/grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone/item.md)**
-18. **[item/grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts.md)**
+18. **[item/grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts/item.md)**
 19. **[item/grapevine-status-frame-leaks](../items/grapevine-status-frame-leaks.md)**:
     holds the `--last n` miscount trimmed from 18.
 

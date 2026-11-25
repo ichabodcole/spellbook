@@ -240,10 +240,9 @@ function readPluginVersion(): string | null {
 }
 const PLUGIN_VERSION = readPluginVersion();
 
-// One-shot version-mismatch check. The daemon may be from a different
-// cached plugin path than this CLI (existing tail processes' auto-reconnect
-// can race a `stop` and respawn the old daemon). Warn once per invocation
-// so the user has a signal instead of silently degraded behavior.
+// One-shot version-mismatch check: the daemon may be from another cached plugin
+// path (a tail's auto-reconnect can race a `stop` and respawn the old one). Warn
+// once per invocation so the user has a signal instead of silent degradation.
 let _versionCheckDone = false;
 async function maybeWarnOnVersionMismatch(port: number) {
   if (_versionCheckDone) return;
@@ -259,13 +258,12 @@ async function maybeWarnOnVersionMismatch(port: number) {
     if (daemonVersion === null) {
       process.stderr.write(
         `# grapevine: daemon is older than this CLI (no version reported). ` +
-          `CLI is v${PLUGIN_VERSION}. Some features may silently degrade. ` +
-          `Restart the daemon (drop tails, then \`stop\`, then any verb) to upgrade.\n`,
+          `CLI is v${PLUGIN_VERSION}. Some features may silently degrade; run ${runnable("roll")}.\n`,
       );
     } else if (daemonVersion !== PLUGIN_VERSION) {
       process.stderr.write(
         `# grapevine: daemon version (v${daemonVersion}) differs from CLI version (v${PLUGIN_VERSION}). ` +
-          `Some features may silently degrade. Restart the daemon to align.\n`,
+          `Some features may silently degrade. Run ${runnable("roll")} to align.\n`,
       );
     }
   } catch {
@@ -463,15 +461,14 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
-// How THIS CLI was invoked, as a runnable prefix. `process.argv[1]` is the
-// absolute path of cli.ts under `bun …/cli.ts <verb>`, which is SKILL.md's
-// canonical invocation — so the line we print can actually be pasted. Falls
-// back to the bare verb if argv is not shaped as expected, which is a verb
-// reference rather than a command that lies about being one.
+// How THIS CLI was invoked (`bun <abs cli.ts>`, SKILL.md's canonical form), so a
+// printed line can be pasted; `runnable` puts a verb behind it, or alone if argv is
+// not shaped as expected (a verb reference, not a command that lies about being one).
 function invocationPrefix(): string {
   const entry = process.argv[1];
   return entry ? `bun ${entry}` : "";
 }
+const runnable = (v: string) => `\`${invocationPrefix() ? `${invocationPrefix()} ` : ""}${v}\``;
 
 // A daemon refusal carries `hint` — the act that recovers from it (a 404 on a
 // read names the `open` that would create the channel).
@@ -969,24 +966,23 @@ async function cmdTail(
       },
       render: (payload, frame) => {
         if (frame.event === "subscribed") return renderSubscribed(payload);
-        // #67 — front-load a recovery pointer on EVERY message frame, so the read
-        // coordinates survive a downstream notification clip. Monitor truncates at
-        // its OWN cap (below our hint threshold, and one we cannot observe here); a
-        // message it clips would otherwise lose its trailing `id` and become
-        // unrecoverable — the reader is left inferring the id. Every frame
-        // therefore carries a FRONT-loaded `read <channel> <id>`, either as the
-        // richer `truncation_hint` (genuinely-long messages — the "+N chars,
-        // you're definitely missing content" alarm) or as the compact `full`
-        // pointer. Serializing it before the long `.text` is what makes it survive
-        // the clip (F17).
+        // #67 — EVERY message frame front-loads a `read <channel> <id>`, so its
+        // coordinates survive a downstream clip (Monitor truncates at its OWN cap,
+        // below our threshold, which we cannot observe): the `truncation_hint` alarm
+        // on a genuinely long body, else the compact `full`. Serialized before the
+        // long `.text`, it survives the clip (F17).
         const readRef = `read ${name} ${payload.id}`;
         if (
           typeof payload.text === "string" &&
           payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
         ) {
-          const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
-          // Cap the INLINE body when --max is set (the full message stays on disk
-          // → `read`); without --max, emit the full text (today's default).
+          // --max caps the INLINE body (the full message stays on disk → `read`) and
+          // the hint counts what it CUT; without --max nothing is cut, so: the length.
+          const len = payload.text.length;
+          const truncation_hint =
+            opts.max !== undefined
+              ? `+${len - opts.max} chars cut (of ${len}) — full: ${readRef}`
+              : `${len} chars, long enough to be clipped — full: ${readRef}`;
           const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
           return JSON.stringify({ truncation_hint, ...payload, text });
         }
@@ -1527,8 +1523,8 @@ async function cmdRoll(opts: { force?: boolean }) {
       if (heldUntil === null || !(e instanceof CliError)) throw e;
       die(
         `${e.message} — the hold (stop --hold) still stands until ${new Date(heldUntil).toISOString()}, ` +
-          "so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run `roll` " +
-          "again; or let the hold lapse, after which any verb (or a waiting tail) starts the daemon.",
+          `so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run ${runnable("roll")} ` +
+          `again; or let the hold lapse, after which ${runnable("start")} (or a waiting tail) starts the daemon.`,
         e.kind,
         e.extra,
       );
@@ -1680,9 +1676,9 @@ async function cmdDoctor() {
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
   else if (!authoritative) {
-    hints.push(
-      "No authoritative daemon running for this HOME. Run any verb (e.g. `cli.ts list`) to spawn one.",
-    );
+    const held = holdActive(); // `start` only reports a hold; `roll` ends it
+    const why = held ? ` (a hold stands until ${new Date(held).toISOString()})` : "";
+    hints.push(`No authoritative daemon${why}; ${runnable(held ? "roll" : "start")} starts one.`);
   }
   if (otherDaemons.length > 0) {
     hints.push(
@@ -1692,11 +1688,11 @@ async function cmdDoctor() {
     const reapableCount = otherDaemons.filter((d) => d.reapable).length;
     if (reapableCount > 0) {
       hints.push(
-        `Found ${reapableCount} reapable orphan daemon(s). Run \`grapevine reap\` to clear them safely.`,
+        `Found ${reapableCount} reapable orphan daemon(s). Run ${runnable("reap")} to clear them safely.`,
       );
     }
     if (otherDaemons.some((d) => d.status === "unresponsive")) {
-      hints.push("Some daemons are unresponsive; `grapevine reap --force` includes them.");
+      hints.push(`Some daemons are unresponsive; ${runnable("reap --force")} includes them.`);
     }
   }
   if (
@@ -1707,11 +1703,11 @@ async function cmdDoctor() {
   ) {
     hints.push(
       `Authoritative daemon version (${authoritative.version}) differs from this CLI's version (${PLUGIN_VERSION}). ` +
-        "Restart the daemon to align — drop active tails, then `stop`, then any verb.",
+        `Run ${runnable("roll")} to swap in this version (with tails attached it needs --force; they reconnect).`,
     );
   }
   if (authoritative && (authoritative.version === null || authoritative.version === undefined)) {
-    hints.push("Authoritative daemon predates version reporting (pre-V1.6.2). Restart to align.");
+    hints.push(`Daemon predates version reporting (pre-V1.6.2). Run ${runnable("roll")}.`);
   }
   if (totalSubscribers > 0) {
     hints.push(
