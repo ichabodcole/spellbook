@@ -37,8 +37,11 @@ the start-path test (below). **S2 built tier 0**: `errors`, `names`, `paths`,
 imports them and re-exports every name it exported before, so no import outside
 the file changed. **S3 built tier 1**: `state`, `places` and `writes` (below,
 "The core"). **S4 built `chats` (tier 2) and `tasks` (tier 3)** (below, "The
-chat and the tasks"). The other parts are still planned. When a step builds a
-part, it adds the part's row here and in the tier test, in the same change.
+chat and the tasks"). **S5 built the read side**: `readIndex`, `linkResolve`,
+`profiles`, `relations` and `search` (tier 4), `linkCheck` and `linkReports`
+(tier 5) (below, "The read side"). The other parts are still planned. When a
+step builds a part, it adds the part's row here and in the tier test, in the
+same change.
 
 ## Why parts, and why tiers
 
@@ -63,7 +66,7 @@ folder says which is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4; the rest planned)                                                          | Story Studio's, not ours                 |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5; the rest planned)                                     | Story Studio's, not ours                 |
 | ---- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                     |                                          |
 | 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                  |                                          |
@@ -167,6 +170,101 @@ the task list is `taskList`, since `tasks()` is one of the verbs.
   `manifest.test.ts` replaces `persist` on a session and counts
   `transitionTask`'s write (see "Gotchas").
 
+### The read side (tiers 4 and 5, built at S5)
+
+The facade builds the seven parts after the tasks, lower before higher. Each
+takes the core and `places` where it uses them, the read parts below it, and the
+facade's members it still needs as a hooks object:
+
+```ts
+this.readIndex = new ReadIndex(this.core, this.places, {
+  activeText,
+  filteredOut,
+  mainOf,
+  findDoc,
+  docOrDie,
+});
+this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, {
+  docOrDie,
+  imageOfDoc,
+  imageDescription,
+  imageFile,
+  imageNodeAt,
+  docsAfter,
+  typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
+  relationPass: (index) => this.relationsPart.relationPass(index),
+});
+this.profilesPart = new Profiles(this.core, this.places, this.readIndex);
+this.relationsPart = new Relations(
+  this.places,
+  this.readIndex,
+  this.linkResolve,
+  this.profilesPart
+);
+this.searchPart = new Search(this.places, this.readIndex, { imageOfDoc });
+this.linkCheckPart = new LinkChecker(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.linkResolve,
+  this.relationsPart,
+  { movedFrom, movedTarget }
+);
+this.linkReports = new LinkReports(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.linkResolve,
+  this.profilesPart,
+  this.relationsPart,
+  { findDoc, versionOrDie }
+);
+```
+
+(Each hook is an arrow to the facade's member, `(d) => this.activeText(d)`,
+shortened here.) The fields for `profiles`, `relations`, `search` and
+`linkCheck` carry `Part` because each verb of that name is public; the link
+check's class is `LinkChecker`, since `LinkCheck` is the report's type.
+
+| Part             | Tier | Owns                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `readIndex.ts`   | 4    | `linkCache`, `headingCache`, and the app's link slot (`linkSlot`, `linkCheckOpts`, `resolvable`, `setLinkSlot`, `setLinkCheck`, `appEdges`); `candidates`, `markdownCandidates`, `candidateText`, `readOf`, `linksOf`, `headingsAt`, `entryFinder`, `pruneLinkCache`, `resolvableDocs`, `inContextAt`, `linkSubject`, and a bundle's references (`referenceCandidates`, `placeOf`, `resolveReference`, `referenceView`). |
+| `linkResolve.ts` | 4    | `resolveFrom`, `resolveLink`, `linkTargets`, `linkHeadings`, `droppedLinks` with `droppedDocTitle`, `embeds`, `contextDocs`, `contextDocEach`, `imageInside`.                                                                                                                                                                                                                                                            |
+| `profiles.ts`    | 4    | `profileReader`; `kindOf` and `kindView` (where a document's kind is decided), `profilePass`, `profileSurvey`, `profiles`, `documentProfile`, `profileCheck`.                                                                                                                                                                                                                                                            |
+| `relations.ts`   | 4    | `relationsReader`; `relationPass`, `typedLinks`, `relationsAt`, `relations`, `vocabularyHealth`.                                                                                                                                                                                                                                                                                                                         |
+| `search.ts`      | 4    | `search`, `searchEach`, `labelBundleHit`.                                                                                                                                                                                                                                                                                                                                                                                |
+| `linkCheck.ts`   | 5    | `linkCheck`, whole (about 500 lines of one method).                                                                                                                                                                                                                                                                                                                                                                      |
+| `linkReports.ts` | 5    | `linkGraph`, `backlinks`, `outlinks`, `summaries`, `cardSummaries`, `linksAmong`, `documentText`, with `summariesOf` and `subjectText`.                                                                                                                                                                                                                                                                                  |
+
+Each public verb keeps a one-line delegate on the facade, with its comment. The
+facade's own callers of the read side (the move preview, relink, `pinEdges`, the
+doctor's counts) call the parts. `linkSlot`, `linkCheckOpts` and `headingCache`
+are not private: `linkResolve` reads the slot's resolver, the link check reads
+`linkCheckOpts` and prunes `headingCache`. No moved code writes a file, the
+ledger or the record.
+
+Where S5 left the write-up's map, by dependency direction:
+
+- **Two parts that call each other.** `linkTargets` (in `linkResolve`) reads
+  `typedLinks` and `relationPass`, and `relations` resolves its typed links
+  through `linkResolve.resolveFrom`. `relations` is the higher of the two, so it
+  imports `linkResolve`, and `linkResolve` reaches it through two hooks.
+- **Down into `readIndex`**: `headingsAt` (the map's `linkResolve`), with the
+  `headingCache` it fills; `linkSubject` (the map's `linkCheck`, tier 5), which
+  `profiles` calls; and the unlisted `candidateText`, `inContextAt`,
+  `resolvableDocs`, `linksOf` and `appEdges`, which the parts above read.
+- **Into `linkResolve`**: `imageInside` (the map's `linkCheck`), which
+  `contextDocEach` calls, and the unlisted `droppedDocTitle` and
+  `contextDocEach`.
+- **Unlisted, with their callers**: `kindOf`, `kindView`, `profilePass` and
+  `profileSurvey` in `profiles`; `relationPass` in `relations`; `labelBundleHit`
+  in `search`; `summariesOf` and `subjectText` in `linkReports`.
+- **Left in the facade**: `moves`, `movedTo`, `movedFrom` and `movedTarget`,
+  which the map files under `follow` (tier 3, S7); the link check takes
+  `movedFrom` and `movedTarget` as hooks. `movedTarget` calls
+  `linkResolve.resolveFrom` (tier 4), so S7 has to give `follow` that through a
+  hook too, or leave `movedTarget` higher.
+
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
           │
@@ -186,8 +284,10 @@ tier 0  errors  names  paths  facts  types  manifest   (and the existing pure si
 
 - **A part imports only parts in lower tiers**, or in its own tier where the
   call graph already goes one way (within tier 1, `writes` and `places` take
-  `state`, and `writes` takes `places`; the other one-way edges within a tier
-  are recorded here as each step finds them).
+  `state`, and `writes` takes `places`; within tier 4, `linkResolve`, `profiles`
+  and `search` take `readIndex`, and `relations` takes `readIndex`,
+  `linkResolve` and `profiles`; the other one-way edges within a tier are
+  recorded here as each step finds them).
 - **Tiers 0 and 1 import no part above them.** Tier 0 imports no part outside
   tier 0.
 - **Nothing in `session/` imports the facade (`session.ts`) or `server.ts`**, or
@@ -228,7 +328,7 @@ The playbook that applies these when adding behaviour or splitting a file is
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
   file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
-  S3 to 6,768 and S4 to 6,700; `server.ts` is at 4,876.
+  S3 to 6,768, S4 to 6,700 and S5 to 4,649; `server.ts` is at 4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -334,16 +434,24 @@ that finds the same in our code records our instance under it.
   and fails. The daemon's parts, once callers move, call the session's parts
   directly, so a test that counts calls must spy on the part's method; the
   facade's delegate passes through it, so one spy on the part sees both.
-- **A test that reaches a read-side cache reaches its part.** For us:
+- **A test that reaches a read-side cache reaches its part.** Ours at S5:
   `profiles.cost`, `profiles.session`, `relations.cost` and `relations.session`
-  reach `profileReader` and `relationsReader` on the session today; S5 repoints
-  them and shows the counters still move.
+  read `parsed` on `profileReader` and `relationsReader`, which were the
+  session's; they now read them on `profilesPart` and `relationsPart`. Pointed
+  at a dummy reader instead, all four fail (`parsed` reads 0), so the counters
+  they read are the ones the session's passes move.
 - **What is on screen has one writer.** Only the viewer writes `openDoc`,
   `openImage` and `docAside`. Its methods are not one rule applied everywhere (a
   Trash or a delete closes an open image without bringing back the document
   aside); keep each as it is unless a change means to alter what the human sees.
 - **The caches are pruned only after a pass that read every candidate**, in the
-  order the facade pruned them, each by a method on the part that owns it.
+  order the facade pruned them, each by a method on the part that owns it. Ours
+  at S5: every cache is one instance, held by one part (`linkCache`,
+  `headingCache` and `resolvable` by `readIndex`, `profileReader` by `profiles`,
+  `relationsReader` by `relations`). `linkCache` is pruned by
+  `readIndex.pruneLinkCache` and cleared by `setLinkSlot`; the readers by their
+  own `prune`. The link check still prunes `headingCache` with the loop it had,
+  through `readIndex.headingCache`, since S5 moved code and added no method.
 - **A dispatcher looks a handler up by the map's own key** (`Object.hasOwn`), so
   a frame named for `Object.prototype` (`constructor`, `toString`) is an unknown
   op, as it was to the switch; and the merged surface map holds `CLIENT_OPS`
@@ -381,3 +489,8 @@ that finds the same in our code records our instance under it.
 - **2026-11-25**: S4 built `chats` (tier 2) and `tasks` (tier 3), both whole,
   each writing through a `persist` hook; the tier test lists them, and
   `session.ts`'s override went from 6,768 to 6,700.
+- **2026-11-25**: S5 built the read side: `readIndex`, `linkResolve`,
+  `profiles`, `relations`, `search` (tier 4), `linkCheck` and `linkReports`
+  (tier 5); where it left the write-up's map; the read-side caches' owners; the
+  tier test lists the parts, and `session.ts`'s override went from 6,700 to
+  4,649.
