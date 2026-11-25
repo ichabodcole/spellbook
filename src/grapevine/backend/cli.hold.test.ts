@@ -8,7 +8,8 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   bunRun,
@@ -129,8 +130,11 @@ describe("the upgrade window: stop --hold, then roll", () => {
     expect((await bunRun(["stop", "--hold", "60"])).code).toBe(0);
     // It says it is waiting on the hold — and it does NOT exit 6.
     expect(await until(() => t.stderr().includes("daemon held until"), 8000)).toBe(true);
-    await sleep(1500);
+    // Several reconnect attempts (backoff 250 ms, doubling) fit in 3 s; the
+    // held line is said once per hold, not once per attempt.
+    await sleep(3000);
     expect(t.proc.exitCode).toBe(null);
+    expect(t.stderr().match(/daemon held until/g)?.length).toBe(1);
 
     // Close the window. No subscriber is connected (the daemon is down), so
     // roll needs no --force.
@@ -202,4 +206,49 @@ describe("the upgrade window: stop --hold, then roll", () => {
     await bunRun(["close", "hold_lapse"]);
     await bunRun(["stop"]);
   }, 30_000);
+
+  test("a roll that cannot start the daemon keeps the hold, and says so", async () => {
+    // A home of its own, so the suite's daemon is untouched. A regular FILE
+    // where the daemon makes its `channels/` folder kills it before it binds:
+    // a real, deterministic start failure with no seam in the shipped code.
+    const home = mkdtempSync(join(tmpdir(), "grapevine-failroll-"));
+    try {
+      writeFileSync(join(home, "channels"), "");
+      const run = (args: string[]) =>
+        new Promise<{ code: number; stdout: string; stderr: string }>((resolve) => {
+          const p = spawn(process.execPath, [CLI, ...args], {
+            env: { ...process.env, GRAPEVINE_HOME: home },
+            stdio: ["ignore", "pipe", "pipe"],
+          });
+          const out: Buffer[] = [];
+          const err: Buffer[] = [];
+          p.stdout.on("data", (b) => out.push(b));
+          p.stderr.on("data", (b) => err.push(b));
+          p.on("exit", (code) =>
+            resolve({
+              code: code ?? -1,
+              stdout: Buffer.concat(out).toString("utf-8"),
+              stderr: Buffer.concat(err).toString("utf-8"),
+            }),
+          );
+        });
+      const held = JSON.parse((await run(["stop", "--hold", "60"])).stdout).held_until;
+      expect(held).toBeGreaterThan(Date.now() + 30_000);
+
+      const roll = await run(["roll"]);
+      expect(roll.code).toBe(1);
+      const e = errorOf(roll.stderr);
+      expect(e.message).toContain("daemon failed to start within 3s");
+      expect(e.message).toContain(`still stands until ${new Date(held).toISOString()}`);
+
+      // The hold is the operator's, unchanged — not cleared on the way out.
+      const holdFile = join(home, "daemon.hold");
+      expect(existsSync(holdFile)).toBe(true);
+      expect(Number(readFileSync(holdFile, "utf-8").trim())).toBe(held);
+      expect(JSON.parse((await run(["start"])).stdout).held).toBe(true);
+      expect(existsSync(join(home, "daemon.pid"))).toBe(false); // no daemon left behind
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  }, 20_000);
 });

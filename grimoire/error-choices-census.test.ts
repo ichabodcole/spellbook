@@ -185,8 +185,11 @@ const EXPECTED: Record<
   // grapevine 52 -> 53 (2026-10-25, item ci-red-on-linux): stop, restart and
   // roll refuse a daemon that still answers 5 s after it was told to stop
   // (`daemon_still_running`). No closed set there, so no `choices`.
+  // grapevine 53 -> 54 (2026-11-24, item grapevine-hold-has-no-way-out): a cold
+  // `roll` that cannot start the daemon re-raises saying the hold still stands.
+  // No closed set there, so no `choices`.
   glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
-  grapevine: { sites: 53, choices: 1, verbRoster: true, flagMap: true },
+  grapevine: { sites: 54, choices: 1, verbRoster: true, flagMap: true },
   // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
   // kit. The enumerated `context <kind>` and `--link` rejections stay here.

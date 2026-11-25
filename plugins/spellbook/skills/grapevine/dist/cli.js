@@ -1981,12 +1981,16 @@ async function probeVersion(port) {
 async function cmdRoll(opts) {
   const port = await readDaemonPort();
   if (!port) {
+    const heldUntil = holdActive();
     let fresh;
     try {
       fresh = await ensureDaemon({ overHold: true });
-    } finally {
-      releaseHold();
+    } catch (e) {
+      if (heldUntil === null || !(e instanceof CliError))
+        throw e;
+      die2(`${e.message} \u2014 the hold (stop --hold) still stands until ${new Date(heldUntil).toISOString()}, ` + "so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run `roll` " + "again; or let the hold lapse, after which any verb (or a waiting tail) starts the daemon.", e.kind, e.extra);
     }
+    releaseHold();
     printJson2({
       ok: true,
       rolled: true,

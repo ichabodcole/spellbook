@@ -29,6 +29,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry.ts";
 import {
+  CliError,
   type ErrExtra,
   type ErrKind,
   die as raise,
@@ -1585,12 +1586,26 @@ async function cmdRoll(opts: { force?: boolean }) {
     // hold whose own refusal named it. It spawns OVER the hold and releases it
     // only after: a tail waiting on the hold sees the new daemon's port first,
     // never a gap in which to spawn its own (stale) one.
+    //
+    // ⛔ ONLY ONCE THE NEW DAEMON ANSWERS. A roll that fails to start one keeps
+    // the operator's hold and says so: clearing it on the way out (a `finally`)
+    // let every waiting old-CLI tail respawn the stale daemon the hold was there
+    // to keep out, and the error never mentioned that the hold was gone.
+    const heldUntil = holdActive();
     let fresh: number;
     try {
       fresh = await ensureDaemon({ overHold: true });
-    } finally {
-      releaseHold();
+    } catch (e) {
+      if (heldUntil === null || !(e instanceof CliError)) throw e;
+      die(
+        `${e.message} — the hold (stop --hold) still stands until ${new Date(heldUntil).toISOString()}, ` +
+          "so no waiting tail will respawn a stale daemon meanwhile. Fix the cause, then run `roll` " +
+          "again; or let the hold lapse, after which any verb (or a waiting tail) starts the daemon.",
+        e.kind,
+        e.extra,
+      );
     }
+    releaseHold();
     printJson({
       ok: true,
       rolled: true,

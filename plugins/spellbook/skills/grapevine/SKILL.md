@@ -370,14 +370,17 @@ start it; `start` does, with no channel side-effect.
   upgrade window: `stop --hold 60`, swap the plugin, then `roll`. While held,
   `start` answers `held: true` with `held_until`, and every other verb that
   would start a daemon (`restart` included) refuses with exit 6 and a `hint`
-  naming `roll`. **`roll` ends the hold**: it starts the new daemon and clears
-  the hold, with no `--force` needed (nobody is connected to a stopped daemon).
-  Otherwise the hold lapses by itself at `held_until`. **Live tails wait**: each
-  logs `stream dropped`, then `# daemon held until …; waiting`, and stays
-  running. When `roll` starts the daemon (or the hold lapses and the tail's own
-  reconnect starts one), it resumes from the last id it printed, so nothing sent
-  in between is missed. A tail whose window ends during the hold prints its
-  usual `tail.window` line with `--since <the last id>`; re-arm that.
+  naming `roll`. **`roll` ends the hold**: it starts the new daemon and, once
+  that daemon answers, clears the hold, with no `--force` needed (nobody is
+  connected to a stopped daemon). A `roll` that cannot start the daemon keeps
+  the hold, and its error says the hold still stands and until when. Otherwise
+  the hold lapses by itself at `held_until`. **Live tails wait**: each logs
+  `stream dropped`, then
+  `# daemon held until <iso> (stop --hold); waiting — this tail resumes when …`,
+  and stays running. When `roll` starts the daemon (or the hold lapses and the
+  tail's own reconnect starts one), it resumes from the last id it printed, so
+  nothing sent in between is missed. A tail whose window ends during the hold
+  prints its usual `tail.window` line with `--since <the last id>`; re-arm that.
 
 ## Message shape
 
