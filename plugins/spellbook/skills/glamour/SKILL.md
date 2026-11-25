@@ -338,8 +338,9 @@ as end-of-session, then read the snapshot.
   generated images. Tell the user if it is missing.
 - Session discovery files live in the system temp dir (`os.tmpdir()`) — on macOS
   that is `/var/folders/.../T/`, not `/tmp`. A daemon that misses the `open`
-  handshake is stopped, so a failed `open` leaves no session behind; if a
-  session appears lost otherwise, use `info` or `--session <id>` to re-target.
+  handshake is stopped, so a failed `open` leaves no running session (rarely, a
+  stale discovery file; `info` shows it). If a session appears lost otherwise,
+  use `info` or `--session <id>` to re-target.
 
 ## Feedback touchpoint
 
