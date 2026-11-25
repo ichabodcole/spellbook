@@ -35,8 +35,9 @@ G1 put the guard in place: the size limit, the tier test with empty tables, and
 the start-path test (below). **S2 built tier 0**: `errors`, `names`, `paths`,
 `facts`, `types` and `manifest` are files in `session/`, and `session.ts`
 imports them and re-exports every name it exported before, so no import outside
-the file changed. The other tiers are still planned. When a step builds a part,
-it adds the part's row here and in the tier test, in the same change.
+the file changed. **S3 built tier 1**: `state`, `places` and `writes` (below,
+"The core"). The other tiers are still planned. When a step builds a part, it
+adds the part's row here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -60,7 +61,7 @@ is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2; the rest planned)                                                                                                   | Story Studio's, not ours                 |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3; the rest planned)                                                                                     | Story Studio's, not ours                 |
 | ---- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                     |                                          |
 | 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                  |                                          |
@@ -74,19 +75,62 @@ What each part owns, member by member, is in the write-up's
 
 ### Ours, not Story Studio's
 
-| Part or addition                    | Tier | What it holds                                                                                                                                              | Story Studio keeps it in |
-| ----------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `session/manifest.ts`               | 0    | The manifest refusals (`refuseMalformedManifest`, `refuseForeignManifest`, `looksLikeScriptorium`) and `migrateSlot`, which `restore` runs on a raw record | (no counterpart)         |
-| our own-places guards, in `places`  | 1    | `ownPlaces`, `notOwnPlaceOrDie`, `notOwnSourceOrDie`, `mayBeASetOrDie`, `pinDir`, `dirStillOrDie`, `ownFileOrDie`, `writeShown`                            | (no counterpart)         |
-| `session/workspace.ts`              | 2    | No home and the workspace: `setWorkspace`, `workspaceOverlap`, `overlapToSay`, `setAppHome`, `appSlot`, `updateApp`, `m.overlapSaid`                       | `projectMeta` (tier 5)   |
-| the scan filter, in `context`       | 2    | `scanGuard`, `scanSkip`, `filteredOut`, `refilter`                                                                                                         | (no counterpart)         |
-| the app's link slot, in `readIndex` | 4    | `linkSlot`, `linkCheckOpts`, `resolvable`                                                                                                                  | (no counterpart)         |
-| `session/movePlan.ts`               | 5    | The move preview: `movePlan`, `planWorld`, `listedAfter`, `entryAfter`, `docsAfter`, `pinEdges`, `brokenEdges` (the pure planner is `../movePlan.ts`)      | (no counterpart)         |
-| `session/sets.ts`                   | 5    | Set promotion: `makeSet`, `unmakeSet`, `addFolder`                                                                                                         | (no counterpart)         |
+| Part or addition                    | Tier | What it holds                                                                                                                                                             | Story Studio keeps it in |
+| ----------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `session/manifest.ts`               | 0    | The manifest refusals (`refuseMalformedManifest`, `refuseForeignManifest`, `looksLikeScriptorium`) and `migrateSlot`, which `restore` runs on a raw record                | (no counterpart)         |
+| our own-places guards, in `places`  | 1    | `ownPlaces`, `notOwnPlaceOrDie`, `notOwnSourceOrDie`, `mayBeASetOrDie`, `ownFileOrDie` (S3 put `pinDir` and `dirStillOrDie` in `state`; `writeShown` waits in the facade) | (no counterpart)         |
+| `session/workspace.ts`              | 2    | No home and the workspace: `setWorkspace`, `workspaceOverlap`, `overlapToSay`, `setAppHome`, `appSlot`, `updateApp`, `m.overlapSaid`                                      | `projectMeta` (tier 5)   |
+| the scan filter, in `context`       | 2    | `scanGuard`, `scanSkip`, `filteredOut`, `refilter`                                                                                                                        | (no counterpart)         |
+| the app's link slot, in `readIndex` | 4    | `linkSlot`, `linkCheckOpts`, `resolvable`                                                                                                                                 | (no counterpart)         |
+| `session/movePlan.ts`               | 5    | The move preview: `movePlan`, `planWorld`, `listedAfter`, `entryAfter`, `docsAfter`, `pinEdges`, `brokenEdges` (the pure planner is `../movePlan.ts`)                     | (no counterpart)         |
+| `session/sets.ts`                   | 5    | Set promotion: `makeSet`, `unmakeSet`, `addFolder`                                                                                                                        | (no counterpart)         |
 
 **Same name, smaller part.** Our `session/chats.ts` will hold one chat
 (`m.chat`, `addMessage`, `messages`), where theirs holds many chats and a timer.
 We keep their name so their code ports into the file of the same name.
+
+### The core (tier 1, built at S3)
+
+The facade builds the core first and each tier 1 part from it, in its
+constructor:
+
+```ts
+this.core = new State(sessionsRoot, app, manifest);
+this.dir = this.core.dir;
+this.places = new Places(this.core);
+this.writes = new Writes(this.core, this.places);
+```
+
+A part receives the core as `core` (`constructor(private readonly core: State)`)
+and reads and changes the record as `this.core.m`; `writes` also takes `places`.
+The facade keeps the three as private fields (`this.core`, `this.places`,
+`this.writes`) and calls them directly; each public member that moved (`id`,
+`docsDir`, `hasHome`, `workspace`, `own`, `markEnded`, `persist`, `display`,
+`isWorkspace`, `shownFolderOrDie`, `namedAsContext`, `revealTarget`,
+`isOwnWrite`, `OWN_BUNDLE_ECHO_MS`) is a one-line delegate.
+
+| Part        | Owns                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state.ts`  | The record `m`, `dir`, `id`, `docsDir`, `versionPath`, `workspace`, `hasHome`, `markEnded`, `persist`, and `addToRecord`, the hook a part uses to put its own state into the record just before each write (none uses it yet). With `persist` come what it needs: `own` (the session's writer), `refuseWrite`, `realDir`, `pinDir`, `dirStillOrDie`; and `appHome`, which `places` reads. |
+| `places.ts` | `display`, `contextForm`, `coveringEntry`, `contextIndex`, `canonical`, `realInsideOrDie`, `revealTarget`, the `…OrDie` guards (`destinationOrDie`, `shownFolderOrDie`, `notThroughLinkOrDie`, `folderOrDie`, `itemOrDie`, `nameOrDie`, `docNameOrDie`), `namedAsContext`, `itemAt`, `isWorkspace`, `workspaceOrDie`, our own-places guards, and the world's writer `world`.              |
+| `writes.ts` | `owned` and `ownBundles`, both private: `writeVersion`, `writeOwned`, `isOwnWrite`, `wroteBundle`, and `own`, `disown` and `isOwnBundleEcho` for the facade's writes that do not go through `writeOwned`.                                                                                                                                                                                 |
+
+Where S3 left the write-up's map, and why:
+
+- **Down into `state`**: `own`, `realDir`, `pinDir`, `dirStillOrDie`,
+  `refuseWrite`. `persist` writes through `own` after `dirStillOrDie`, and
+  `state` cannot call `places`, so the map's `pinDir` and `dirStillOrDie` (in
+  `places`) would have been a cycle. `appHome` is `state`'s too: `ownPlaces`
+  reads it; `setAppHome` (the `workspace` part's, S8) stays in the facade and
+  sets `core.appHome`.
+- **Into `places`, though the map does not list them**: `isWorkspace` and
+  `workspaceOrDie` (which `destinationOrDie` calls, and which need only the
+  core), and `namedAsContext` and `itemAt` (each a wrapper of a `places` guard).
+- **Left in the facade, waiting on a higher part**: `writeShown` goes through
+  `shownAt` (`context`, tier 2); `adoptActive` and `writeActive` write
+  `activeHash` and `lastActiveText`, which are `documents`' (tier 3); and
+  `preserveOutside` also takes a version number (`takeVersion`, `documents`).
+  Each moves with the part that owns what it needs.
 
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
@@ -107,8 +151,8 @@ tier 0  errors  names  paths  facts  types  manifest   (and the existing pure si
 
 - **A part imports only parts in lower tiers**, or in its own tier where the
   call graph already goes one way (within tier 1, `writes` and `places` take
-  `state`; the other one-way edges within a tier are recorded here as each step
-  finds them).
+  `state`, and `writes` takes `places`; the other one-way edges within a tier
+  are recorded here as each step finds them).
 - **Tiers 0 and 1 import no part above them.** Tier 0 imports no part outside
   tier 0.
 - **Nothing in `session/` imports the facade (`session.ts`) or `server.ts`**, or
@@ -148,8 +192,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   after the last token, so a file's decisions written in JSDoc do not push it
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
-  file is under 1,200. `session.ts` was frozen at 7,848 and S2 lowered it to
-  7,210; `server.ts` is at 4,876.
+  file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210
+  and S3 to 6,768; `server.ts` is at 4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -234,17 +278,25 @@ that finds the same in our code records our instance under it.
   `owned` is private to `writes`: a write that does not go through `writeOwned`
   is remembered with `writes.own(path, text)` before it lands, and a file the
   session removes is disowned. One that is not shows only as the watcher
-  announcing the daemon's own write as foreign.
-- **A test that reaches the core reaches the part.** After S3 the record is
-  `core.m` (our `ownPlaces.test.ts` reads `m.docs` today and is repointed then).
+  announcing the daemon's own write as foreign. Ours at S3: the facade's five
+  other ledger writes (`adoptActive`, an edit's staged rename, a renumbered or
+  adopted version file, a version the watcher saw land) call `writes.own`, a
+  deleted version calls `writes.disown`, and the bundle echo check is
+  `writes.isOwnBundleEcho`. Dropping the edit's `writes.own` fails two of
+  `session.test.ts`'s self-write tests.
+- **A test that reaches the core reaches the part.** Since S3 the record is
+  `core.m`: `ownPlaces.test.ts` reads `core.m.docs`, the one test that reached
+  `m`.
 - **A part calls a facade member a test replaces through a hook.** Tests replace
   `persist` and other members on a session to count calls; a part that calls one
   of them takes it as a hook built in the facade
   (`persist: () => this.persist()`), never its own copy, so the count still sees
-  it. Calls between parts go direct. The daemon's parts, once callers move, call
-  the session's parts directly, so a test that counts calls must spy on the
-  part's method; the facade's delegate passes through it, so one spy on the part
-  sees both.
+  it. Calls between parts go direct. Ours at S3: `manifest.test.ts` replaces
+  `persist` on a session to count writes; no tier 1 part calls `persist`, and
+  the facade's own calls still go through its `persist`, so the count moves. The
+  daemon's parts, once callers move, call the session's parts directly, so a
+  test that counts calls must spy on the part's method; the facade's delegate
+  passes through it, so one spy on the part sees both.
 - **A test that reaches a read-side cache reaches its part.** For us:
   `profiles.cost`, `profiles.session`, `relations.cost` and `relations.session`
   reach `profileReader` and `relationsReader` on the session today; S5 repoints
@@ -286,3 +338,6 @@ that finds the same in our code records our instance under it.
 - **2026-11-25**: S2 built tier 0 (`errors`, `names`, `paths`, `facts`, `types`,
   `manifest`); the tier test lists them, and `session.ts`'s override went from
   7,848 to 7,210.
+- **2026-11-25**: S3 built tier 1 (`state`, `places`, `writes`): the core, how
+  parts receive it, and where S3 left the write-up's map; the tier test lists
+  them, and `session.ts`'s override went from 7,210 to 6,768.
