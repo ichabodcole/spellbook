@@ -3,7 +3,7 @@ type: item
 title: Move WorkspaceShell's daemon notices out
 description: The daemon notices move to useDaemonNotices.ts.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-9aec-76aa-b212-a119874e1f16
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
