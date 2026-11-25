@@ -67,3 +67,13 @@ default to 15 s (`426a68ed`, on the test script, since bun 1.4.0 ignores
 bunfig's `[test] timeout`) to unblock 6.0.0. This item still stands: make the
 slow tests cheaper, or give each a timeout sized from a measurement. The last
 three CI runs put about 50 tests at 2.5–7 s on the runner.
+
+**Seen 2026-11-24, in the kit-split cycle's first five branches** (each passed
+on the next gate run): `src/kit/workspace/profiles.integration.test.ts`
+(context.changed, recurring); `prefsStorage.test.ts` (in `test:timings`); a
+`Frame.test.tsx` cell; `DocumentPane.test.tsx` ("the diff never names the new
+document…", `waitFor` timeout); and two "unhandled error between tests" in kit
+React and CodeMirror tests, `WorkspaceShell.images.test.tsx` ("window is not
+defined" after teardown) and `DocumentPane.contextMenu.test.tsx`
+(`EditorView.update` during an update). The last two are teardown races rather
+than timeouts.
