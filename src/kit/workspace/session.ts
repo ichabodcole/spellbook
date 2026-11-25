@@ -210,6 +210,7 @@ import {
   type PlanWorld,
   type RestoreReport,
 } from "./session/types.ts";
+import { Viewer } from "./session/viewer.ts";
 import { Writes } from "./session/writes.ts";
 import {
   bundleNode,
@@ -308,6 +309,8 @@ export class WorkspaceSession {
   private readonly writes: Writes;
   /** Tier 2: the chat. */
   private readonly chats: Chats;
+  /** Tier 2: what is on screen, the only writer of `openDoc`, `openImage` and `docAside`. */
+  private readonly viewer: Viewer;
   /** Tier 2: the images the session shows, as files. */
   private readonly media: Media;
   /** Tier 2: an image's description, its sidecar. */
@@ -351,6 +354,7 @@ export class WorkspaceSession {
     this.places = new Places(this.core);
     this.writes = new Writes(this.core, this.places);
     this.chats = new Chats(this.core, { persist: () => this.persist() });
+    this.viewer = new Viewer(this.core);
     this.media = new Media(this.core, this.places);
     this.sidecars = new Sidecars(this.core, this.places, { activeText: (d) => this.activeText(d) });
     this.placing = new Placing(this.core, this.places, {
@@ -936,7 +940,7 @@ export class WorkspaceSession {
     });
     if (out.length > 0) {
       report.ownPlaceSets = out;
-      this.closeOrphanedOpenDoc();
+      this.viewer.closeOrphaned();
     }
   }
 
@@ -1023,7 +1027,7 @@ export class WorkspaceSession {
       );
     const [entry] = this.core.m.context.splice(i, 1) as [ContextEntry];
     this.relink();
-    this.closeOrphanedOpenDoc();
+    this.viewer.closeOrphaned();
     // An open image the context no longer shows is put away, as `closeImage` does.
     if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
@@ -1091,18 +1095,6 @@ export class WorkspaceSession {
     this.relink();
     this.persist();
     return back;
-  }
-
-  /**
-   * The open document left the context (its entry removed): close it in the
-   * view. Its versions stay in the session, since nothing is deleted, and
-   * bringing it back and opening it again finds them.
-   */
-  private closeOrphanedOpenDoc(): void {
-    const open = this.core.m.openDoc
-      ? this.core.m.docs.find((d) => d.slug === this.core.m.openDoc)
-      : undefined;
-    if (open && open.entryId === null) this.core.m.openDoc = null;
   }
 
   /** Re-mirror a folder entry. Returns whether its nodes changed. */
@@ -1177,7 +1169,7 @@ export class WorkspaceSession {
     for (const e of this.core.m.context)
       if ((entryId === undefined || e.id === entryId) && this.rescan(e.id)) changed = true;
     this.relink();
-    this.closeOrphanedOpenDoc();
+    this.viewer.closeOrphaned();
     if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
     this.persist();
     return changed;
@@ -1407,7 +1399,7 @@ export class WorkspaceSession {
     const abs = this.places.canonical(this.mainOf(resolve(rawPath)));
     const existing = this.core.m.docs.find((d) => d.original === abs);
     if (existing) {
-      if (focus) this.focusDoc(existing.slug);
+      if (focus) this.viewer.showDoc(existing.slug);
       this.persist();
       return { slug: existing.slug, created: false };
     }
@@ -1449,20 +1441,13 @@ export class WorkspaceSession {
     };
     this.core.m.docs.push(d);
     this.writeActive(d, text);
-    if (focus) this.focusDoc(d.slug);
+    if (focus) this.viewer.showDoc(d.slug);
     this.persist();
     return { slug: d.slug, created: true };
   }
 
-  /** The centre shows one thing: a document coming on screen puts the open image away. */
-  private focusDoc(slug: string): void {
-    this.core.m.openDoc = slug;
-    this.core.m.openImage = null;
-    this.core.m.docAside = null;
-  }
-
   openSlug(slug: string): void {
-    this.focusDoc(this.docOrDie(slug).slug);
+    this.viewer.showDoc(this.docOrDie(slug).slug);
     this.persist();
   }
 
@@ -2169,7 +2154,7 @@ export class WorkspaceSession {
    */
   closeDoc(slug: string): { slug: string } {
     const d = this.docOrDie(slug);
-    if (this.core.m.openDoc === d.slug) this.core.m.openDoc = null;
+    this.viewer.closeDoc(d.slug);
     this.persist();
     return { slug: d.slug };
   }
@@ -2196,9 +2181,9 @@ export class WorkspaceSession {
       versions: d.versions.length,
     };
     this.core.m.docs = this.core.m.docs.filter((x) => x.slug !== d.slug);
-    if (this.core.m.openDoc === d.slug) this.core.m.openDoc = this.core.m.docs[0]?.slug ?? null;
+    this.viewer.docForgotten(d.slug);
     this.relink();
-    this.closeOrphanedOpenDoc();
+    this.viewer.closeOrphaned();
     this.persist();
     return forgotten;
   }
@@ -2256,9 +2241,7 @@ export class WorkspaceSession {
     this.places.realInsideOrDie(abs, at.entry, "not opened");
     // The document on screen is put aside, not forgotten: closing the image
     // brings it back. A second image opened over the first keeps the same one.
-    if (this.core.m.openDoc) this.core.m.docAside = this.core.m.openDoc;
-    this.core.m.openImage = abs;
-    this.core.m.openDoc = null;
+    this.viewer.showImage(abs);
     this.persist();
     return { path: abs };
   }
@@ -2268,10 +2251,7 @@ export class WorkspaceSession {
    * when that document is still held (closed or gone, nothing comes back).
    */
   closeImage(): void {
-    const back = this.core.m.docAside;
-    this.core.m.openImage = null;
-    this.core.m.docAside = null;
-    if (back && this.core.m.docs.some((d) => d.slug === back)) this.core.m.openDoc = back;
+    this.viewer.closeImage();
     this.persist();
   }
 
@@ -3048,13 +3028,10 @@ export class WorkspaceSession {
       if (!inside(d.original)) continue;
       d.missing = true;
       docs.push(d.slug);
-      if (this.core.m.openDoc === d.slug) {
-        this.core.m.openDoc = null;
-        closed = d.slug;
-      }
+      if (this.viewer.closeDoc(d.slug)) closed = d.slug;
     }
     // An image has no record to keep: its viewer simply closes.
-    if (this.core.m.openImage && inside(this.core.m.openImage)) this.core.m.openImage = null;
+    this.viewer.closeImageInside(inside);
     for (const e of [...this.core.m.context]) {
       const only = listedFile(e);
       if (only && inside(only.abs)) this.removeContext(e.id);
@@ -3346,8 +3323,7 @@ export class WorkspaceSession {
       }
     }
     // The open image follows a rename or a move, as an open document does.
-    const image = this.core.m.openImage ? moved(this.core.m.openImage) : null;
-    if (image) this.core.m.openImage = image;
+    this.viewer.followMove(moved);
     // A converted image's remembered name follows it; one left by a file that
     // was where the moved thing now is goes.
     if (this.core.m.importedAs) {
@@ -4523,11 +4499,10 @@ export class WorkspaceSession {
       if (e.nodes.length === 0 || inside(e.root)) this.removeContext(e.id);
     }
     this.core.m.docs = this.core.m.docs.filter((d) => !inside(d.original));
-    if (this.core.m.openImage && inside(this.core.m.openImage)) this.core.m.openImage = null;
-    if (this.core.m.openDoc && !this.core.m.docs.some((d) => d.slug === this.core.m.openDoc))
-      this.core.m.openDoc = this.core.m.docs[0]?.slug ?? null;
+    this.viewer.closeImageInside(inside);
+    this.viewer.docsForgotten();
     this.relink();
-    this.closeOrphanedOpenDoc();
+    this.viewer.closeOrphaned();
     this.persist();
   }
 
