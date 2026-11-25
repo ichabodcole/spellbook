@@ -195,8 +195,6 @@ import type {
   LinkTarget,
   LinkTargets,
   Message,
-  MessageAbout,
-  MessageType,
   Note,
   Outlinks,
   OutlinkView,
@@ -213,7 +211,6 @@ import type {
   SearchReport,
   SearchResult,
   Session,
-  Speaker,
   SymmetryHint,
   Task,
   TaskStatus,
@@ -232,6 +229,7 @@ import {
   type Vocabulary,
 } from "./relations";
 import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
+import { Chats } from "./session/chats.ts";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
 import {
   BACKLINK_CAP,
@@ -399,6 +397,8 @@ export class WorkspaceSession {
   private readonly core: State;
   private readonly places: Places;
   private readonly writes: Writes;
+  /** Tier 2: the chat. */
+  private readonly chats: Chats;
   /** slug to hash of the active version's current text. */
   private activeHash = new Map<string, string>();
   /** slug to the active version's text as the daemon last wrote (or adopted) it:
@@ -473,6 +473,7 @@ export class WorkspaceSession {
     this.dir = this.core.dir;
     this.places = new Places(this.core);
     this.writes = new Writes(this.core, this.places);
+    this.chats = new Chats(this.core, { persist: () => this.persist() });
   }
 
   /**
@@ -5030,31 +5031,13 @@ export class WorkspaceSession {
 
   // ── chat ───────────────────────────────────────────────────────────────
 
-  addMessage(input: {
-    from: Speaker;
-    text: string;
-    type?: MessageType;
-    about?: MessageAbout;
-    /** The gesture it came through, as sent (`Message.via`). */
-    via?: string;
-  }): Message {
-    const msg: Message = {
-      id: `m-${randHex(4)}`,
-      from: input.from,
-      type: input.type ?? (input.from === "system" ? "info" : "message"),
-      text: input.text,
-      ...(input.about ? { about: input.about } : {}),
-      ...(input.via ? { via: input.via } : {}),
-      ts: nowIso(),
-    };
-    this.core.m.chat.push(msg);
-    this.persist();
-    return msg;
+  addMessage(input: Parameters<Chats["addMessage"]>[0]): Message {
+    return this.chats.addMessage(input);
   }
 
   /** The conversation, without building a snapshot around it. */
   messages(): readonly Message[] {
-    return this.core.m.chat;
+    return this.chats.messages();
   }
 
   // ── tasks ──────────────────────────────────────────────────────────────

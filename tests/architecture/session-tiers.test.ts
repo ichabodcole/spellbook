@@ -50,6 +50,8 @@ export const TIERS: Record<string, number> = {
   state: 1,
   places: 1,
   writes: 1,
+  // Tier 2: the tree, what is on screen, the conversation (S4 built `chats`).
+  chats: 2,
 };
 
 /**
