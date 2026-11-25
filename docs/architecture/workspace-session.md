@@ -36,8 +36,9 @@ the start-path test (below). **S2 built tier 0**: `errors`, `names`, `paths`,
 `facts`, `types` and `manifest` are files in `session/`, and `session.ts`
 imports them and re-exports every name it exported before, so no import outside
 the file changed. **S3 built tier 1**: `state`, `places` and `writes` (below,
-"The core"). The other tiers are still planned. When a step builds a part, it
-adds the part's row here and in the tier test, in the same change.
+"The core"). **S4 built `chats` (tier 2) and `tasks` (tier 3)** (below, "The
+chat and the tasks"). The other parts are still planned. When a step builds a
+part, it adds the part's row here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -55,13 +56,14 @@ writes them. Other parts may read them. `session.ts` stays at its path as the
 **facade**: `create`, `restore`, `listSaved`, building the parts, and every
 public member as a delegate while callers still use it. Where a pure sibling
 module of `workspace/` has the same topic (`movePlan.ts` is the pure planner;
-`session/movePlan.ts` holds the session's move preview), the folder says which
-is which.
+`session/movePlan.ts` holds the session's move preview; `tasks.ts` is the
+daemon's task engine, `session/tasks.ts` the task list and its verbs), the
+folder says which is which.
 
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3; the rest planned)                                                                                     | Story Studio's, not ours                 |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4; the rest planned)                                                          | Story Studio's, not ours                 |
 | ---- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                     |                                          |
 | 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                  |                                          |
@@ -85,9 +87,9 @@ What each part owns, member by member, is in the write-up's
 | `session/movePlan.ts`               | 5    | The move preview: `movePlan`, `planWorld`, `listedAfter`, `entryAfter`, `docsAfter`, `pinEdges`, `brokenEdges` (the pure planner is `../movePlan.ts`)                     | (no counterpart)         |
 | `session/sets.ts`                   | 5    | Set promotion: `makeSet`, `unmakeSet`, `addFolder`                                                                                                                        | (no counterpart)         |
 
-**Same name, smaller part.** Our `session/chats.ts` will hold one chat
-(`m.chat`, `addMessage`, `messages`), where theirs holds many chats and a timer.
-We keep their name so their code ports into the file of the same name.
+**Same name, smaller part.** Our `session/chats.ts` holds one chat (`m.chat`,
+`addMessage`, `messages`), where theirs holds many chats and a timer. We keep
+their name so their code ports into the file of the same name.
 
 ### The core (tier 1, built at S3)
 
@@ -131,6 +133,39 @@ Where S3 left the write-up's map, and why:
   `activeHash` and `lastActiveText`, which are `documents`' (tier 3); and
   `preserveOutside` also takes a version number (`takeVersion`, `documents`).
   Each moves with the part that owns what it needs.
+
+### The chat and the tasks (tiers 2 and 3, built at S4)
+
+The facade builds both after the core, each with the core and a `persist` hook:
+
+```ts
+this.chats = new Chats(this.core, { persist: () => this.persist() });
+this.taskList = new Tasks(this.core, { persist: () => this.persist() });
+```
+
+| Part       | Tier | Owns                                                                                                                                          |
+| ---------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chats.ts` | 2    | `m.chat`: `addMessage`, `messages`.                                                                                                           |
+| `tasks.ts` | 3    | `m.tasks`: `createTask`, `task`, `transitionTask`, `setTaskDetail`, `removeTask`, `clearFinishedTasks`, `tasks`, and the private `taskOrDie`. |
+
+Each public verb keeps a one-line delegate on the facade. The facade's field for
+the task list is `taskList`, since `tasks()` is one of the verbs.
+
+- **`tasks` moved whole at S4, though it is tier 3.** The write-up's S7 row says
+  "`tasks` if not in S4", in case the verbs needed `documents` or another part
+  not yet built. They need only the core and tier 0 (`SessionError`, `nowIso`,
+  `randHex`, `isFinished`, `TASK_NEXT`), so the whole part moved.
+- **Not `../tasks.ts`.** `src/kit/workspace/tasks.ts` is the daemon's task
+  engine (`TaskEngine`), which runs tasks and drives them through these verbs on
+  the facade; it imports the facade at run time, so no part may import it.
+  `session/tasks.ts` imports neither.
+- **Left in the facade**: `restore`'s pass that fails or cancels the daemon's
+  own tasks a stopped daemon left behind writes `m.tasks` too. It stays with
+  `restore`, the facade's, as it was; moving it into `Tasks` would be a new
+  method, not a move.
+- **Both write through the `persist` hook**, not `core.persist`:
+  `manifest.test.ts` replaces `persist` on a session and counts
+  `transitionTask`'s write (see "Gotchas").
 
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
@@ -192,8 +227,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   after the last token, so a file's decisions written in JSDoc do not push it
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
-  file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210
-  and S3 to 6,768; `server.ts` is at 4,876.
+  file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
+  S3 to 6,768 and S4 to 6,697; `server.ts` is at 4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -293,10 +328,12 @@ that finds the same in our code records our instance under it.
   (`persist: () => this.persist()`), never its own copy, so the count still sees
   it. Calls between parts go direct. Ours at S3: `manifest.test.ts` replaces
   `persist` on a session to count writes; no tier 1 part calls `persist`, and
-  the facade's own calls still go through its `persist`, so the count moves. The
-  daemon's parts, once callers move, call the session's parts directly, so a
-  test that counts calls must spy on the part's method; the facade's delegate
-  passes through it, so one spy on the part sees both.
+  the facade's own calls still go through its `persist`, so the count moves.
+  Ours at S4: `chats` and `tasks` call `persist` through the hook; with
+  `core.persist` instead, that test's count of `transitionTask`'s write reads 0
+  and fails. The daemon's parts, once callers move, call the session's parts
+  directly, so a test that counts calls must spy on the part's method; the
+  facade's delegate passes through it, so one spy on the part sees both.
 - **A test that reaches a read-side cache reaches its part.** For us:
   `profiles.cost`, `profiles.session`, `relations.cost` and `relations.session`
   reach `profileReader` and `relationsReader` on the session today; S5 repoints
@@ -341,3 +378,6 @@ that finds the same in our code records our instance under it.
 - **2026-11-25**: S3 built tier 1 (`state`, `places`, `writes`): the core, how
   parts receive it, and where S3 left the write-up's map; the tier test lists
   them, and `session.ts`'s override went from 7,210 to 6,768.
+- **2026-11-25**: S4 built `chats` (tier 2) and `tasks` (tier 3), both whole,
+  each writing through a `persist` hook; the tier test lists them, and
+  `session.ts`'s override went from 6,768 to 6,697.
