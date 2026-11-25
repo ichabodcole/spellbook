@@ -59,7 +59,7 @@ no test's expectations changed.
   [grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone/item.md),
   [grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts/item.md):
   the grapevine spell, all `ready`.
-- [bounty-latest-pointer-and-list-title](../items/bounty-latest-pointer-and-list-title.md)
+- [bounty-latest-pointer-and-list-title](../items/bounty-latest-pointer-and-list-title/item.md)
   and
   [glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr/item.md),
   both `ready`.
@@ -83,4 +83,4 @@ _Written at close._
 - fix/grapevine-paused-daemon-reads-as-gone (landed 2026-11-24)
 - fix/grapevine-small-hint-miscounts (landed 2026-11-24)
 - fix/glamour-daemon-holds-cli-stderr (landed 2026-11-24)
-- fix/bounty-latest-pointer-and-list-title (open)
+- fix/bounty-latest-pointer-and-list-title (landed 2026-11-24)

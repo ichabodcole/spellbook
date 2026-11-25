@@ -6,7 +6,7 @@ description:
   at a still-running board, so unpinned verbs exit 5; list reads titles from the
   discovery file and misses init --title.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a176ad-1bd5-71a6-834c-2a18ecd6382e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
@@ -27,15 +27,15 @@ Found by the SKILL review and confirmed by its verifier (2026-10-25):
   shows the new one.
 
 Trimmed at triage, 2026-10-26: the `list` title half is the same bug as
-[bounty-list-shows-stale-title](bounty-list-shows-stale-title.md) and is tracked
-there. This item is the pointer only.
+[bounty-list-shows-stale-title](../bounty-list-shows-stale-title.md) and is
+tracked there. This item is the pointer only.
 
 ## Definition of done
 
-- [ ] Closing a board points `latest` at the newest board still running, or
+- [x] Closing a board points `latest` at the newest board still running, or
       removes it only when none is.
-- [ ] Tested.
+- [x] Tested.
 
 ## Related Documents
 
-- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./_archive/bounty-grapevine-skill-review.md)
+- [Review bounty + grapevine SKILL.md for accuracy and usefulness](../_archive/bounty-grapevine-skill-review.md)
