@@ -85,4 +85,4 @@ _Written at close._
 - fix/glamour-daemon-holds-cli-stderr (landed 2026-11-24)
 - fix/bounty-latest-pointer-and-list-title (landed 2026-11-24)
 - chore/kit-split-w1 (landed 2026-11-25)
-- chore/kit-split-s2 (open)
+- chore/kit-split-s2 (landed 2026-11-25)
