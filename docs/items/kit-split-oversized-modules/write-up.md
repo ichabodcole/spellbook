@@ -271,15 +271,16 @@ ports into the file of the same name. Likewise `protocol/project.ts` holds our
 manifest and snapshot types though we have no projects. Keeping their names
 where the role matches is what makes a later port a file-to-file diff.
 
-**One difference in the gate.** Story Studio's steps lean on typecheck ("a
+**The gate already typechecks.** Story Studio's steps lean on typecheck ("a
 component that closes over a parent variable it was not passed fails to
-typecheck, which is the point"). Our gate (`bun run gate`: build, Biome, docs,
-tests) runs no typecheck: Bun runs TypeScript without checking it. Run over the
-repo, `tsc --noEmit` reports 40 errors, all in the bounty and grapevine
-surfaces' `@/ui` path aliases. `src/kit` and `src/scriptorium` check clean, in
-about 40 s. A move that drops a name, or a part that is handed the wrong
-function, would show up only when a test happens to run it. So a kit typecheck
-goes into the guard step (Decision 4).
+typecheck, which is the point"). Ours does too:
+`grimoire/type-check-ward.test.ts` (Cole, 2026-09-10, type-debt T37) runs
+`tsc --noEmit` over every area of the repo inside `bun test`, each spell under
+its own `tsconfig.json`, and fails on any error or on any file left unexamined.
+`src/kit` and `src/scriptorium` are in it. _Corrected at G0, 2026-11-24: this
+section first said our gate ran no typecheck, and G0 planned a separate kit
+`tsc` step; the ward's header argues against exactly that step (an exit 0 cannot
+tell clean from unexamined), so G0 added none._
 
 ### The proposed module map: session.ts
 
@@ -479,10 +480,11 @@ Following their tree is also what answers the port-back constraint.
 
 Each step is behaviour-preserving and lands alone. Step names follow Story
 Studio's numbering (our S2 is their session step 2, our D4 their D4), so the two
-teams can say "after S7" and mean the same tree. "The gate" means `bun run gate`
-plus the kit typecheck added in G0. The rule for every step: **no test's
-expectations change**. A test changes only where it reached into private state
-that moved, and then only to reach the same state at its new address.
+teams can say "after S7" and mean the same tree. "The gate" means
+`bun run gate`, whose type-check ward typechecks every move. The rule for every
+step: **no test's expectations change**. A test changes only where it reached
+into private state that moved, and then only to reach the same state at its new
+address.
 
 | #     | Step                                                                                                                                                                                                                                                                                                                                                                                            | Proves it, beyond the gate                                                                                                                | Risks, and the lesson that applies                                                                                                                                                                                                                              |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -687,8 +689,8 @@ _Ruled 2026-11-24; see Decided._
 4. **Upgrade Biome to 2.5.x and add a kit typecheck to the gate first (G0)?**
    Recommended: yes. In our Biome 2.4.16 the size rule exists only as a
    `nursery` rule, which may change. And Story Studio's moves were made safe by
-   typecheck, which our gate doesn't run. A kit-and-Scriptorium typecheck takes
-   about 40 s and passes today.
+   typecheck. _(At G0 our gate turned out to typecheck already, through the
+   type-check ward; no separate step was added.)_
 5. **Facade end state: public parts, callers moved, delegates retired?**
    Recommended: yes, as Story Studio chose. The daemon's code then calls
    `session.documents.findDoc(…)` as theirs does, so daemon code ports as it is.

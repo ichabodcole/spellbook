@@ -33,7 +33,10 @@ its [step table](./kit-split-oversized-modules/write-up.md#the-build-steps).
 
 - [ ] Biome is at 2.5.x in `package.json` and the lockfile.
 - [ ] A `typecheck` script covers `src/kit` and `src/scriptorium`, and
-      `bun run gate` runs it.
+      `bun run gate` runs it. _Met by the existing type-check ward
+      (`grimoire/type-check-ward.test.ts`), which already typechecks both inside
+      `bun test`; no separate script was added (see the write-up's "The gate
+      already typechecks")._
 - [ ] Any new Biome findings are fixed in this step, and nothing else is mixed
       in.
 - [ ] Behaviour is unchanged: no test's expectations change (a test that reached
