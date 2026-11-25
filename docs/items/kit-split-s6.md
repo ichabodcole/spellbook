@@ -6,8 +6,8 @@ description:
   What the centre shows becomes one rule in session/viewer.ts, which the 8
   methods that set it call, and the image and sidecar helpers and placing move
   to media.ts, sidecars.ts and placing.ts.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-8e6d-71be-86b7-11263dfb3241
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
