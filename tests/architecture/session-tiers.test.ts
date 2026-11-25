@@ -55,7 +55,12 @@ export const TIERS: Record<string, number> = {
   // Tier 3: documents (S4 built `tasks`, which needs only the core).
   tasks: 3,
   // Tier 4: what reads across documents (S5 builds the read side).
+  // Within it, one way: `linkResolve` and `search` take `readIndex`. The
+  // picker's relations (`linkResolve.linkTargets`), still the facade's, come
+  // through a hook.
   readIndex: 4,
+  linkResolve: 4,
+  search: 4,
 };
 
 /**
