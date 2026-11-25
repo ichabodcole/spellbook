@@ -8,7 +8,7 @@ description:
   overrides frozen at today's counts, and a ported tier test and a new
   start-path test fail any step that breaks the split's rules.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-8ba5-7686-8775-15ef37334619
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
