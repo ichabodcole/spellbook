@@ -225,7 +225,7 @@ describe("cli.ts ↔ daemon parity", () => {
       .map((l) => JSON.parse(l) as Record<string, unknown>);
     const add = lines.find((e) => e.type === "task.add");
     expect(add).toBeDefined();
-    expect((add?.task as Task).id).toBe("tt");
+    expect((add?.task as Task | undefined)?.id).toBe("tt");
     // Frames are monotonic on `id`; the closed frame ends the stream, exit 0.
     expect(lines.some((e) => e.type === "closed")).toBe(true);
     expect(code).toBe(0);

@@ -111,13 +111,13 @@ describe("the converter never writes a path outside its session", () => {
     ];
     for (const [ws, why] of cases) {
       const r = convertShippedManifest(shipped({ workspace: ws }), at());
-      const ids = (r?.manifest.context as { id: string }[]).map((e) => e.id);
+      const ids = (r?.manifest.context as { id: string }[] | undefined)?.map((e) => e.id);
       expect([ws, ids]).toEqual([ws, []]);
       expect(r?.note, ws).toContain(why);
     }
     // A folder that holds none of them (a /tmp of its own) is still added.
     const r = convertShippedManifest(shipped({ workspace: scratchTmp }), at());
-    expect((r?.manifest.context as { id: string }[]).map((e) => e.id)).toEqual([
+    expect((r?.manifest.context as { id: string }[] | undefined)?.map((e) => e.id)).toEqual([
       WORKSPACE_ENTRY_ID,
     ]);
   });

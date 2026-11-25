@@ -81,7 +81,7 @@ test("propose --zone tags the proposal; unknown zone is an intake error", () => 
     // proposal.added carries the tag — payload-tagging is the mechanism
     // (events can never be zone-scoped; consumers filter by zoneId).
     expect(received[0]?.kind).toBe("proposal.added");
-    expect((received[0]?.payload as { zoneId: string }).zoneId).toBe("messy");
+    expect((received[0]?.payload as { zoneId: string } | undefined)?.zoneId).toBe("messy");
 
     expect(() =>
       proposeNode(db, bus, { draft: { title: "X" }, evidence: {}, zone: "nope" }),
@@ -297,7 +297,7 @@ test("moveProposalToZone moves a pending main proposal INTO a zone and re-emits 
     const state = readState(db, { id: "default", title: "Default" });
     expect(state.proposals.find((p) => p.id === proposal.id)?.zoneId).toBe("messy-ideas");
     const emit = received.find((e) => e.kind === "proposal.added");
-    expect((emit?.payload as { zoneId: string }).zoneId).toBe("messy-ideas");
+    expect((emit?.payload as { zoneId: string } | undefined)?.zoneId).toBe("messy-ideas");
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

@@ -50,7 +50,7 @@ test("createJob persists a first-class row, defaults status queued, and rides /s
     // D3: job.added carries the FULL entity (not a thin {id}).
     expect(received).toHaveLength(1);
     expect(received[0]).toMatchObject({ kind: "job.added" });
-    expect((received[0]?.payload as { id: string; title: string }).title).toBe(
+    expect((received[0]?.payload as { id: string; title: string } | undefined)?.title).toBe(
       "Research the antagonist",
     );
 
@@ -122,7 +122,7 @@ test("claim is atomic: sets running + owner, re-claim by same owner is idempoten
     expect(claimed?.status).toBe("running");
     // D3 + SEAM B: a distinct job.claimed carrying the full entity.
     expect(received[0]).toMatchObject({ kind: "job.claimed" });
-    expect((received[0]?.payload as { claimedBy: string }).claimedBy).toBe("circe");
+    expect((received[0]?.payload as { claimedBy: string } | undefined)?.claimedBy).toBe("circe");
 
     // Idempotent re-claim by the same owner — no throw, still circe's.
     const again = claimJob(db, bus, job.id, "circe");

@@ -616,64 +616,67 @@ test.each([
   [404, "not_found", 5],
   [409, "conflict", 6],
   [500, "internal", 1],
-])("a daemon refusal with HTTP %i maps to %s / exit %i; body under server, its set lifted into choices", async (status, kind, code) => {
-  const body = {
-    ok: false,
-    error: "stubbed",
-    choices: ["notes", "solo"],
-    hint: "try the other one",
-  };
-  const server = Bun.serve({
-    port: 0,
-    hostname: "127.0.0.1",
-    fetch: () => Response.json(body, { status }),
-  });
-  const dir = mkdtempSync(join(tmpdir(), "workspace-stub-"));
-  writeFileSync(
-    join(dir, "kit-fixture.s1.json"),
-    JSON.stringify({
-      url: `http://127.0.0.1:${server.port}`,
-      port: server.port,
-      session_id: "s1",
-      dir: "/x",
-      // This process: alive and ours (a `latest` is read only while its pid lives).
-      pid: process.pid,
-    }),
-  );
-  try {
-    for (const args of [["state"], ["version-new", "--doc", "x"], ["ping"]]) {
-      const run = async () => {
-        const p = Bun.spawn(["bun", CLI, ...args], {
-          stdout: "pipe",
-          stderr: "pipe",
-          stdin: "ignore",
-          env: { ...process.env, TMPDIR: dir, KIT_FIXTURE_HOME: S1_HOME },
-        });
-        const [out, err, exit] = await Promise.all([
-          new Response(p.stdout).text(),
-          new Response(p.stderr).text(),
-          p.exited,
-        ]);
-        return { out, err, exit };
-      };
-      // Once, in a full run under load, a refusal printed "null\n" on stdout
-      // (HTTP 404, this file); it never reproduced alone or in 14 reruns, and no
-      // code path prints null on a refusal. One retry keeps the gate honest
-      // about a real regression, which would print on both runs.
-      let { out, err, exit } = await run();
-      if (out !== "") ({ out, err, exit } = await run());
-      expect(out).toBe("");
-      expect(exit).toBe(code);
-      const doc = JSON.parse(err) as Envelope;
-      expect(doc.error.kind).toBe(kind);
-      expect(doc.error.server).toEqual(body);
-      expect(doc.error.choices).toEqual(["notes", "solo"]);
-      expect(doc.error.hint).toBe("try the other one");
+])(
+  "a daemon refusal with HTTP %i maps to %s / exit %i; body under server, its set lifted into choices",
+  async (status, kind, code) => {
+    const body = {
+      ok: false,
+      error: "stubbed",
+      choices: ["notes", "solo"],
+      hint: "try the other one",
+    };
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => Response.json(body, { status }),
+    });
+    const dir = mkdtempSync(join(tmpdir(), "workspace-stub-"));
+    writeFileSync(
+      join(dir, "kit-fixture.s1.json"),
+      JSON.stringify({
+        url: `http://127.0.0.1:${server.port}`,
+        port: server.port,
+        session_id: "s1",
+        dir: "/x",
+        // This process: alive and ours (a `latest` is read only while its pid lives).
+        pid: process.pid,
+      }),
+    );
+    try {
+      for (const args of [["state"], ["version-new", "--doc", "x"], ["ping"]]) {
+        const run = async () => {
+          const p = Bun.spawn(["bun", CLI, ...args], {
+            stdout: "pipe",
+            stderr: "pipe",
+            stdin: "ignore",
+            env: { ...process.env, TMPDIR: dir, KIT_FIXTURE_HOME: S1_HOME },
+          });
+          const [out, err, exit] = await Promise.all([
+            new Response(p.stdout).text(),
+            new Response(p.stderr).text(),
+            p.exited,
+          ]);
+          return { out, err, exit };
+        };
+        // Once, in a full run under load, a refusal printed "null\n" on stdout
+        // (HTTP 404, this file); it never reproduced alone or in 14 reruns, and no
+        // code path prints null on a refusal. One retry keeps the gate honest
+        // about a real regression, which would print on both runs.
+        let { out, err, exit } = await run();
+        if (out !== "") ({ out, err, exit } = await run());
+        expect(out).toBe("");
+        expect(exit).toBe(code);
+        const doc = JSON.parse(err) as Envelope;
+        expect(doc.error.kind).toBe(kind);
+        expect(doc.error.server).toEqual(body);
+        expect(doc.error.choices).toEqual(["notes", "solo"]);
+        expect(doc.error.hint).toBe("try the other one");
+      }
+    } finally {
+      server.stop(true);
     }
-  } finally {
-    server.stop(true);
-  }
-});
+  },
+);
 
 test("a session pointer that cannot be read is internal/1, not not_found/5", () => {
   const dir = mkdtempSync(join(tmpdir(), "workspace-unreadable-"));

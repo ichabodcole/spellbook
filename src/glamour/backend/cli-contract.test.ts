@@ -216,17 +216,20 @@ test.each([
   ["say --seed", ["say", "hi", "--seed", "3"], "say"],
   ["open --session", ["open", "--no-open", "--session", "abc"], "open"],
   ["state --kind", ["state", "--kind", "x"], "state"],
-])("a recognized flag at the wrong verb is MISPLACED, and the rejection lists the verb's own flags: %s", (_l, args, verb) => {
-  const r = run(args);
-  expect(r.stdout).toBe("");
-  expect(r.code).toBe(2);
-  const doc = JSON.parse(r.stderr) as Envelope;
-  expect(doc.error.kind).toBe("usage");
-  expect(doc.error.message).toContain(`is not accepted by \`${verb}\``);
-  expect(doc.error.message).toContain("recognized glamour flag");
-  expect(doc.error.choices).toEqual(flagsFor(verb as keyof typeof VERB_SPEC));
-  expect(doc.meta.command).toBe(verb);
-});
+])(
+  "a recognized flag at the wrong verb is MISPLACED, and the rejection lists the verb's own flags: %s",
+  (_l, args, verb) => {
+    const r = run(args);
+    expect(r.stdout).toBe("");
+    expect(r.code).toBe(2);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.kind).toBe("usage");
+    expect(doc.error.message).toContain(`is not accepted by \`${verb}\``);
+    expect(doc.error.message).toContain("recognized glamour flag");
+    expect(doc.error.choices).toEqual(flagsFor(verb as keyof typeof VERB_SPEC));
+    expect(doc.meta.command).toBe(verb);
+  },
+);
 
 test("help takes no flags, and says so beside the empty set it states", () => {
   const doc = JSON.parse(run(["help", "--session", "abc"]).stderr) as Envelope;
@@ -323,51 +326,54 @@ test.each([
   [404, "not_found", 5],
   [409, "conflict", 6],
   [500, "internal", 1],
-])("a daemon refusal with HTTP %i maps to kind %s / exit %i, body verbatim under error.server", async (status, kind, code) => {
-  // A stub daemon answering every /cmd and /state with one status, and a
-  // session pointer in an isolated TMPDIR aimed at it — so the mapping runs
-  // against a real HTTP round trip. Async spawn, because a sync one blocks the
-  // loop the stub answers on.
-  const body = { error: "stubbed", status };
-  const server = Bun.serve({
-    port: 0,
-    hostname: "127.0.0.1",
-    fetch: () => Response.json(body, { status }),
-  });
-  const dir = mkdtempSync(join(tmpdir(), "glamour-daemon-"));
-  writeFileSync(
-    join(dir, "glamour-latest.json"),
-    JSON.stringify({
-      url: `http://127.0.0.1:${server.port}`,
-      port: server.port,
-      session_id: "s1",
-      title: "t",
-    }),
-  );
-  try {
-    for (const args of [["state"], ["say", "hi"]]) {
-      const p = Bun.spawn(["bun", CLI, ...args], {
-        stdout: "pipe",
-        stderr: "pipe",
-        stdin: "ignore",
-        env: { ...process.env, TMPDIR: dir },
-      });
-      const [out, err, exit] = await Promise.all([
-        new Response(p.stdout).text(),
-        new Response(p.stderr).text(),
-        p.exited,
-      ]);
-      expect(out).toBe("");
-      expect(exit).toBe(code);
-      const doc = JSON.parse(err) as Envelope & { error: { server?: unknown } };
-      expect(doc.error.kind).toBe(kind);
-      expect(doc.error.exit_code).toBe(code);
-      expect(doc.error.server).toEqual(body);
+])(
+  "a daemon refusal with HTTP %i maps to kind %s / exit %i, body verbatim under error.server",
+  async (status, kind, code) => {
+    // A stub daemon answering every /cmd and /state with one status, and a
+    // session pointer in an isolated TMPDIR aimed at it — so the mapping runs
+    // against a real HTTP round trip. Async spawn, because a sync one blocks the
+    // loop the stub answers on.
+    const body = { error: "stubbed", status };
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => Response.json(body, { status }),
+    });
+    const dir = mkdtempSync(join(tmpdir(), "glamour-daemon-"));
+    writeFileSync(
+      join(dir, "glamour-latest.json"),
+      JSON.stringify({
+        url: `http://127.0.0.1:${server.port}`,
+        port: server.port,
+        session_id: "s1",
+        title: "t",
+      }),
+    );
+    try {
+      for (const args of [["state"], ["say", "hi"]]) {
+        const p = Bun.spawn(["bun", CLI, ...args], {
+          stdout: "pipe",
+          stderr: "pipe",
+          stdin: "ignore",
+          env: { ...process.env, TMPDIR: dir },
+        });
+        const [out, err, exit] = await Promise.all([
+          new Response(p.stdout).text(),
+          new Response(p.stderr).text(),
+          p.exited,
+        ]);
+        expect(out).toBe("");
+        expect(exit).toBe(code);
+        const doc = JSON.parse(err) as Envelope & { error: { server?: unknown } };
+        expect(doc.error.kind).toBe(kind);
+        expect(doc.error.exit_code).toBe(code);
+        expect(doc.error.server).toEqual(body);
+      }
+    } finally {
+      server.stop(true);
     }
-  } finally {
-    server.stop(true);
-  }
-});
+  },
+);
 
 // ── absence is not the same as failure ───────────────────────────────
 //

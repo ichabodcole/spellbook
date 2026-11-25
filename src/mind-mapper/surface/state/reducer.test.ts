@@ -647,19 +647,17 @@ test("doc.kind on an unknown doc advances the cursor and touches nothing", () =>
 // ephemeral-event cursor clause) and change nothing. Without the advance,
 // every later event would read as a gap and cost a wholesale refetch.
 
-test.each([
-  "job.added",
-  "job.updated",
-  "job.claimed",
-  "job.deleted",
-] as const)("%s advances the cursor and leaves the board untouched (no surface jobs state)", (kind) => {
-  const before = baseState();
-  const next = applyEvent(before, {
-    id: 6,
-    kind,
-    payload: { id: "job-1", title: "Research the archive", status: "queued" },
-  });
-  expect(next.cursor).toBe(6);
-  expect({ ...next, cursor: 0 }).toEqual({ ...before, cursor: 0 });
-  expect("jobs" in next).toBe(false);
-});
+test.each(["job.added", "job.updated", "job.claimed", "job.deleted"] as const)(
+  "%s advances the cursor and leaves the board untouched (no surface jobs state)",
+  (kind) => {
+    const before = baseState();
+    const next = applyEvent(before, {
+      id: 6,
+      kind,
+      payload: { id: "job-1", title: "Research the archive", status: "queued" },
+    });
+    expect(next.cursor).toBe(6);
+    expect({ ...next, cursor: 0 }).toEqual({ ...before, cursor: 0 });
+    expect("jobs" in next).toBe(false);
+  },
+);

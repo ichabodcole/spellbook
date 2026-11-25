@@ -1297,7 +1297,7 @@ describe("GET /events (SSE)", () => {
     // Model B: agent /cmd writes reach the event log so scoped tails (Phase C)
     // can wake on agent-to-agent coordination.
     expect(add?.by).toBe("agent");
-    expect((add?.task as Task).id).toBe("a1");
+    expect((add?.task as Task | undefined)?.id).toBe("a1");
     expect(typeof add?.id).toBe("number");
   }, 15000);
 

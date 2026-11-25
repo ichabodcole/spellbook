@@ -271,7 +271,7 @@ test("an inbound stream admits a kind:canvas human message, and grounding names 
   const canvasFrame = frames.find(
     (f) => (f.payload as { text?: string } | undefined)?.text === "canvas-ramble-admitted",
   );
-  expect((canvasFrame?.payload as { kind: string }).kind).toBe("canvas");
+  expect((canvasFrame?.payload as { kind: string } | undefined)?.kind).toBe("canvas");
 });
 
 test("POST /send with an UNKNOWN channel stores it and returns an additive warning (not a 400)", async () => {

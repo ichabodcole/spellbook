@@ -143,13 +143,12 @@ test.each([
   expect(doc.error.retryable).toBe(false);
 });
 
-test.each([
-  ["--version"],
-  ["-V"],
-  ["version"],
-])("failure contract: %s is a data path, not a failure", (token) => {
-  const r = run([token]);
-  expect(r.code).toBe(0);
-  expect(r.stderr).toBe("");
-  expect(JSON.parse(r.stdout)).toEqual({ name: "magpie", version: expect.any(String) });
-});
+test.each([["--version"], ["-V"], ["version"]])(
+  "failure contract: %s is a data path, not a failure",
+  (token) => {
+    const r = run([token]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toBe("");
+    expect(JSON.parse(r.stdout)).toEqual({ name: "magpie", version: expect.any(String) });
+  },
+);

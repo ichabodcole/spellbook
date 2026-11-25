@@ -584,7 +584,7 @@ describe("planted links and twins", () => {
       DiskRefusal,
     );
     // The same `..` in the path itself, not in a link's target.
-    expect(() => disk.writeFile(join(outside, "sub") + "/../plain-dd.md", "x")).toThrow(
+    expect(() => disk.writeFile(`${join(outside, "sub")}/../plain-dd.md`, "x")).toThrow(
       DiskRefusal,
     );
     // A dangling folder link whose target climbs through `sub`.

@@ -219,8 +219,12 @@ test("zone-move re-emit keeps tags (the readProposalById clobber catch)", () => 
     expect(reemit).toBeDefined();
     // The re-emit carries BOTH the new zoneId AND the tags — a partial payload
     // would have dropped tags on an inclusive consumer (the clobber this catches).
-    expect((reemit?.payload as { zoneId?: string; tags?: string[] }).zoneId).toBe("sandbox");
-    expect((reemit?.payload as { zoneId?: string; tags?: string[] }).tags).toEqual(["keepme"]);
+    expect((reemit?.payload as { zoneId?: string; tags?: string[] } | undefined)?.zoneId).toBe(
+      "sandbox",
+    );
+    expect((reemit?.payload as { zoneId?: string; tags?: string[] } | undefined)?.tags).toEqual([
+      "keepme",
+    ]);
 
     // And the tags survive a to-main promote (row keys by proposal id).
     promote(db, bus, p.id);
