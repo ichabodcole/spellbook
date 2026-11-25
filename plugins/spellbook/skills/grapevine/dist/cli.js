@@ -2,17 +2,9 @@
 // @bun
 
 // src/grapevine/backend/cli.ts
-import { spawn } from "child_process";
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync
-} from "fs";
-import { homedir } from "os";
-import { dirname, join } from "path";
+import { spawn as spawn2 } from "child_process";
+import { existsSync as existsSync2, mkdirSync, readdirSync, readFileSync as readFileSync2, writeFileSync } from "fs";
+import { dirname, join as join2 } from "path";
 import { fileURLToPath } from "url";
 
 // src/kit/cli/registry.ts
@@ -1082,6 +1074,187 @@ async function tailWithHandoff(tail, h) {
   }
 }
 
+// src/grapevine/backend/daemonDiscovery.ts
+import { spawn } from "child_process";
+import { existsSync, readFileSync, unlinkSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
+var DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
+var PORT_FILE = join(DATA_DIR, "daemon.port");
+var PID_FILE = join(DATA_DIR, "daemon.pid");
+var HOLD_FILE = join(DATA_DIR, "daemon.hold");
+async function answeringPort() {
+  if (!existsSync(PORT_FILE))
+    return null;
+  const raw = readFileSync(PORT_FILE, "utf-8").trim();
+  const port = parseInt(raw, 10);
+  if (!port)
+    return null;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: AbortSignal.timeout(500)
+    });
+    if (res.ok)
+      return port;
+  } catch {}
+  try {
+    unlinkSync(PORT_FILE);
+  } catch {}
+  try {
+    unlinkSync(PID_FILE);
+  } catch {}
+  return null;
+}
+async function untilDaemonGone(verb, prefix) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if (await answeringPort() === null)
+      return;
+  }
+  let pid = null;
+  try {
+    pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || null;
+  } catch {}
+  die(`${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers after 5 s, ` + `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` + `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`, "internal", {
+    token: "daemon_still_running",
+    hint: prefix ? `try: ${prefix} doctor` : "try the `doctor` verb"
+  });
+}
+function holdActive() {
+  try {
+    if (!existsSync(HOLD_FILE))
+      return null;
+    const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+    if (Number.isFinite(until) && until > Date.now())
+      return until;
+    try {
+      unlinkSync(HOLD_FILE);
+    } catch {}
+    return null;
+  } catch {
+    return null;
+  }
+}
+function releaseHold() {
+  try {
+    if (existsSync(HOLD_FILE))
+      unlinkSync(HOLD_FILE);
+  } catch {}
+}
+async function listGrapevineDaemonPids() {
+  const pids = [];
+  try {
+    const proc = spawn("ps", ["-eo", "pid,command"], {
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    const chunks = [];
+    proc.stdout?.on("data", (b) => chunks.push(b));
+    await new Promise((resolve) => proc.on("exit", () => resolve()));
+    const out = Buffer.concat(chunks).toString("utf-8");
+    for (const line of out.split(`
+`)) {
+      if (!line.includes("daemon.ts"))
+        continue;
+      if (!line.toLowerCase().includes("grapevine"))
+        continue;
+      const digits = line.match(/^\s*(\d+)\s+/)?.[1];
+      if (digits === undefined)
+        continue;
+      const pid = parseInt(digits, 10);
+      if (pid)
+        pids.push(pid);
+    }
+  } catch {}
+  return pids;
+}
+async function lsofListenPort(pid) {
+  try {
+    const proc = spawn("lsof", ["-aiTCP", "-sTCP:LISTEN", "-p", String(pid), "-P", "-n"], {
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    const chunks = [];
+    proc.stdout?.on("data", (b) => chunks.push(b));
+    await new Promise((r) => proc.on("exit", () => r()));
+    const digits = Buffer.concat(chunks).toString("utf-8").match(/127\.0\.0\.1:(\d+)/)?.[1];
+    return digits === undefined ? null : parseInt(digits, 10);
+  } catch {
+    return null;
+  }
+}
+async function classifyDaemon(pid) {
+  const port = await lsofListenPort(pid);
+  if (!port)
+    return { pid, port: null, status: "unknown", reapable: false };
+  let info = null;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: AbortSignal.timeout(800)
+    });
+    if (res.ok)
+      info = await res.json();
+  } catch {}
+  if (!info)
+    return { pid, port, status: "unresponsive", reapable: false };
+  const home = info.data_dir;
+  let owns = false;
+  try {
+    const op = readFileSync(join(home, "daemon.port"), "utf-8").trim();
+    const oi = readFileSync(join(home, "daemon.pid"), "utf-8").trim();
+    owns = op === String(port) && oi === String(pid);
+  } catch {}
+  return owns ? {
+    pid,
+    port,
+    home,
+    version: info.version ?? null,
+    status: "authoritative",
+    reapable: false
+  } : {
+    pid,
+    port,
+    home,
+    version: info.version ?? null,
+    status: "orphan",
+    reapable: true
+  };
+}
+async function otherDaemonsThan(selfPid) {
+  const otherDaemons = [];
+  try {
+    for (const pid of await listGrapevineDaemonPids()) {
+      if (selfPid && pid === selfPid)
+        continue;
+      otherDaemons.push(await classifyDaemon(pid));
+    }
+  } catch {}
+  return otherDaemons;
+}
+async function reapDaemons(selfPid, opts) {
+  const pids = await listGrapevineDaemonPids();
+  const kept = [], reaped = [], skipped = [];
+  for (const pid of pids) {
+    const c = await classifyDaemon(pid);
+    const isSelf = pid === selfPid;
+    const shouldReap = !isSelf && (c.reapable || c.status === "unresponsive" && opts.force === true);
+    if (!shouldReap) {
+      kept.push(c);
+      continue;
+    }
+    if (opts.dryRun) {
+      skipped.push({ ...c, note: "dry-run" });
+      continue;
+    }
+    try {
+      process.kill(pid, "SIGTERM");
+      reaped.push(c);
+    } catch {
+      skipped.push({ ...c, note: "kill failed" });
+    }
+  }
+  return { kept, reaped, skipped };
+}
+
 // src/kit/wire/heartbeat.ts
 var MAX_IDLE_TIMEOUT_SEC = 255;
 var DEFAULT_HEARTBEAT_MS = 15000;
@@ -1109,27 +1282,23 @@ var SSE_HEARTBEAT_MS = heartbeatMs(process.env.GRAPEVINE_HEARTBEAT_MS, IDLE_TIME
 var TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS);
 
 // src/grapevine/backend/cli.ts
-var DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
-var PORT_FILE = join(DATA_DIR, "daemon.port");
-var PID_FILE = join(DATA_DIR, "daemon.pid");
-var HOLD_FILE = join(DATA_DIR, "daemon.hold");
-var CONFIG_FILE = join(DATA_DIR, "config.json");
+var CONFIG_FILE = join2(DATA_DIR, "config.json");
 var SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-var DAEMON_SCRIPT = join(SCRIPT_DIR, "..", "scripts", "daemon.ts");
-var SKILL_ROOT = join(SCRIPT_DIR, "..");
-var DIST_DIR = join(SKILL_ROOT, "dist");
-var SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "grapevine");
+var DAEMON_SCRIPT = join2(SCRIPT_DIR, "..", "scripts", "daemon.ts");
+var SKILL_ROOT = join2(SCRIPT_DIR, "..");
+var DIST_DIR = join2(SKILL_ROOT, "dist");
+var SURFACE_CWD = join2(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "grapevine");
 function daemonCwd() {
   if (process.env.SPELLBOOK_SURFACE_MODE === "release")
     return SKILL_ROOT;
   if (process.env.SPELLBOOK_SURFACE_MODE === "dev")
     return SURFACE_CWD;
-  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+  return existsSync2(join2(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 function readPluginVersion() {
   try {
-    const pluginJsonPath = join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json");
-    const raw = readFileSync(pluginJsonPath, "utf-8");
+    const pluginJsonPath = join2(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json");
+    const raw = readFileSync2(pluginJsonPath, "utf-8");
     return JSON.parse(raw).version ?? null;
   } catch {
     return null;
@@ -1185,66 +1354,10 @@ function kindForStatus(status) {
   return "internal";
 }
 async function readDaemonPort() {
-  if (!existsSync(PORT_FILE))
-    return null;
-  const raw = readFileSync(PORT_FILE, "utf-8").trim();
-  const port = parseInt(raw, 10);
-  if (!port)
-    return null;
-  try {
-    const res = await fetch(`http://127.0.0.1:${port}/`, {
-      signal: AbortSignal.timeout(500)
-    });
-    if (res.ok) {
-      maybeWarnOnVersionMismatch(port);
-      return port;
-    }
-  } catch {}
-  try {
-    unlinkSync(PORT_FILE);
-  } catch {}
-  try {
-    unlinkSync(PID_FILE);
-  } catch {}
-  return null;
-}
-async function untilDaemonGone(verb) {
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 50));
-    if (await readDaemonPort() === null)
-      return;
-  }
-  let pid = null;
-  try {
-    pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || null;
-  } catch {}
-  const prefix = invocationPrefix();
-  die2(`${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers after 5 s, ` + `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` + `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`, "internal", {
-    token: "daemon_still_running",
-    hint: prefix ? `try: ${prefix} doctor` : "try the `doctor` verb"
-  });
-}
-function holdActive() {
-  try {
-    if (!existsSync(HOLD_FILE))
-      return null;
-    const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
-    if (Number.isFinite(until) && until > Date.now())
-      return until;
-    try {
-      unlinkSync(HOLD_FILE);
-    } catch {}
-    return null;
-  } catch {
-    return null;
-  }
-}
-function releaseHold() {
-  try {
-    if (existsSync(HOLD_FILE))
-      unlinkSync(HOLD_FILE);
-  } catch {}
+  const port = await answeringPort();
+  if (port)
+    maybeWarnOnVersionMismatch(port);
+  return port;
 }
 async function ensureDaemon(opts = {}) {
   const r = await daemonUnlessHeld(opts);
@@ -1263,10 +1376,10 @@ async function daemonUnlessHeld(opts = {}) {
       return { heldUntil };
   }
   const cwd = daemonCwd();
-  if (!existsSync(cwd)) {
+  if (!existsSync2(cwd)) {
     die2(`grapevine cannot start its daemon: the working directory it needs is missing \u2014 ${cwd}. ` + "No dist/index.html was found (or SPELLBOOK_SURFACE_MODE=dev is set), so the daemon " + "must run from src/grapevine/ to bundle the watch surface, which a source-free install " + "does not have. Either the shipped dist/ is missing (reinstall the spell) or you are in " + "a checkout without src/grapevine/.", "internal");
   }
-  const proc = spawn(process.execPath, [DAEMON_SCRIPT], {
+  const proc = spawn2(process.execPath, [DAEMON_SCRIPT], {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
@@ -1523,7 +1636,7 @@ async function cmdWhoAll() {
 async function cmdAlias(name) {
   let cfg = {};
   try {
-    cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    cfg = JSON.parse(readFileSync2(CONFIG_FILE, "utf-8"));
   } catch {}
   if (name === undefined) {
     const alias = typeof cfg.alias === "string" && cfg.alias.trim() ? cfg.alias.trim() : null;
@@ -1679,10 +1792,10 @@ async function cmdTail(name, opts) {
 }
 function foldDispositions(name) {
   const map = new Map;
-  const path = join(DATA_DIR, "channels", `${name}.jsonl`);
-  if (!existsSync(path))
+  const path = join2(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync2(path))
     return map;
-  for (const line of readFileSync(path, "utf-8").split(`
+  for (const line of readFileSync2(path, "utf-8").split(`
 `)) {
     if (!line.trim())
       continue;
@@ -1713,12 +1826,12 @@ function isOpen(d) {
   return !d || d.disposition === "open";
 }
 function loadChannelMessagesBadged(name) {
-  const logPath = join(DATA_DIR, "channels", `${name}.jsonl`);
-  if (!existsSync(logPath))
+  const logPath = join2(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync2(logPath))
     return [];
   const disp = foldDispositions(name);
   const messages = [];
-  for (const line of readFileSync(logPath, "utf-8").split(`
+  for (const line of readFileSync2(logPath, "utf-8").split(`
 `)) {
     if (!line.trim())
       continue;
@@ -1791,8 +1904,8 @@ async function cmdTriage(name, opts = {}) {
 async function cmdGrep(name, pattern, opts) {
   if (!name || !pattern)
     die2("usage: grapevine grep <channel> <pattern> [--literal|-F] [--from <alias>]");
-  const logPath = join(DATA_DIR, "channels", `${name}.jsonl`);
-  if (!existsSync(logPath)) {
+  const logPath = join2(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync2(logPath)) {
     printJson2({ ok: true, messages: [] });
     return;
   }
@@ -1809,7 +1922,7 @@ async function cmdGrep(name, pattern, opts) {
     }
     matcher = (text) => re.test(text);
   }
-  const raw = readFileSync(logPath, "utf-8");
+  const raw = readFileSync2(logPath, "utf-8");
   const messages = [];
   for (const line of raw.split(`
 `)) {
@@ -1899,7 +2012,7 @@ async function cmdStop(opts = {}) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  await untilDaemonGone("stop");
+  await untilDaemonGone("stop", invocationPrefix());
   printJson2({
     ok: true,
     stopped: true,
@@ -1955,7 +2068,7 @@ async function cmdRestart(opts) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  await untilDaemonGone("restart");
+  await untilDaemonGone("restart", invocationPrefix());
   const fresh = await ensureDaemon();
   printJson2({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
 }
@@ -2018,7 +2131,7 @@ async function cmdRoll(opts) {
   } catch {}
   let fresh;
   try {
-    await untilDaemonGone("roll");
+    await untilDaemonGone("roll", invocationPrefix());
     fresh = await ensureDaemon({ overHold: true });
   } finally {
     releaseHold();
@@ -2043,7 +2156,7 @@ async function cmdWatch(name) {
   const url = `http://127.0.0.1:${port}/watch#${encodeURIComponent(channel)}`;
   const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer" : "xdg-open";
   try {
-    const p = spawn(opener, [url], {
+    const p = spawn2(opener, [url], {
       detached: true,
       stdio: "ignore"
     });
@@ -2075,19 +2188,11 @@ async function cmdDoctor() {
       }
     } catch {}
   }
-  const otherDaemons = [];
-  const selfPid = authoritative?.pid;
-  try {
-    for (const pid of await listGrapevineDaemonPids()) {
-      if (selfPid && pid === selfPid)
-        continue;
-      otherDaemons.push(await classifyDaemon(pid));
-    }
-  } catch {}
+  const otherDaemons = await otherDaemonsThan(authoritative?.pid);
   const channelsOnDisk = [];
   try {
-    const channelsDir = join(DATA_DIR, "channels");
-    if (existsSync(channelsDir)) {
+    const channelsDir = join2(DATA_DIR, "channels");
+    if (existsSync2(channelsDir)) {
       for (const f of readdirSync(channelsDir)) {
         if (f.endsWith(".jsonl"))
           channelsOnDisk.push(f.replace(/\.jsonl$/, ""));
@@ -2147,83 +2252,6 @@ async function cmdInfo() {
   const { data } = await api(port, "GET", "/");
   printJson2({ ok: true, daemon: true, ...data });
 }
-async function listGrapevineDaemonPids() {
-  const pids = [];
-  try {
-    const proc = spawn("ps", ["-eo", "pid,command"], {
-      stdio: ["ignore", "pipe", "ignore"]
-    });
-    const chunks = [];
-    proc.stdout?.on("data", (b) => chunks.push(b));
-    await new Promise((resolve) => proc.on("exit", () => resolve()));
-    const out = Buffer.concat(chunks).toString("utf-8");
-    for (const line of out.split(`
-`)) {
-      if (!line.includes("daemon.ts"))
-        continue;
-      if (!line.toLowerCase().includes("grapevine"))
-        continue;
-      const digits = line.match(/^\s*(\d+)\s+/)?.[1];
-      if (digits === undefined)
-        continue;
-      const pid = parseInt(digits, 10);
-      if (pid)
-        pids.push(pid);
-    }
-  } catch {}
-  return pids;
-}
-async function lsofListenPort(pid) {
-  try {
-    const proc = spawn("lsof", ["-aiTCP", "-sTCP:LISTEN", "-p", String(pid), "-P", "-n"], {
-      stdio: ["ignore", "pipe", "ignore"]
-    });
-    const chunks = [];
-    proc.stdout?.on("data", (b) => chunks.push(b));
-    await new Promise((r) => proc.on("exit", () => r()));
-    const digits = Buffer.concat(chunks).toString("utf-8").match(/127\.0\.0\.1:(\d+)/)?.[1];
-    return digits === undefined ? null : parseInt(digits, 10);
-  } catch {
-    return null;
-  }
-}
-async function classifyDaemon(pid) {
-  const port = await lsofListenPort(pid);
-  if (!port)
-    return { pid, port: null, status: "unknown", reapable: false };
-  let info = null;
-  try {
-    const res = await fetch(`http://127.0.0.1:${port}/`, {
-      signal: AbortSignal.timeout(800)
-    });
-    if (res.ok)
-      info = await res.json();
-  } catch {}
-  if (!info)
-    return { pid, port, status: "unresponsive", reapable: false };
-  const home = info.data_dir;
-  let owns = false;
-  try {
-    const op = readFileSync(join(home, "daemon.port"), "utf-8").trim();
-    const oi = readFileSync(join(home, "daemon.pid"), "utf-8").trim();
-    owns = op === String(port) && oi === String(pid);
-  } catch {}
-  return owns ? {
-    pid,
-    port,
-    home,
-    version: info.version ?? null,
-    status: "authoritative",
-    reapable: false
-  } : {
-    pid,
-    port,
-    home,
-    version: info.version ?? null,
-    status: "orphan",
-    reapable: true
-  };
-}
 async function cmdReap(opts) {
   const selfPort = await readDaemonPort();
   let selfPid = null;
@@ -2232,27 +2260,7 @@ async function cmdReap(opts) {
       selfPid = (await api(selfPort, "GET", "/")).data?.pid ?? null;
     } catch {}
   }
-  const pids = await listGrapevineDaemonPids();
-  const kept = [], reaped = [], skipped = [];
-  for (const pid of pids) {
-    const c = await classifyDaemon(pid);
-    const isSelf = pid === selfPid;
-    const shouldReap = !isSelf && (c.reapable || c.status === "unresponsive" && opts.force === true);
-    if (!shouldReap) {
-      kept.push(c);
-      continue;
-    }
-    if (opts.dryRun) {
-      skipped.push({ ...c, note: "dry-run" });
-      continue;
-    }
-    try {
-      process.kill(pid, "SIGTERM");
-      reaped.push(c);
-    } catch {
-      skipped.push({ ...c, note: "kill failed" });
-    }
-  }
+  const { kept, reaped, skipped } = await reapDaemons(selfPid, opts);
   printJson2({ ok: true, dry_run: !!opts.dryRun, kept, reaped, skipped });
 }
 var LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\b(?:send|announce)\b/;
@@ -2711,11 +2719,9 @@ async function run() {
   return await main(process.argv.slice(2));
 }
 export {
-  classifyDaemon,
   cli,
   daemonCwd,
   looksShellRisky,
   probeVersion,
-  releaseHold,
   run
 };

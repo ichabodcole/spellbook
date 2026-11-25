@@ -568,7 +568,7 @@ describe("grapevine cli", () => {
     await bunRun(["start"]);
     const doc = JSON.parse((await bunRun(["doctor"])).stdout);
     const pid = doc.authoritative.pid as number;
-    const { classifyDaemon } = await import("./cli.ts");
+    const { classifyDaemon } = await import("./daemonDiscovery.ts");
 
     const auth = await classifyDaemon(pid);
     expect(auth.status).toBe("authoritative");
