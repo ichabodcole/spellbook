@@ -1246,12 +1246,22 @@ function releaseHold() {
       unlinkSync(HOLD_FILE);
   } catch {}
 }
-async function ensureDaemon() {
+async function ensureDaemon(opts = {}) {
+  const r = await daemonUnlessHeld(opts);
+  if (typeof r === "number")
+    return r;
+  const prefix = invocationPrefix();
+  die2(`daemon is held (respawn suppressed until ${new Date(r.heldUntil).toISOString()}) \u2014 ` + "wait for the hold to lapse, or run `roll`, which ends the hold and starts the daemon", "conflict", { hint: prefix ? `try: ${prefix} roll` : "try the `roll` verb" });
+}
+async function daemonUnlessHeld(opts = {}) {
   let port = await readDaemonPort();
   if (port)
     return port;
-  if (holdActive())
-    die2("daemon is held (respawn suppressed) \u2014 wait for the hold to clear or run `grapevine roll`", "conflict");
+  if (!opts.overHold) {
+    const heldUntil = holdActive();
+    if (heldUntil !== null)
+      return { heldUntil };
+  }
   const cwd = daemonCwd();
   if (!existsSync(cwd)) {
     die2(`grapevine cannot start its daemon: the working directory it needs is missing \u2014 ${cwd}. ` + "No dist/index.html was found (or SPELLBOOK_SURFACE_MODE=dev is set), so the daemon " + "must run from src/grapevine/ to bundle the watch surface, which a source-free install " + "does not have. Either the shipped dist/ is missing (reinstall the spell) or you are in " + "a checkout without src/grapevine/.", "internal");
@@ -1534,6 +1544,7 @@ async function cmdTail(name, opts) {
   const since = opts.fromStart ? 0 : opts.since ?? -1;
   let grounded = opts.since !== undefined;
   let seedFromMarker = since < 0 && opts.last === undefined;
+  let heldNoted = null;
   const again = (at) => commandLine([
     "tail",
     name,
@@ -1543,7 +1554,16 @@ async function cmdTail(name, opts) {
     ...at >= 0 ? ["--since", String(at)] : []
   ]);
   return await tailWithHandoff({
-    resolve: async () => `http://127.0.0.1:${await ensureDaemon()}`,
+    resolve: async () => {
+      const r = await daemonUnlessHeld();
+      if (typeof r === "number")
+        return `http://127.0.0.1:${r}`;
+      if (heldNoted !== r.heldUntil) {
+        heldNoted = r.heldUntil;
+        process.stderr.write(`# daemon held until ${new Date(r.heldUntil).toISOString()} (stop --hold); ` + "waiting \u2014 this tail resumes when `roll` starts the daemon or the hold lapses\n");
+      }
+      return null;
+    },
     path: `/channels/${name}/tail`,
     since,
     query: (cursor, firstConnect) => {
@@ -1901,8 +1921,15 @@ async function fetchActiveSubscribers(port) {
 }
 async function cmdStart() {
   const existing = await readDaemonPort();
-  if (!existing && holdActive()) {
-    printJson2({ ok: true, held: true, port: null });
+  const heldUntil = existing ? null : holdActive();
+  if (heldUntil !== null) {
+    printJson2({
+      ok: true,
+      held: true,
+      port: null,
+      held_until: heldUntil,
+      hint: "the hold lapses by itself at held_until; `roll` ends it now and starts the daemon"
+    });
     return;
   }
   const port = existing ?? await ensureDaemon();
@@ -1954,7 +1981,12 @@ async function probeVersion(port) {
 async function cmdRoll(opts) {
   const port = await readDaemonPort();
   if (!port) {
-    const fresh = await ensureDaemon();
+    let fresh;
+    try {
+      fresh = await ensureDaemon({ overHold: true });
+    } finally {
+      releaseHold();
+    }
     printJson2({
       ok: true,
       rolled: true,
@@ -1980,12 +2012,13 @@ async function cmdRoll(opts) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
+  let fresh;
   try {
     await untilDaemonGone("roll");
+    fresh = await ensureDaemon({ overHold: true });
   } finally {
     releaseHold();
   }
-  const fresh = await ensureDaemon();
   let pid = null;
   try {
     pid = (await api(fresh, "GET", "/")).data?.pid ?? null;

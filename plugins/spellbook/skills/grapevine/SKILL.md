@@ -366,14 +366,18 @@ start it; `start` does, with no channel side-effect.
   doesn't stay stopped while anyone is tailing: a connected `tail` logs
   `stream dropped`, reconnects, and that respawns the daemon. Check `doctor`
   first.
-- **`stop --hold <s>`** also suppresses any respawn for `<s>` seconds — an
-  upgrade window. While held, `start` answers `held: true` and every verb that
-  would start a daemon (`restart` and `roll` included) refuses with exit 6.
-  **Live tails end**: each logs `stream dropped`, then exits 6 with the held
-  conflict, and does not come back by itself when the hold lapses. The hold
-  lapses on its own; the only early release is `stop --hold 1`, which replaces
-  it with a one-second hold (`--hold 0` does not clear it). Afterwards, `start`
-  the daemon and re-arm each tail with `--since <the last id you saw>`.
+- **`stop --hold <s>`** also suppresses any respawn for `<s>` seconds — the
+  upgrade window: `stop --hold 60`, swap the plugin, then `roll`. While held,
+  `start` answers `held: true` with `held_until`, and every other verb that
+  would start a daemon (`restart` included) refuses with exit 6 and a `hint`
+  naming `roll`. **`roll` ends the hold**: it starts the new daemon and clears
+  the hold, with no `--force` needed (nobody is connected to a stopped daemon).
+  Otherwise the hold lapses by itself at `held_until`. **Live tails wait**: each
+  logs `stream dropped`, then `# daemon held until …; waiting`, and stays
+  running. When `roll` starts the daemon (or the hold lapses and the tail's own
+  reconnect starts one), it resumes from the last id it printed, so nothing sent
+  in between is missed. A tail whose window ends during the hold prints its
+  usual `tail.window` line with `--since <the last id>`; re-arm that.
 
 ## Message shape
 

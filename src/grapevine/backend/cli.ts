@@ -440,14 +440,39 @@ export function releaseHold() {
   } catch {}
 }
 
-async function ensureDaemon(): Promise<number> {
+/**
+ * The running daemon's port, spawning one if none answers.
+ *
+ * ⛔ A HOLD (`stop --hold`) REFUSES THE SPAWN, AND THE REFUSAL NAMES `roll`,
+ * WHICH ENDS IT. `roll` is the one verb that passes `overHold`: it spawns while
+ * the hold is still on disk and releases it only once the new daemon answers,
+ * so a waiting tail (below) cannot spawn its own copy in the gap. The refusal
+ * used to say "run `grapevine roll`" while `roll` itself took this path and was
+ * refused by the same sentence: the recovery it named did not work.
+ */
+async function ensureDaemon(opts: { overHold?: boolean } = {}): Promise<number> {
+  const r = await daemonUnlessHeld(opts);
+  if (typeof r === "number") return r;
+  const prefix = invocationPrefix();
+  die(
+    `daemon is held (respawn suppressed until ${new Date(r.heldUntil).toISOString()}) — ` +
+      "wait for the hold to lapse, or run `roll`, which ends the hold and starts the daemon",
+    "conflict",
+    { hint: prefix ? `try: ${prefix} roll` : "try the `roll` verb" },
+  );
+}
+
+/** `ensureDaemon`, except that an active hold is ANSWERED (with when it lapses)
+ *  rather than raised: a tail waits it out instead of exiting. */
+async function daemonUnlessHeld(
+  opts: { overHold?: boolean } = {},
+): Promise<number | { heldUntil: number }> {
   let port = await readDaemonPort();
   if (port) return port;
-  if (holdActive())
-    die(
-      "daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`",
-      "conflict",
-    );
+  if (!opts.overHold) {
+    const heldUntil = holdActive();
+    if (heldUntil !== null) return { heldUntil };
+  }
   // Check the cwd EXISTS before spawning: the daemon's stdio is ignored, so a
   // dev-mode daemon dying at its surface import would otherwise surface only as
   // "failed to start within 3s" — and node reports a missing cwd as ENOENT on
@@ -883,7 +908,8 @@ async function cmdAlias(name: string | undefined) {
  * `readBacklog(name, 0)` — the whole channel log off disk, into an agent's pipe,
  * on every `grapevine roll`.
  *
- * ⚠ `resolve` CALLS `ensureDaemon`, WHICH CAN RAISE — deliberately, and the kit
+ * ⚠ `resolve` CALLS `daemonUnlessHeld`, WHICH CAN RAISE (a spawn that fails;
+ * a hold is answered, not raised) — deliberately, and the kit
  * documents the property this depends on: its outer block is a `try`/`finally`
  * with NO `catch`, so a `CliError` from three frames down propagates into
  * `main` instead of being read as a dropped connection and retried forever.
@@ -924,6 +950,8 @@ async function cmdTail(
   // Once: a later marker (a reconnect) must not jump the cursor past messages
   // its own backlog is about to replay.
   let seedFromMarker = since < 0 && opts.last === undefined;
+  // The hold this tail last said it is waiting on, so it says so once per hold.
+  let heldNoted: number | null = null;
 
   // ⛔ A PRESENCE SPELL: the connection IS `who`'s presence, so the window
   // always names the Monitor re-arm, never the stop-start `--once`, and a lost
@@ -946,7 +974,27 @@ async function cmdTail(
       // the daemon it started against — `roll` and `restart` both replace it — and
       // `ensureDaemon` re-reads the port file and respawns, so a reconnect after a
       // roll lands on the NEW daemon rather than spinning against a dead port.
-      resolve: async () => `http://127.0.0.1:${await ensureDaemon()}`,
+      //
+      // ⛔ A HOLD IS WAITED OUT, NOT RAISED. `stop --hold` used to end every live
+      // tail at exit 6 with the held conflict and no `tail.*` line, so the
+      // watch was simply gone and nothing named how to resume. A null answer
+      // is the kit's "not found, retry": the tail backs off and asks again, so
+      // it comes back on the daemon `roll` starts (or the one it spawns once the
+      // hold lapses) and resumes from its own cursor, with no gap. The window
+      // still runs meanwhile, so a long hold ends in the ordinary `tail.window`
+      // handoff, bookmark included, rather than in Monitor's kill.
+      resolve: async () => {
+        const r = await daemonUnlessHeld();
+        if (typeof r === "number") return `http://127.0.0.1:${r}`;
+        if (heldNoted !== r.heldUntil) {
+          heldNoted = r.heldUntil;
+          process.stderr.write(
+            `# daemon held until ${new Date(r.heldUntil).toISOString()} (stop --hold); ` +
+              "waiting — this tail resumes when `roll` starts the daemon or the hold lapses\n",
+          );
+        }
+        return null;
+      },
       path: `/channels/${name}/tail`,
       since,
       // ⚠ NO ensure call before the subscribe. A fresh `tail name` still works
@@ -1425,8 +1473,16 @@ async function cmdStart() {
   // daemon, or spawn a fresh one. The explicit "bring it up" verb — diagnostics
   // (doctor/info/list) stay read-only and never spawn.
   const existing = await readDaemonPort();
-  if (!existing && holdActive()) {
-    printJson({ ok: true, held: true, port: null });
+  const heldUntil = existing ? null : holdActive();
+  if (heldUntil !== null) {
+    // The answer names the act that ends the hold early, which nothing did.
+    printJson({
+      ok: true,
+      held: true,
+      port: null,
+      held_until: heldUntil,
+      hint: "the hold lapses by itself at held_until; `roll` ends it now and starts the daemon",
+    });
     return;
   }
   const port = existing ?? (await ensureDaemon());
@@ -1523,7 +1579,18 @@ async function cmdRoll(opts: { force?: boolean }) {
     // COLD PATH — nothing was running, so this is a start rather than a roll.
     // It still reports the verify, because "no daemon was up" is not a reason to
     // stay silent about which version is now serving.
-    const fresh = await ensureDaemon();
+    //
+    // ⛔ AND IT ENDS A HOLD. This is the close of the upgrade window
+    // (`stop --hold`, swap the plugin, `roll`), and it used to be refused by the
+    // hold whose own refusal named it. It spawns OVER the hold and releases it
+    // only after: a tail waiting on the hold sees the new daemon's port first,
+    // never a gap in which to spawn its own (stale) one.
+    let fresh: number;
+    try {
+      fresh = await ensureDaemon({ overHold: true });
+    } finally {
+      releaseHold();
+    }
     printJson({
       ok: true,
       rolled: true,
@@ -1553,12 +1620,15 @@ async function cmdRoll(opts: { force?: boolean }) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
+  // Spawn over our own hold, then release it: our turn to spawn the new version,
+  // or nobody's — and released on a failure too, so a refused roll leaves none.
+  let fresh: number;
   try {
     await untilDaemonGone("roll");
+    fresh = await ensureDaemon({ overHold: true });
   } finally {
-    releaseHold(); // our turn to spawn the new version, or nobody's
+    releaseHold();
   }
-  const fresh = await ensureDaemon();
   let pid: number | null = null;
   try {
     pid = (await api<RootInfo>(fresh, "GET", "/")).data?.pid ?? null;
