@@ -6,7 +6,10 @@
 // own GRAPEVINE_HOME, its own daemon, and stops both after its last test.
 
 import { afterAll, describe, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   at,
   bunRun,
@@ -41,7 +44,8 @@ describe("grapevine cli", () => {
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(2500);
     expect(payload.truncation_hint).toBeDefined();
-    expect(payload.truncation_hint).toContain("2500 chars");
+    // Nothing was cut (no --max), so no "+N" claims a loss: it gives the length.
+    expect(payload.truncation_hint).toStartWith("2500 chars");
     // Hint carries the exact recovery command: `read <channel> <id>`.
     expect(payload.truncation_hint).toContain(`read test_trunc ${payload.id}`);
     // F17: the hint must serialize BEFORE .text so a notification clip (which
@@ -145,7 +149,8 @@ describe("grapevine cli", () => {
     const payload = JSON.parse(line);
     expect(payload.text.length).toBe(200); // inline body capped to --max
     expect(payload.truncation_hint).toBeDefined();
-    expect(payload.truncation_hint).toContain("2500 chars"); // hint reports the TRUE total
+    // The hint counts what --max CUT (2500 − 200), not the body's length.
+    expect(payload.truncation_hint).toStartWith("+2300 chars cut (of 2500)");
     expect(payload.truncation_hint).toContain(`read test_max ${payload.id}`);
     // F17 order: hint serializes before .text so a downstream clip can't bury it.
     expect(line.indexOf("truncation_hint")).toBeLessThan(line.indexOf('"text"'));
@@ -250,6 +255,37 @@ describe("grapevine cli", () => {
       (c: { name: string }) => c.name === "test_doctor_ch",
     );
     expect(ownEntry).toBeUndefined();
+  });
+
+  test("doctor with no daemon names a verb that really starts one, run verbatim", async () => {
+    // A HOME of its own, with no daemon: the hint used to say `list` spawns one,
+    // and `list` never does.
+    const home = mkdtempSync(join(tmpdir(), "grapevine-doctor-"));
+    const env = { ...process.env, GRAPEVINE_HOME: home };
+    const run = (argv: string[]) => spawnSync(argv[0] as string, argv.slice(1), { env });
+    try {
+      const before = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+      expect(before.authoritative).toBeNull();
+      const hint = must(
+        (before.hints as string[]).find((h) => h.startsWith("No authoritative daemon")),
+        "the no-daemon hint",
+      );
+      const cmd = must(hint.match(/`([^`]+)`/)?.[1], "the hint names a command in backticks");
+      expect(cmd).toBe(`bun ${CLI} start`);
+      expect(run(cmd.split(" ")).status).toBe(0);
+      const after = JSON.parse(run([process.execPath, CLI, "doctor"]).stdout.toString());
+      expect(after.authoritative?.data_dir).toBe(home);
+    } finally {
+      run([process.execPath, CLI, "stop"]);
+      // Only this cell's own daemon: the pid in its own temp HOME's pid file.
+      const pidFile = join(home, "daemon.pid");
+      if (existsSync(pidFile)) {
+        try {
+          process.kill(Number(readFileSync(pidFile, "utf-8").trim()), "SIGKILL");
+        } catch {}
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 
   test("doctor surfaces active subscribers when present", async () => {

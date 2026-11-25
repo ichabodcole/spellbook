@@ -969,24 +969,23 @@ async function cmdTail(
       },
       render: (payload, frame) => {
         if (frame.event === "subscribed") return renderSubscribed(payload);
-        // #67 — front-load a recovery pointer on EVERY message frame, so the read
-        // coordinates survive a downstream notification clip. Monitor truncates at
-        // its OWN cap (below our hint threshold, and one we cannot observe here); a
-        // message it clips would otherwise lose its trailing `id` and become
-        // unrecoverable — the reader is left inferring the id. Every frame
-        // therefore carries a FRONT-loaded `read <channel> <id>`, either as the
-        // richer `truncation_hint` (genuinely-long messages — the "+N chars,
-        // you're definitely missing content" alarm) or as the compact `full`
-        // pointer. Serializing it before the long `.text` is what makes it survive
-        // the clip (F17).
+        // #67 — EVERY message frame front-loads a `read <channel> <id>`, so its
+        // coordinates survive a downstream clip (Monitor truncates at its OWN cap,
+        // below our threshold, which we cannot observe): the `truncation_hint` alarm
+        // on a genuinely long body, else the compact `full`. Serialized before the
+        // long `.text`, it survives the clip (F17).
         const readRef = `read ${name} ${payload.id}`;
         if (
           typeof payload.text === "string" &&
           payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
         ) {
-          const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
-          // Cap the INLINE body when --max is set (the full message stays on disk
-          // → `read`); without --max, emit the full text (today's default).
+          // --max caps the INLINE body (the full message stays on disk → `read`) and
+          // the hint counts what it CUT; without --max nothing is cut, so: the length.
+          const len = payload.text.length;
+          const truncation_hint =
+            opts.max !== undefined
+              ? `+${len - opts.max} chars cut (of ${len}) — full: ${readRef}`
+              : `${len} chars, long enough to be clipped — full: ${readRef}`;
           const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
           return JSON.stringify({ truncation_hint, ...payload, text });
         }
@@ -1680,9 +1679,9 @@ async function cmdDoctor() {
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
   else if (!authoritative) {
-    hints.push(
-      "No authoritative daemon running for this HOME. Run any verb (e.g. `cli.ts list`) to spawn one.",
-    );
+    // `start` is the verb that spawns one; `list` (named here once) never did.
+    const start = invocationPrefix() ? `\`${invocationPrefix()} start\`` : "the `start` verb";
+    hints.push(`No authoritative daemon running for this HOME. Run ${start} to start one.`);
   }
   if (otherDaemons.length > 0) {
     hints.push(

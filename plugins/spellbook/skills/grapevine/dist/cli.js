@@ -1784,7 +1784,8 @@ async function cmdTail(name, opts) {
         return renderSubscribed(payload);
       const readRef = `read ${name} ${payload.id}`;
       if (typeof payload.text === "string" && payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)) {
-        const truncation_hint = `+${payload.text.length} chars \u2014 full: ${readRef}`;
+        const len = payload.text.length;
+        const truncation_hint = opts.max !== undefined ? `+${len - opts.max} chars cut (of ${len}) \u2014 full: ${readRef}` : `${len} chars, long enough to be clipped \u2014 full: ${readRef}`;
         const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
         return JSON.stringify({ truncation_hint, ...payload, text });
       }
@@ -2275,7 +2276,8 @@ async function cmdDoctor() {
   if (stuck)
     hints.push(`This HOME's daemon (pid ${stuck.pid}) is not answering: ${stuckAct(stuck.pid)}.`);
   else if (!authoritative) {
-    hints.push("No authoritative daemon running for this HOME. Run any verb (e.g. `cli.ts list`) to spawn one.");
+    const start = invocationPrefix() ? `\`${invocationPrefix()} start\`` : "the `start` verb";
+    hints.push(`No authoritative daemon running for this HOME. Run ${start} to start one.`);
   }
   if (otherDaemons.length > 0) {
     hints.push(`Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` + "They may be zombies from past runs OR daemons serving other HOMEs (different GRAPEVINE_HOME).");
