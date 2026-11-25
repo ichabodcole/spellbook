@@ -80,14 +80,7 @@ import {
 } from "../context/model.ts";
 import type { BeforeMove, UncheckedMoveNote } from "../context/preMove.ts";
 import { RelinkBar } from "../context/RelinkBar.tsx";
-import {
-  applySelectionEvent,
-  type HeldSelection,
-  type Reveal,
-  revealAfter,
-  type SelectionEvent,
-} from "../context/selection.ts";
-import { type PointedDocs, type Workspace, WorkspaceContext } from "../context/workspace.ts";
+import { type Workspace, WorkspaceContext } from "../context/workspace.ts";
 import { bundleOf, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
@@ -109,10 +102,7 @@ import type {
   Backlinks as BacklinksData,
   DocView,
   Message,
-  MessageRef,
   PublicState,
-  SearchResult,
-  ServerOp,
   TrashPreview,
 } from "../workspace/protocol";
 import { ChatColumn } from "./ChatColumn.tsx";
@@ -138,7 +128,9 @@ import { SettingsDialog } from "./SettingsDialog.tsx";
 import { StatusBar } from "./StatusBar.tsx";
 import { keptTheme, type ShellStorage, THEME_KEY } from "./storage.ts";
 import { TopBar } from "./TopBar.tsx";
+import { useHeldSelection } from "./useHeldSelection.ts";
 import { usePaneKeys } from "./usePaneKeys.ts";
+import { useReveal } from "./useReveal.ts";
 import { useShellColumns } from "./useShellColumns.ts";
 
 /** A tab an app adds to the right column. */
@@ -459,237 +451,40 @@ function ShellBody({
   });
 
   // ── the open document, and the selection held against it ────────────────
-  const openDoc = useMemo(
-    () => state.docs.find((d) => d.slug === state.openDoc) ?? null,
-    [state.docs, state.openDoc],
-  );
-  // The open image, when one is: the centre shows the kit's viewer instead of
-  // the app's own centre, and the app's toolbar (a document's tools) stands aside.
-  const openImage = state.openImage ?? null;
-  // A bundle's main file opened from its own row inside the expanded bundle
-  // is drawn raw. It stays so while that file is the open document, and ends
-  // when another one opens (the bundle's own row clears it at once).
-  const [rawMain, setRawMain] = useState<string | null>(null);
-  const openOriginal = openDoc?.original ?? null;
-  const rawRef = useRef(rawMain);
-  rawRef.current = rawMain;
-  useEffect(() => {
-    if (rawRef.current !== null && openOriginal !== rawRef.current) setRawMain(null);
-  }, [openOriginal]);
-  const [selection, setSelection] = useState<HeldSelection | null>(null);
-  const [clearSeq, setClearSeq] = useState(0);
-  const [reveal, setReveal] = useState<Reveal | null>(null);
-  const revealSeq = useRef(0);
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  /** One held selection, told to the daemon, with a bump when the panes must unpaint. */
-  const onSelectionEvent = useCallback((event: SelectionEvent) => {
-    const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
-    selectionRef.current = held;
-    setSelection(held);
-    if (clearPaint) setClearSeq((n) => n + 1);
-    if (event.type === "shown") setReveal((r) => revealAfter(r, event));
-    else setReveal((r) => revealAfter(r, { type: "selection" }));
-  }, []);
-  const shownDoc = openDoc?.slug ?? null;
-  const shownVersion = openDoc?.active ?? null;
-  useEffect(() => {
-    onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
-  }, [shownDoc, shownVersion, onSelectionEvent]);
-  // A note is pointed at until the human moves on: another document or version.
-  // The Notes panel borders it and the centre paints its passage, from this one id.
-  // Resolving it lets it go as well: it leaves the panel's list, so it leaves the
-  // document's paint (a resolved note chosen while they are listed stays chosen).
-  const [pointedAt, setPointedAt] = useState<{
-    id: string;
-    doc: string;
-    version: number;
-    resolved: boolean;
-  } | null>(null);
-  const focusedNote =
-    pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion
-      ? pointedAt.id
-      : null;
-  const pickedState =
-    focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
-  useEffect(() => {
-    if (!pointedAt || pickedState === undefined) return;
-    if (pickedState && !pointedAt.resolved) setPointedAt(null);
-    // Chosen while resolved and reopened since: the next resolve lets it go.
-    else if (!pickedState && pointedAt.resolved) setPointedAt({ ...pointedAt, resolved: false });
-  }, [pickedState, pointedAt]);
-  /** The Notes panel is listing resolved notes: the document paints them too. */
-  const [showResolvedNotes, setShowResolvedNotes] = useState(false);
-  // The daemon holds the selection `say` attaches; it is told of every change.
-  // The snapshot is read when the selection changes, not on every snapshot. A
-  // reconnect tells it again: a daemon that restarted holds no selection, and the
-  // chip on screen would otherwise promise a passage `say` no longer carries.
-  const connected = daemon.connection === "open";
-  const docsRef = useRef(state.docs);
-  docsRef.current = state.docs;
-  useEffect(() => {
-    if (!connected) return;
-    if (!selection) {
-      send({ op: "select", selection: null });
-      return;
-    }
-    const doc = docsRef.current.find((d) => d.slug === selection.doc);
-    const path = doc?.versions.find((v) => v.n === selection.version)?.path;
-    if (!path) return;
-    send({
-      op: "select",
-      selection: {
-        doc: selection.doc,
-        version: selection.version,
-        path,
-        fromLine: selection.fromLine,
-        toLine: selection.toLine,
-        text: selection.text,
-      },
-    });
-  }, [selection, send, connected]);
-
-  // Whole documents pointed at from an app's view: the chip's other kind. One
-  // kind is held at a time, so a message is never about two things at once.
-  const [pointedDocs, setPointedDocs] = useState<PointedDocs | null>(null);
-  const reportSelection = useCallback(
-    (s: HeldSelection) => {
-      if (s.from !== s.to) setPointedDocs(null);
-      onSelectionEvent({ type: "report", selection: s });
-    },
-    [onSelectionEvent],
-  );
-  const dropSelection = useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
-  const pointDocs = useCallback(
-    (p: PointedDocs | null) => {
-      const next = p && (p.docs.length > 0 || p.label) ? p : null;
-      if (next && selectionRef.current) onSelectionEvent({ type: "drop" });
-      setPointedDocs(next);
-    },
-    [onSelectionEvent],
-  );
-  // ── what the next message draws on besides its subject ──────────────────
-  // The file tree's selection (absolute row paths): the tree's own, held here so
-  // it outlives a set drilled out of, read at send and never cleared by it.
-  const [treeSelected, setTreeSelected] = useState<readonly string[]>([]);
-  // The references added by hand ("Add as reference"): cleared on send.
-  const [addedRefs, setAddedRefs] = useState<readonly MessageRef[]>([]);
-  const addRef = useCallback(
-    (ref: MessageRef) =>
-      setAddedRefs((rs) => (rs.some((r) => r.path === ref.path) ? rs : [...rs, ref])),
-    [],
-  );
-  const removeRef = useCallback(
-    (path: string) => setAddedRefs((rs) => rs.filter((r) => r.path !== path)),
-    [],
-  );
-  const clearRefs = useCallback(() => setAddedRefs([]), []);
-  const requestReveal = useCallback((target: Omit<Reveal, "seq">) => {
-    setReveal({ ...target, seq: ++revealSeq.current });
-  }, []);
-  const revealApplied = useCallback(
-    (seq: number) => setReveal((r) => revealAfter(r, { type: "applied", seq })),
-    [],
-  );
+  const {
+    openDoc,
+    openImage,
+    rawMain,
+    setRawMain,
+    selection,
+    clearSeq,
+    reveal,
+    setPointedAt,
+    focusedNote,
+    showResolvedNotes,
+    setShowResolvedNotes,
+    pointedDocs,
+    reportSelection,
+    dropSelection,
+    pointDocs,
+    treeSelected,
+    setTreeSelected,
+    addedRefs,
+    addRef,
+    removeRef,
+    clearRefs,
+    requestReveal,
+    revealApplied,
+  } = useHeldSelection({ daemon, state, send });
 
   // ── opening a search result ──────────────────────────────────────────────
-  // A match in the document already on screen is shown at once. Otherwise the
-  // document is opened first, and the match is shown when it is the one on screen:
-  // a reveal asked for before that would be spent by the switch itself.
-  const [pendingShow, setPendingShow] = useState<{
-    path: string;
-    from: number;
-    to: number;
-    /** A heading's line, for a link followed to a heading: see `Reveal`. */
-    heading?: { from: number; to: number };
-    /** The document on screen when it was asked for: leaving for any other one cancels it. */
-    since: string | null;
-  } | null>(null);
-  // The same for a backlink, which knows where its link sits in the source.
-  const openAt = useCallback(
-    (path: string, at?: { from: number; to: number }) => {
-      if (openDoc && openDoc.original === path) {
-        setPendingShow(null);
-        if (at)
-          requestReveal({ doc: openDoc.slug, version: openDoc.active, from: at.from, to: at.to });
-        return;
-      }
-      setPendingShow(
-        at ? { path, from: at.from, to: at.to, since: openDoc?.original ?? null } : null,
-      );
-      send({ op: "open", path });
-    },
-    [send, requestReveal, openDoc],
-  );
-  const openResult = useCallback(
-    (r: SearchResult) => {
-      // A match in an image's description opens the image, which shows it.
-      if (r.image) {
-        setPendingShow(null);
-        send({ op: "open", path: r.image });
-        return;
-      }
-      openAt(
-        r.path,
-        r.kind === "text" && r.from !== undefined && r.to !== undefined
-          ? { from: r.from, to: r.to }
-          : undefined,
-      );
-    },
-    [openAt, send],
-  );
-  // Declared after the effect that clears a reveal when the document changes, so
-  // that on the render a document comes on screen the clear runs first.
-  useEffect(() => {
-    if (!pendingShow) return;
-    if (openDoc?.original !== pendingShow.path) {
-      // Another document came on screen instead: the request is stale.
-      if ((openDoc?.original ?? null) !== pendingShow.since) setPendingShow(null);
-      return;
-    }
-    setPendingShow(null);
-    requestReveal({
-      doc: openDoc.slug,
-      version: openDoc.active,
-      from: pendingShow.from,
-      to: pendingShow.to,
-      ...(pendingShow.heading ? { heading: pendingShow.heading } : {}),
-    });
-  }, [pendingShow, openDoc, requestReveal]);
-
-  // ── following a link to a heading ────────────────────────────────────────
-  // The daemon opened the document and says where the link's heading is in the
-  // version it opened (kit-heading-links-build). The human followed their own
-  // link, so the caret goes to the heading's start, nothing selected, and its
-  // line is marked; a heading not found opens the document at the top, and
-  // says which heading was not there. Shown once the document is on screen, as
-  // a search result is.
-  const openDocRef = useRef(openDoc);
-  openDocRef.current = openDoc;
-  const { onFrame: onDaemonFrame } = daemon;
-  const { announce: announceToast } = toasts;
-  useEffect(
-    () =>
-      onDaemonFrame((frame) => {
-        if (frame.op !== "link.target") return;
-        const f = frame as Extract<ServerOp, { op: "link.target" }>;
-        if (f.state !== "in-context" || !f.heading || f.refused) return;
-        const { found, anchor } = f.heading;
-        if (!found)
-          announceToast(
-            "Heading not found",
-            `No heading “${anchor}” in ${baseName(f.path)}; opened at the top.`,
-          );
-        setPendingShow({
-          path: f.path,
-          from: found?.from ?? 0,
-          to: found?.from ?? 0,
-          ...(found ? { heading: { from: found.from, to: found.to } } : {}),
-          since: openDocRef.current?.original ?? null,
-        });
-      }),
-    [onDaemonFrame, announceToast],
-  );
+  const { setPendingShow, openAt, openResult } = useReveal({
+    daemon,
+    toasts,
+    send,
+    openDoc,
+    requestReveal,
+  });
 
   // ── where the open image is used ────────────────────────────────────────
   // The open image's backlinks (its embeds and the links to it), for the
@@ -727,7 +522,7 @@ function ShellBody({
   // A refusal (the open failed) cancels a reveal that was waiting on it.
   useEffect(() => {
     if (lastError) setPendingShow(null);
-  }, [lastError]);
+  }, [lastError, setPendingShow]);
   // An app that shows refusals in the sidebar's notice keeps them there: one
   // place per refusal, cleared when the human dismisses it. While the context
   // column is collapsed its notice is out of sight, so the refusal is toasted
@@ -919,7 +714,7 @@ function ShellBody({
       const kept = rowsShown(contextEntries, rows);
       return kept.length === rows.length ? rows : kept;
     });
-  }, [contextEntries]);
+  }, [contextEntries, setTreeSelected]);
 
   const contextBody = (
     <ContextSidebar
