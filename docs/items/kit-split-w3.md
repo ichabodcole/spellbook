@@ -4,8 +4,8 @@ title: Move WorkspaceShell's held selection and reveal out, together
 description:
   The held selection and the reveal move to useHeldSelection.ts and useReveal.ts
   in one step, keeping the effect order their comment describes.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-9a59-7302-ba4d-9aed91799269
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
