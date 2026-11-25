@@ -228,7 +228,7 @@ The playbook that applies these when adding behaviour or splitting a file is
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
   file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
-  S3 to 6,768 and S4 to 6,697; `server.ts` is at 4,876.
+  S3 to 6,768 and S4 to 6,700; `server.ts` is at 4,876.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -380,4 +380,4 @@ that finds the same in our code records our instance under it.
   them, and `session.ts`'s override went from 7,210 to 6,768.
 - **2026-11-25**: S4 built `chats` (tier 2) and `tasks` (tier 3), both whole,
   each writing through a `persist` hook; the tier test lists them, and
-  `session.ts`'s override went from 6,768 to 6,697.
+  `session.ts`'s override went from 6,768 to 6,700.

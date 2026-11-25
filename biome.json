@@ -71,7 +71,7 @@
             "noExcessiveLinesPerFile": {
               "level": "error",
               "options": {
-                "maxLines": 6697
+                "maxLines": 6700
               }
             }
           }

@@ -5044,6 +5044,10 @@ export class WorkspaceSession {
 
   // ── tasks ──────────────────────────────────────────────────────────────
 
+  /**
+   * One list, three creators. A task starts `open` (or `running`, when its
+   * creator is already on it) and only ever moves along `TASK_NEXT`.
+   */
   createTask(input: NewTask): Task {
     return this.taskList.createTask(input);
   }
@@ -5052,6 +5056,12 @@ export class WorkspaceSession {
     return this.taskList.task(id);
   }
 
+  /**
+   * Move a task along its transitions. Idempotent on purpose: a task finished
+   * twice (an agent retrying, a human clicking as the agent reports) is not an
+   * error, and refusing would make the surface handle a race it did not cause.
+   * An illegal move (done to running, cancelled to done) is a conflict.
+   */
   transitionTask(
     id: string,
     to: TaskStatus,
@@ -5060,6 +5070,10 @@ export class WorkspaceSession {
     return this.taskList.transitionTask(id, to, patch);
   }
 
+  /**
+   * Set a task's detail without persisting: it rides progress reports, which are
+   * runtime, and is written with the next status change.
+   */
   setTaskDetail(id: string, detail: string): Task {
     return this.taskList.setTaskDetail(id, detail);
   }
