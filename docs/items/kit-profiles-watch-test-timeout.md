@@ -36,3 +36,6 @@ tests item on 2026-10-25 with this one filed rather than fixed.
 - [ ] The cause fixed in the test (or in the code, if a user could see it), with
       no sleeps, skips or longer timeouts.
 - [ ] The file passes `--rerun-each=50` beside a looping full parallel suite.
+
+Recurred 2026-11-24 in one full gate run on `fix/grapevine-hold-has-no-way-out`
+(a slow, 112 s run); the re-run passed.

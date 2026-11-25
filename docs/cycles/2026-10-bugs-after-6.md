@@ -66,7 +66,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 
 **4. The grapevine daemon** (one branch; all in `src/grapevine/backend/cli.ts`):
 
-15. **[item/grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out.md)**
+15. **[item/grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out/item.md)**
 16. **[item/grapevine-stuck-daemon-refusal-gaps](../items/grapevine-stuck-daemon-refusal-gaps.md)**
 17. **[item/grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone.md)**
 18. **[item/grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts.md)**

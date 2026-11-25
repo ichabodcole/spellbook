@@ -55,7 +55,7 @@ no test's expectations changed.
 
 **Fixes alongside** (none touches a file the split moves):
 
-- [grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out.md),
+- [grapevine-hold-has-no-way-out](../items/grapevine-hold-has-no-way-out/item.md),
   [grapevine-paused-daemon-reads-as-gone](../items/grapevine-paused-daemon-reads-as-gone.md),
   [grapevine-small-hint-miscounts](../items/grapevine-small-hint-miscounts.md):
   the grapevine spell, all `ready`.
@@ -78,4 +78,4 @@ _Written at close._
 <!-- One line per branch: `- <type>/<slug> (open)`, then `(landed YYYY-MM-DD)`. -->
 
 - chore/kit-split-g0 (landed 2026-11-24)
-- fix/grapevine-hold-has-no-way-out (open)
+- fix/grapevine-hold-has-no-way-out (landed 2026-11-24)

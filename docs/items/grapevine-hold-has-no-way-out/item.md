@@ -7,7 +7,7 @@ description:
   it, and live tails exit 6 with no tail.* line naming the next act; only stop
   --hold 1 shortens a hold, and nothing says so.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a176ad-1a0d-7549-8367-6ceb7b8419f5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
@@ -31,16 +31,16 @@ Found by the SKILL review and its verifier (2026-10-25), both on scratch homes.
   naming the next act; they don't come back when the hold lapses.
 
 Related:
-[grapevine-stuck-daemon-refusal-gaps](./grapevine-stuck-daemon-refusal-gaps.md).
+[grapevine-stuck-daemon-refusal-gaps](../grapevine-stuck-daemon-refusal-gaps.md).
 
 ## Definition of done
 
-- [ ] `roll` releases an active hold and respawns (or a named verb does), and
+- [x] `roll` releases an active hold and respawns (or a named verb does), and
       the hold's refusal names a verb that works.
-- [ ] A tail that meets a hold prints a `tail.*` handoff line naming how to
+- [x] A tail that meets a hold prints a `tail.*` handoff line naming how to
       resume (`start`, then `--since <last id>`), or waits out the hold.
-- [ ] The SKILL describes the upgrade window as it then behaves.
+- [x] The SKILL describes the upgrade window as it then behaves.
 
 ## Related Documents
 
-- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./_archive/bounty-grapevine-skill-review.md)
+- [Review bounty + grapevine SKILL.md for accuracy and usefulness](../_archive/bounty-grapevine-skill-review.md)
