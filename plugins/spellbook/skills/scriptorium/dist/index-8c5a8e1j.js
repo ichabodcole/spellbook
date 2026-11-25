@@ -12763,7 +12763,7 @@ var __iconNode80 = [
 ];
 var X = createLucideIcon("x", __iconNode80);
 // src/scriptorium/surface/Frame.tsx
-var import_react63 = __toESM(require_react(), 1);
+var import_react65 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
 var React8 = __toESM(require_react(), 1);
@@ -68902,7 +68902,7 @@ function DocumentPane({
 }
 
 // src/kit/shell/WorkspaceShell.tsx
-var import_react59 = __toESM(require_react(), 1);
+var import_react61 = __toESM(require_react(), 1);
 var import_react_dom6 = __toESM(require_react_dom(), 1);
 
 // src/kit/chat/ChatMessageView.tsx
@@ -70143,114 +70143,6 @@ function NotesPanel({
     ]
   });
 }
-
-// src/kit/workspace/waiting.ts
-function askOutstanding(note, chat) {
-  if (note.resolved)
-    return false;
-  let askedAt = Number.NaN;
-  for (let i = chat.length - 1;i >= 0; i--) {
-    const m = chat[i];
-    if (m?.from === "human" && m.via === "ask" && m.about?.noteId === note.id) {
-      askedAt = Date.parse(m.ts);
-      break;
-    }
-  }
-  if (!Number.isFinite(askedAt))
-    return false;
-  for (const w of [note.editedAt, note.reopenedAt])
-    if (w !== undefined && Date.parse(w) > askedAt)
-      return false;
-  for (let i = chat.length - 1;i >= 0; i--) {
-    const m = chat[i];
-    if (m?.from === "agent" && Date.parse(m.ts) > askedAt)
-      return false;
-  }
-  return true;
-}
-
-// src/kit/chat/noteWaiting.ts
-function askedAbout(waiting, docs, chat) {
-  const out = new Set;
-  for (const w of waiting) {
-    const note = docs.find((d) => d.slug === w.doc)?.notes.find((n) => n.id === w.noteId);
-    if (note && askOutstanding(note, chat))
-      out.add(w.noteId);
-  }
-  return out;
-}
-function excerpt(text, max) {
-  const flat = [...text.replace(/\s+/gu, " ").trim()];
-  return flat.length <= max ? flat.join("") : `${flat.slice(0, max - 1).join("").trimEnd()}…`;
-}
-function askAboutNoteText(note, docName) {
-  return `About my note on “${excerpt(note.quote, 60)}” in ${docName}: “${excerpt(note.body, 120)}”`;
-}
-function badgesOn(waiting, doc) {
-  const out = new Map;
-  for (const n of waiting)
-    if (n.doc === doc)
-      out.set(n.noteId, n);
-  return out;
-}
-function loudest(badges) {
-  let got = null;
-  for (const b of badges) {
-    if (b === "stalled")
-      return "stalled";
-    got = "working";
-  }
-  return got;
-}
-function elsewhere(waiting, open) {
-  const by = new Map;
-  for (const n of waiting) {
-    if (n.doc === open)
-      continue;
-    const since = Date.parse(n.since);
-    const got = by.get(n.doc);
-    if (!got)
-      by.set(n.doc, {
-        doc: n.doc,
-        count: 1,
-        badge: n.badge,
-        since,
-        acknowledged: n.acknowledged === true
-      });
-    else {
-      got.count++;
-      if (n.badge === "stalled")
-        got.badge = "stalled";
-      got.since = Math.min(got.since, since);
-    }
-  }
-  return [...by.values()].sort((a, b) => a.since - b.since).map(({ doc, count, badge, acknowledged }) => ({
-    doc,
-    count,
-    badge,
-    ...acknowledged ? { acknowledged: true } : {}
-  }));
-}
-function owedLabel(waiting) {
-  const stuck = waiting.filter((n) => n.badge === "stalled").length;
-  const owed = owedCount(waiting);
-  if (stuck === 0)
-    return owed;
-  if (waiting.length === 1)
-    return `${owed}; it may be stuck`;
-  return `${owed}; ${stuck} may be stuck`;
-}
-function owedSummary(waiting, agentListening, ended = false) {
-  const badge = loudest(waiting.map((n) => n.badge));
-  if (!badge)
-    return null;
-  const shown = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening, ended);
-  return {
-    badge: shown,
-    label: shown === "ended" ? `${owedCount(waiting)}; ${ENDED_LABEL.note}` : shown === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
-  };
-}
-var owedCount = (waiting) => `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
 
 // src/kit/chat/OutsideChangeToasts.tsx
 var import_react35 = __toESM(require_react(), 1);
@@ -74695,12 +74587,6 @@ var THEME_PREPAINT = `(() => {
   document.documentElement.dataset.theme = t;
 })();`;
 
-// src/kit/workspace/anchors.ts
-function quoteLabel(quote, max = 60) {
-  const flat = quote.replace(/\s+/gu, " ").trim();
-  return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
-}
-
 // src/kit/shell/ColumnChrome.tsx
 var import_react45 = __toESM(require_react(), 1);
 var jsx_runtime46 = __toESM(require_jsx_runtime(), 1);
@@ -75618,81 +75504,6 @@ function ImageViewer({
     ]
   });
 }
-
-// src/kit/shell/messageRefs.ts
-var REFS_SENT = 50;
-function messageParts(input) {
-  const docPaths = input.openDoc ? [input.openDoc.original, input.openDoc.path ?? ""] : [];
-  let subject = null;
-  let own = docPaths;
-  const held = [];
-  if (!input.selection && input.pointed.length > 0) {
-    const open = input.pointed.find((p) => p.path === input.openImage || docPaths.includes(p.path));
-    const first = open ?? input.pointed[0];
-    subject = first?.path ?? null;
-    own = subject ? [subject] : [];
-    for (const p of input.pointed)
-      if (p !== first)
-        held.push({
-          path: p.path,
-          name: p.name,
-          from: "pointed",
-          ref: { path: p.path, label: p.name }
-        });
-  } else if (!input.selection && input.openImage) {
-    subject = input.openImage;
-    own = [input.openImage];
-  }
-  for (const r of input.tree)
-    held.push({
-      path: r.path,
-      name: r.name,
-      from: "tree",
-      row: r.row,
-      ref: { path: r.path, label: r.name }
-    });
-  for (const r of input.added)
-    held.push({
-      path: r.path,
-      name: r.label ?? input.nameOf(r.path),
-      ...r.role ? { role: r.role } : {},
-      from: "added",
-      ref: r
-    });
-  const seen = new Set(own.filter((p) => p !== ""));
-  const refs = [];
-  let unsent = 0;
-  for (const h of held) {
-    if (seen.has(h.path))
-      continue;
-    seen.add(h.path);
-    if (refs.length === REFS_SENT)
-      unsent++;
-    else
-      refs.push(h);
-  }
-  return { subject, refs, unsent };
-}
-
-// src/kit/shell/rail.ts
-function lastMessageId(chat) {
-  return chat.at(-1)?.id ?? null;
-}
-function unseenFromAgent(chat, seen) {
-  const from = seen === null ? 0 : chat.findIndex((m) => m.id === seen) + 1;
-  return chat.slice(from).some((m) => m.from === "agent");
-}
-function waitingOnAgent(waiting, notes, agentListening, ended = false) {
-  const message = waiting ? badgeFor(waiting, agentListening, ended) : null;
-  const owed = owedSummary(notes, agentListening, ended);
-  const badges = [message, owed?.badge].filter((b) => b != null);
-  if (badges.length === 0)
-    return null;
-  const badge = LOUDNESS.find((b) => badges.includes(b));
-  const label = [message && `your message: ${labelOf(message)}`, owed?.label].filter(Boolean).join("; ");
-  return { badge, label };
-}
-var LOUDNESS = ["stalled", "unheard", "working", "ended"];
 
 // src/kit/shell/SessionEnd.tsx
 var import_react50 = __toESM(require_react(), 1);
@@ -77847,8 +77658,383 @@ function useReveal({
   return { setPendingShow, openAt, openResult };
 }
 
-// src/kit/shell/useShellColumns.ts
+// src/kit/shell/useRightColumn.ts
 var import_react58 = __toESM(require_react(), 1);
+
+// src/kit/workspace/waiting.ts
+function askOutstanding(note, chat) {
+  if (note.resolved)
+    return false;
+  let askedAt = Number.NaN;
+  for (let i = chat.length - 1;i >= 0; i--) {
+    const m = chat[i];
+    if (m?.from === "human" && m.via === "ask" && m.about?.noteId === note.id) {
+      askedAt = Date.parse(m.ts);
+      break;
+    }
+  }
+  if (!Number.isFinite(askedAt))
+    return false;
+  for (const w of [note.editedAt, note.reopenedAt])
+    if (w !== undefined && Date.parse(w) > askedAt)
+      return false;
+  for (let i = chat.length - 1;i >= 0; i--) {
+    const m = chat[i];
+    if (m?.from === "agent" && Date.parse(m.ts) > askedAt)
+      return false;
+  }
+  return true;
+}
+
+// src/kit/chat/noteWaiting.ts
+function askedAbout(waiting, docs, chat) {
+  const out = new Set;
+  for (const w of waiting) {
+    const note = docs.find((d) => d.slug === w.doc)?.notes.find((n) => n.id === w.noteId);
+    if (note && askOutstanding(note, chat))
+      out.add(w.noteId);
+  }
+  return out;
+}
+function excerpt(text, max) {
+  const flat = [...text.replace(/\s+/gu, " ").trim()];
+  return flat.length <= max ? flat.join("") : `${flat.slice(0, max - 1).join("").trimEnd()}…`;
+}
+function askAboutNoteText(note, docName) {
+  return `About my note on “${excerpt(note.quote, 60)}” in ${docName}: “${excerpt(note.body, 120)}”`;
+}
+function badgesOn(waiting, doc) {
+  const out = new Map;
+  for (const n of waiting)
+    if (n.doc === doc)
+      out.set(n.noteId, n);
+  return out;
+}
+function loudest(badges) {
+  let got = null;
+  for (const b of badges) {
+    if (b === "stalled")
+      return "stalled";
+    got = "working";
+  }
+  return got;
+}
+function elsewhere(waiting, open) {
+  const by = new Map;
+  for (const n of waiting) {
+    if (n.doc === open)
+      continue;
+    const since = Date.parse(n.since);
+    const got = by.get(n.doc);
+    if (!got)
+      by.set(n.doc, {
+        doc: n.doc,
+        count: 1,
+        badge: n.badge,
+        since,
+        acknowledged: n.acknowledged === true
+      });
+    else {
+      got.count++;
+      if (n.badge === "stalled")
+        got.badge = "stalled";
+      got.since = Math.min(got.since, since);
+    }
+  }
+  return [...by.values()].sort((a, b) => a.since - b.since).map(({ doc, count, badge, acknowledged }) => ({
+    doc,
+    count,
+    badge,
+    ...acknowledged ? { acknowledged: true } : {}
+  }));
+}
+function owedLabel(waiting) {
+  const stuck = waiting.filter((n) => n.badge === "stalled").length;
+  const owed = owedCount(waiting);
+  if (stuck === 0)
+    return owed;
+  if (waiting.length === 1)
+    return `${owed}; it may be stuck`;
+  return `${owed}; ${stuck} may be stuck`;
+}
+function owedSummary(waiting, agentListening, ended = false) {
+  const badge = loudest(waiting.map((n) => n.badge));
+  if (!badge)
+    return null;
+  const shown = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening, ended);
+  return {
+    badge: shown,
+    label: shown === "ended" ? `${owedCount(waiting)}; ${ENDED_LABEL.note}` : shown === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
+  };
+}
+var owedCount = (waiting) => `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
+
+// src/kit/workspace/anchors.ts
+function quoteLabel(quote, max = 60) {
+  const flat = quote.replace(/\s+/gu, " ").trim();
+  return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
+}
+
+// src/kit/shell/messageRefs.ts
+var REFS_SENT = 50;
+function messageParts(input) {
+  const docPaths = input.openDoc ? [input.openDoc.original, input.openDoc.path ?? ""] : [];
+  let subject = null;
+  let own = docPaths;
+  const held = [];
+  if (!input.selection && input.pointed.length > 0) {
+    const open = input.pointed.find((p) => p.path === input.openImage || docPaths.includes(p.path));
+    const first = open ?? input.pointed[0];
+    subject = first?.path ?? null;
+    own = subject ? [subject] : [];
+    for (const p of input.pointed)
+      if (p !== first)
+        held.push({
+          path: p.path,
+          name: p.name,
+          from: "pointed",
+          ref: { path: p.path, label: p.name }
+        });
+  } else if (!input.selection && input.openImage) {
+    subject = input.openImage;
+    own = [input.openImage];
+  }
+  for (const r of input.tree)
+    held.push({
+      path: r.path,
+      name: r.name,
+      from: "tree",
+      row: r.row,
+      ref: { path: r.path, label: r.name }
+    });
+  for (const r of input.added)
+    held.push({
+      path: r.path,
+      name: r.label ?? input.nameOf(r.path),
+      ...r.role ? { role: r.role } : {},
+      from: "added",
+      ref: r
+    });
+  const seen = new Set(own.filter((p) => p !== ""));
+  const refs = [];
+  let unsent = 0;
+  for (const h of held) {
+    if (seen.has(h.path))
+      continue;
+    seen.add(h.path);
+    if (refs.length === REFS_SENT)
+      unsent++;
+    else
+      refs.push(h);
+  }
+  return { subject, refs, unsent };
+}
+
+// src/kit/shell/rail.ts
+function lastMessageId(chat) {
+  return chat.at(-1)?.id ?? null;
+}
+function unseenFromAgent(chat, seen) {
+  const from = seen === null ? 0 : chat.findIndex((m) => m.id === seen) + 1;
+  return chat.slice(from).some((m) => m.from === "agent");
+}
+function waitingOnAgent(waiting, notes, agentListening, ended = false) {
+  const message = waiting ? badgeFor(waiting, agentListening, ended) : null;
+  const owed = owedSummary(notes, agentListening, ended);
+  const badges = [message, owed?.badge].filter((b) => b != null);
+  if (badges.length === 0)
+    return null;
+  const badge = LOUDNESS.find((b) => badges.includes(b));
+  const label = [message && `your message: ${labelOf(message)}`, owed?.label].filter(Boolean).join("; ");
+  return { badge, label };
+}
+var LOUDNESS = ["stalled", "unheard", "working", "ended"];
+
+// src/kit/shell/useRightColumn.ts
+function useRightColumn({
+  daemon,
+  state,
+  send,
+  ended,
+  askAboutNotes,
+  draft,
+  setDraft,
+  openDoc,
+  openImage,
+  selection,
+  dropSelection,
+  pointedDocs,
+  pointDocs,
+  treeSelected,
+  setTreeSelected,
+  addedRefs,
+  removeRef,
+  clearRefs
+}) {
+  const notes = openDoc?.notes ?? [];
+  const openNotes = notes.filter((n) => !n.resolved);
+  const tasks = state.tasks;
+  const outstanding = tasks.filter((t) => !isFinishedStatus(t.status));
+  const docName = import_react58.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
+  const pathName = import_react58.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
+  const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
+  const agentListening = state.agentListening !== false;
+  const owedNotes = state.notesWaiting ?? [];
+  const [askPressed, setAskPressed] = import_react58.useState(() => new Map);
+  const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
+  if (daemon.connection === "open") {
+    for (const [id, at] of askPressed)
+      if (at === state.chat.length)
+        notesAsked.add(id);
+  }
+  const notesWaiting = notesAsked.size === 0 ? owedNotes : owedNotes.map((n) => notesAsked.has(n.noteId) && state.waiting ? {
+    ...n,
+    badge: state.waiting.badge,
+    ...state.waiting.acknowledged ? { acknowledged: true } : {}
+  } : n);
+  const askNote = askAboutNotes ? (doc, noteId) => {
+    if (notesAsked.has(noteId))
+      return;
+    const note = state.docs.find((d) => d.slug === doc)?.notes.find((n) => n.id === noteId);
+    if (!note)
+      return;
+    const name = docName(doc);
+    const text = typeof askAboutNotes === "function" ? askAboutNotes(note, name) : askAboutNoteText(note, name);
+    const sent = send({ op: "say", text, withSelection: false, via: "ask", about: { noteId } });
+    if (sent !== null)
+      setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
+  } : undefined;
+  const noteReplies = import_react58.useMemo(() => repliesByNote(state.chat), [state.chat]);
+  const noteName = (noteId) => {
+    for (const d of state.docs) {
+      const n = d.notes.find((x) => x.id === noteId);
+      if (n)
+        return `note on ${docName(d.slug)}: "${quoteLabel(n.quote, 40)}"`;
+    }
+    return;
+  };
+  const followChatLink = (target) => send({
+    op: "link.open",
+    target,
+    from: "chat",
+    ...openDoc ? { doc: openDoc.slug } : {}
+  });
+  const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
+  const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
+    ...o,
+    name: docName(o.doc)
+  }));
+  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
+  const attachable = heldHere ? {
+    doc: heldHere.doc,
+    name: docName(heldHere.doc),
+    version: heldHere.version,
+    fromLine: heldHere.fromLine,
+    toLine: heldHere.toLine,
+    text: heldHere.text
+  } : null;
+  const pointedNames = pointedDocs ? pointedDocs.docs.map((d) => d.name) : null;
+  const pointedLabel = pointedDocs?.label ?? null;
+  const dropPointed = () => pointDocs(null);
+  const activePath = openDoc?.versions.find((v) => v.n === openDoc.active)?.path;
+  const treeRefs = import_react58.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
+  const parts = messageParts({
+    selection: attachable !== null && !pointedDocs,
+    pointed: pointedDocs?.inAppPart ? [] : pointedDocs?.docs ?? [],
+    openDoc: openDoc ? { original: openDoc.original, ...activePath ? { path: activePath } : {} } : null,
+    openImage: openImage?.path ?? null,
+    tree: treeRefs,
+    added: addedRefs,
+    nameOf: pathName
+  });
+  const dropRef = (path) => {
+    const rows = new Set(treeRefs.filter((r) => r.path === path).map((r) => r.row));
+    if (rows.size > 0)
+      setTreeSelected((s) => s.filter((p) => !rows.has(p)));
+    removeRef(path);
+    if (pointedDocs?.docs.some((d) => d.path === path))
+      pointDocs({ ...pointedDocs, docs: pointedDocs.docs.filter((d) => d.path !== path) });
+  };
+  const say = (text, withSelection) => {
+    const about = {
+      ...parts.subject && !(withSelection && !pointedDocs) ? { path: parts.subject } : {},
+      ...parts.refs.length > 0 ? { refs: parts.refs.map((r) => r.ref) } : {}
+    };
+    const sent = send({
+      op: "say",
+      text,
+      withSelection: withSelection && !pointedDocs,
+      via: "chat",
+      ...Object.keys(about).length > 0 ? { about } : {}
+    });
+    if (sent !== null)
+      clearRefs();
+  };
+  const composerProps = {
+    attachable,
+    connected: daemon.connection === "open",
+    heard: agentListening,
+    ended: daemon.connection === "ended",
+    draft,
+    onDraft: setDraft,
+    onDrop: dropSelection,
+    pointed: pointedNames,
+    pointedLabel,
+    onDropPointed: dropPointed,
+    refs: parts.refs.map((r) => ({
+      path: r.path,
+      name: r.name,
+      role: r.role ?? "reference",
+      from: r.from
+    })),
+    refsUnsent: parts.unsent,
+    onDropRef: dropRef,
+    onSend: say
+  };
+  return {
+    notes,
+    openNotes,
+    tasks,
+    outstanding,
+    docName,
+    pathName,
+    heldHere,
+    agentListening,
+    notesAsked,
+    notesWaiting,
+    askNote,
+    noteReplies,
+    noteName,
+    followChatLink,
+    noteBadges,
+    notesElsewhere,
+    notesOwed,
+    composerWaiting,
+    composerProps
+  };
+}
+
+// src/kit/shell/useRightTab.ts
+var import_react59 = __toESM(require_react(), 1);
+function useRightTab({
+  storage,
+  tabs,
+  showChatTab
+}) {
+  const TAB_KEY = "tab";
+  const [panelId, setPanelIdState] = import_react59.useState(() => storage.getItem(TAB_KEY));
+  const setPanelId = (id) => {
+    setPanelIdState(id);
+    storage.setItem(TAB_KEY, id);
+  };
+  const activePanel = tabs.find((p) => p.id === panelId) ?? tabs[0];
+  showChatTab.current = () => setPanelId("chat");
+  return { setPanelId, activePanel };
+}
+
+// src/kit/shell/useShellColumns.ts
+var import_react60 = __toESM(require_react(), 1);
 var PANES = ["context", "centre", "chat"];
 var HANDLE_REACH = 6;
 function useShellColumns({
@@ -77856,25 +78042,25 @@ function useShellColumns({
   storageKey,
   state
 }) {
-  const storage = import_react58.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layoutStorage = import_react58.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const storage = import_react60.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
+  const layoutStorage = import_react60.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
   const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
-  const [collapsed, setCollapsed] = import_react58.useState(() => collapsedSides(layout.defaultLayout));
-  const collapsedRef = import_react58.useRef(collapsed);
+  const [collapsed, setCollapsed] = import_react60.useState(() => collapsedSides(layout.defaultLayout));
+  const collapsedRef = import_react60.useRef(collapsed);
   collapsedRef.current = collapsed;
-  const reopening = import_react58.useRef(new Set);
-  const openSizesRef = import_react58.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
+  const reopening = import_react60.useRef(new Set);
+  const openSizesRef = import_react60.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
   const contextPanel = fn();
   const chatPanel = fn();
-  const panelFor = import_react58.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
-  const collapse = import_react58.useCallback((side) => {
+  const panelFor = import_react60.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
+  const collapse = import_react60.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel || panel.isCollapsed())
       return false;
     panel.collapse();
     return true;
   }, [panelFor]);
-  const expand = import_react58.useCallback((side) => {
+  const expand = import_react60.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel?.isCollapsed())
       return false;
@@ -77919,12 +78105,12 @@ function useShellColumns({
     else
       collapse(side);
   };
-  const focusNext = import_react58.useRef(null);
-  const toggleFrom = import_react58.useCallback((side, act, then) => {
+  const focusNext = import_react60.useRef(null);
+  const toggleFrom = import_react60.useCallback((side, act, then) => {
     const acted = act === "collapse" ? collapse(side) : expand(side);
     focusNext.current = acted ? then ?? `[data-column-control="${side}-${act === "collapse" ? "reopen" : "collapse"}"]` : null;
   }, [collapse, expand]);
-  import_react58.useEffect(() => {
+  import_react60.useEffect(() => {
     const sel = focusNext.current;
     if (!sel)
       return;
@@ -77934,7 +78120,7 @@ function useShellColumns({
     focusNext.current = null;
     el.focus();
   });
-  const onLayoutChanged = import_react58.useCallback((next, meta) => {
+  const onLayoutChanged = import_react60.useCallback((next, meta) => {
     layout.onLayoutChanged(next, meta);
     const panels = { context: contextPanel.current, chat: chatPanel.current };
     const now = collapsedFrom(next, panels);
@@ -77954,17 +78140,17 @@ function useShellColumns({
       storage.setItem(OPEN_KEY, encodeOpenSizes(remembered));
     }
   }, [layout, storage, contextPanel, chatPanel]);
-  const columns = import_react58.useMemo(() => ({
+  const columns = import_react60.useMemo(() => ({
     collapsed: { context: collapsed.context, chat: collapsed.chat },
     collapse: (side) => void collapse(side),
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
-  const [quietWanted, setQuiet] = import_react58.useState(false);
+  const [quietWanted, setQuiet] = import_react60.useState(false);
   const quiet = quietWanted && !state.openImage;
   const fade = quiet ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
-  const [seenMessage, setSeenMessage] = import_react58.useState(newestMessage);
-  import_react58.useEffect(() => {
+  const [seenMessage, setSeenMessage] = import_react60.useState(newestMessage);
+  import_react60.useEffect(() => {
     if (!collapsed.chat && seenMessage !== newestMessage)
       setSeenMessage(newestMessage);
   }, [collapsed.chat, newestMessage, seenMessage]);
@@ -78071,31 +78257,31 @@ function ShellBody({
   const { send } = daemon;
   const toasts = useToastStore();
   const restoreCommand = `${state.launcher ? `${state.launcher} ` : ""}open --restore ${state.sessionId}`;
-  const [endPhase, setEndPhase] = import_react59.useState(null);
+  const [endPhase, setEndPhase] = import_react61.useState(null);
   const ended = daemon.connection === "ended";
-  const endedBefore = import_react59.useRef(ended);
-  import_react59.useEffect(() => {
+  const endedBefore = import_react61.useRef(ended);
+  import_react61.useEffect(() => {
     if (ended && !endedBefore.current)
       setEndPhase("ended");
     endedBefore.current = ended;
   }, [ended]);
-  const [endNotice, setEndNotice] = import_react59.useState(null);
-  import_react59.useEffect(() => {
+  const [endNotice, setEndNotice] = import_react61.useState(null);
+  import_react61.useEffect(() => {
     if (endPhase === "ending" && daemon.connection !== "open" && !ended) {
       setEndPhase("confirm");
       setEndNotice(UNREACHABLE);
     }
   }, [endPhase, daemon.connection, ended]);
-  const chipRef = import_react59.useRef(null);
-  const [settingsOpen, setSettingsOpen] = import_react59.useState(false);
-  const [theme, setThemeState] = import_react59.useState(() => readAppliedTheme());
-  const setTheme = import_react59.useCallback((next) => {
+  const chipRef = import_react61.useRef(null);
+  const [settingsOpen, setSettingsOpen] = import_react61.useState(false);
+  const [theme, setThemeState] = import_react61.useState(() => readAppliedTheme());
+  const setTheme = import_react61.useCallback((next) => {
     applyTheme(next);
     setThemeState(next);
     storageProp?.setItem(THEME_KEY, next);
   }, [storageProp]);
   const themeKept = keptTheme(storageProp?.getItem(THEME_KEY));
-  import_react59.useEffect(() => {
+  import_react61.useEffect(() => {
     if (themeKept && themeKept !== readAppliedTheme()) {
       applyTheme(themeKept);
       setThemeState(themeKept);
@@ -78121,20 +78307,20 @@ function ShellBody({
     fade,
     chatUnseen
   } = useShellColumns({ storageProp, storageKey, state });
-  const [draft, setDraft] = import_react59.useState("");
-  const [floatClosed, setFloatClosedState] = import_react59.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
-  const setFloatClosed = import_react59.useCallback((closed) => {
+  const [draft, setDraft] = import_react61.useState("");
+  const [floatClosed, setFloatClosedState] = import_react61.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
+  const setFloatClosed = import_react61.useCallback((closed) => {
     setFloatClosedState(closed);
     storage.setItem(FLOAT_KEY, encodeFloatClosed(closed));
   }, [storage]);
-  const chatWasCollapsed = import_react59.useRef(collapsed.chat);
-  import_react59.useEffect(() => {
+  const chatWasCollapsed = import_react61.useRef(collapsed.chat);
+  import_react61.useEffect(() => {
     if (chatWasCollapsed.current && !collapsed.chat && floatClosed)
       setFloatClosed(false);
     chatWasCollapsed.current = collapsed.chat;
   }, [collapsed.chat, floatClosed, setFloatClosed]);
   const floating = floatShown(collapsed, floatClosed);
-  const [dock, setDock] = import_react59.useState(null);
+  const [dock, setDock] = import_react61.useState(null);
   const floatIcon = floatOnRail(collapsed, floatClosed);
   const sessionLabel = `session ${state.sessionId}${daemon.connection === "ended" ? " (ended)" : ""}`;
   const { focusPane, showChatTab, focusComposer, rootRef } = usePaneKeys({
@@ -78177,10 +78363,10 @@ function ShellBody({
     openDoc,
     requestReveal
   });
-  const [imageLinks, setImageLinks] = import_react59.useState(null);
+  const [imageLinks, setImageLinks] = import_react61.useState(null);
   const openImagePath = openImage?.path ?? null;
   const { request } = daemon;
-  import_react59.useEffect(() => {
+  import_react61.useEffect(() => {
     if (openImagePath === null) {
       setImageLinks(null);
       return;
@@ -78209,7 +78395,7 @@ function ShellBody({
     collapsedRef,
     collapsed
   });
-  const workspace = import_react59.useMemo(() => ({
+  const workspace = import_react61.useMemo(() => ({
     daemon,
     state,
     openDoc,
@@ -78278,7 +78464,7 @@ function ShellBody({
   } : null;
   const userHome = state.userHome || null;
   const contextEntries = state.context;
-  const askDescribe = import_react59.useCallback((path) => {
+  const askDescribe = import_react61.useCallback((path) => {
     const set = contextEntries.find((e) => e.membership === "mirrored" && path.startsWith(`${e.root}/`));
     const shown = set ? `${set.label}/${path.slice(set.root.length + 1)}` : tildify(path, userHome);
     send({
@@ -78289,7 +78475,7 @@ function ShellBody({
       about: { path }
     });
   }, [send, userHome, contextEntries]);
-  import_react59.useEffect(() => {
+  import_react61.useEffect(() => {
     setTreeSelected((rows) => {
       if (rows.length === 0)
         return rows;
@@ -78359,127 +78545,46 @@ function ShellBody({
     notice,
     onDismissNotice
   });
-  const notes = openDoc?.notes ?? [];
-  const openNotes = notes.filter((n) => !n.resolved);
-  const tasks = state.tasks;
-  const outstanding = tasks.filter((t) => !isFinishedStatus(t.status));
-  const docName = import_react59.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
-  const pathName = import_react59.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
-  const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
-  const agentListening = state.agentListening !== false;
-  const owedNotes = state.notesWaiting ?? [];
-  const [askPressed, setAskPressed] = import_react59.useState(() => new Map);
-  const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
-  if (daemon.connection === "open") {
-    for (const [id, at] of askPressed)
-      if (at === state.chat.length)
-        notesAsked.add(id);
-  }
-  const notesWaiting = notesAsked.size === 0 ? owedNotes : owedNotes.map((n) => notesAsked.has(n.noteId) && state.waiting ? {
-    ...n,
-    badge: state.waiting.badge,
-    ...state.waiting.acknowledged ? { acknowledged: true } : {}
-  } : n);
-  const askNote = askAboutNotes ? (doc, noteId) => {
-    if (notesAsked.has(noteId))
-      return;
-    const note = state.docs.find((d) => d.slug === doc)?.notes.find((n) => n.id === noteId);
-    if (!note)
-      return;
-    const name = docName(doc);
-    const text = typeof askAboutNotes === "function" ? askAboutNotes(note, name) : askAboutNoteText(note, name);
-    const sent = send({ op: "say", text, withSelection: false, via: "ask", about: { noteId } });
-    if (sent !== null)
-      setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
-  } : undefined;
-  const noteReplies = import_react59.useMemo(() => repliesByNote(state.chat), [state.chat]);
-  const noteName = (noteId) => {
-    for (const d of state.docs) {
-      const n = d.notes.find((x) => x.id === noteId);
-      if (n)
-        return `note on ${docName(d.slug)}: "${quoteLabel(n.quote, 40)}"`;
-    }
-    return;
-  };
-  const followChatLink = (target) => send({
-    op: "link.open",
-    target,
-    from: "chat",
-    ...openDoc ? { doc: openDoc.slug } : {}
-  });
-  const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
-  const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
-    ...o,
-    name: docName(o.doc)
-  }));
-  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
-  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
-  const attachable = heldHere ? {
-    doc: heldHere.doc,
-    name: docName(heldHere.doc),
-    version: heldHere.version,
-    fromLine: heldHere.fromLine,
-    toLine: heldHere.toLine,
-    text: heldHere.text
-  } : null;
-  const pointedNames = pointedDocs ? pointedDocs.docs.map((d) => d.name) : null;
-  const pointedLabel = pointedDocs?.label ?? null;
-  const dropPointed = () => pointDocs(null);
-  const activePath = openDoc?.versions.find((v) => v.n === openDoc.active)?.path;
-  const treeRefs = import_react59.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
-  const parts = messageParts({
-    selection: attachable !== null && !pointedDocs,
-    pointed: pointedDocs?.inAppPart ? [] : pointedDocs?.docs ?? [],
-    openDoc: openDoc ? { original: openDoc.original, ...activePath ? { path: activePath } : {} } : null,
-    openImage: openImage?.path ?? null,
-    tree: treeRefs,
-    added: addedRefs,
-    nameOf: pathName
-  });
-  const dropRef = (path) => {
-    const rows = new Set(treeRefs.filter((r) => r.path === path).map((r) => r.row));
-    if (rows.size > 0)
-      setTreeSelected((s) => s.filter((p) => !rows.has(p)));
-    removeRef(path);
-    if (pointedDocs?.docs.some((d) => d.path === path))
-      pointDocs({ ...pointedDocs, docs: pointedDocs.docs.filter((d) => d.path !== path) });
-  };
-  const say = (text, withSelection) => {
-    const about = {
-      ...parts.subject && !(withSelection && !pointedDocs) ? { path: parts.subject } : {},
-      ...parts.refs.length > 0 ? { refs: parts.refs.map((r) => r.ref) } : {}
-    };
-    const sent = send({
-      op: "say",
-      text,
-      withSelection: withSelection && !pointedDocs,
-      via: "chat",
-      ...Object.keys(about).length > 0 ? { about } : {}
-    });
-    if (sent !== null)
-      clearRefs();
-  };
-  const composerProps = {
-    attachable,
-    connected: daemon.connection === "open",
-    heard: agentListening,
-    ended: daemon.connection === "ended",
+  const {
+    notes,
+    openNotes,
+    tasks,
+    outstanding,
+    docName,
+    pathName,
+    heldHere,
+    agentListening,
+    notesAsked,
+    notesWaiting,
+    askNote,
+    noteReplies,
+    noteName,
+    followChatLink,
+    noteBadges,
+    notesElsewhere,
+    notesOwed,
+    composerWaiting,
+    composerProps
+  } = useRightColumn({
+    daemon,
+    state,
+    send,
+    ended,
+    askAboutNotes,
     draft,
-    onDraft: setDraft,
-    onDrop: dropSelection,
-    pointed: pointedNames,
-    pointedLabel,
-    onDropPointed: dropPointed,
-    refs: parts.refs.map((r) => ({
-      path: r.path,
-      name: r.name,
-      role: r.role ?? "reference",
-      from: r.from
-    })),
-    refsUnsent: parts.unsent,
-    onDropRef: dropRef,
-    onSend: say
-  };
+    setDraft,
+    openDoc,
+    openImage,
+    selection,
+    dropSelection,
+    pointedDocs,
+    pointDocs,
+    treeSelected,
+    setTreeSelected,
+    addedRefs,
+    removeRef,
+    clearRefs
+  });
   const chatPanel_ = /* @__PURE__ */ jsx_runtime57.jsx(ChatSidebar, {
     messages: state.chat,
     waiting: state.waiting,
@@ -78601,14 +78706,7 @@ function ShellBody({
     },
     ...panels
   ];
-  const TAB_KEY = "tab";
-  const [panelId, setPanelIdState] = import_react59.useState(() => storage.getItem(TAB_KEY));
-  const setPanelId = (id) => {
-    setPanelIdState(id);
-    storage.setItem(TAB_KEY, id);
-  };
-  const activePanel = tabs.find((p) => p.id === panelId) ?? tabs[0];
-  showChatTab.current = () => setPanelId("chat");
+  const { setPanelId, activePanel } = useRightTab({ storage, tabs, showChatTab });
   const floatRow = floating && /* @__PURE__ */ jsx_runtime57.jsx("div", {
     className: "shrink-0 px-3 pt-1 pb-2",
     children: /* @__PURE__ */ jsx_runtime57.jsx(FloatingComposer, {
@@ -79190,10 +79288,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
 }
 
 // src/scriptorium/surface/useMapView.tsx
-var import_react62 = __toESM(require_react(), 1);
+var import_react64 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/MapView.tsx
-var import_react61 = __toESM(require_react(), 1);
+var import_react63 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -80167,14 +80265,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/forceLayout.ts
-var import_react60 = __toESM(require_react(), 1);
+var import_react62 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size, enabled) {
-  const [positions, setPositions] = import_react60.useState(new Map);
-  const sim = import_react60.useRef(null);
-  const bodies = import_react60.useRef(new Map);
-  const [dragging, setDragging] = import_react60.useState(null);
-  import_react60.useEffect(() => {
+  const [positions, setPositions] = import_react62.useState(new Map);
+  const sim = import_react62.useRef(null);
+  const bodies = import_react62.useRef(new Map);
+  const [dragging, setDragging] = import_react62.useState(null);
+  import_react62.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -80197,7 +80295,7 @@ function useForceLayout(nodes, edges, size, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size.width, size.height, enabled]);
-  const onDragStart = import_react60.useCallback((path, at) => {
+  const onDragStart = import_react62.useCallback((path, at) => {
     const body = bodies.current.get(path);
     if (!body)
       return;
@@ -80206,7 +80304,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fy = at.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react60.useCallback((at) => {
+  const onDragMove = import_react62.useCallback((at) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -80215,7 +80313,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fx = at.x;
     body.fy = at.y;
   }, [dragging]);
-  const onDragEnd = import_react60.useCallback(() => {
+  const onDragEnd = import_react62.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -80291,10 +80389,10 @@ function MapView({
   onOpenDoc,
   onClose
 }) {
-  const root = import_react61.useRef(null);
-  const close = import_react61.useRef(onClose);
+  const root = import_react63.useRef(null);
+  const close = import_react63.useRef(onClose);
   close.current = onClose;
-  import_react61.useEffect(() => {
+  import_react63.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape" || e.defaultPrevented)
         return;
@@ -80309,15 +80407,15 @@ function MapView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [hover, setHover] = import_react61.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react61.useState(null);
-  const { placed, width, height, headings } = import_react61.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
-  const at = import_react61.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react61.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
+  const [hover, setHover] = import_react63.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react63.useState(null);
+  const { placed, width, height, headings } = import_react63.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at = import_react63.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react63.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
   const links = drawn.reduce((sum, e) => sum + e.count, 0);
   const dense = links > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react61.useMemo(() => {
+  const connected = import_react63.useMemo(() => {
     if (!hover)
       return null;
     const set = new Set([hover]);
@@ -80331,7 +80429,7 @@ function MapView({
   }, [hover, drawn]);
   const lit = (path) => connected === null || connected.has(path);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react61.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react61.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  const force = useForceLayout(import_react63.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react63.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
   return /* @__PURE__ */ jsx_runtime59.jsxs("div", {
     ref: root,
     "data-slot": "map",
@@ -80592,7 +80690,7 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react61.useRef(null);
+  const svg = import_react63.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at = (e) => {
     const box = svg.current?.getBoundingClientRect();
@@ -80740,12 +80838,12 @@ var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
 var messageOf = (e) => e instanceof Error ? e.message : String(e);
 function useMapView(daemon) {
-  const [showing, setShowing] = import_react62.useState(null);
-  const [active, setActive] = import_react62.useState(false);
-  const [mode, setMode] = import_react62.useState("columns");
+  const [showing, setShowing] = import_react64.useState(null);
+  const [active, setActive] = import_react64.useState(false);
+  const [mode, setMode] = import_react64.useState("columns");
   const { request, send, state } = daemon;
-  const asked = import_react62.useRef(0);
-  const fetch2 = import_react62.useCallback((entry) => {
+  const asked = import_react64.useRef(0);
+  const fetch2 = import_react64.useCallback((entry) => {
     const seq = ++asked.current;
     setShowing({ entryId: entry.id, graph: null });
     const keep = (next) => {
@@ -80759,18 +80857,18 @@ function useMapView(daemon) {
   }, [request]);
   const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
   const gone = showing !== null && state !== null && entry === undefined;
-  import_react62.useEffect(() => {
+  import_react64.useEffect(() => {
     if (!gone)
       return;
     asked.current++;
     setShowing(null);
     setActive(false);
   }, [gone]);
-  const show = import_react62.useCallback((e) => {
+  const show = import_react64.useCallback((e) => {
     fetch2(e);
     setActive(true);
   }, [fetch2]);
-  const appView = import_react62.useMemo(() => {
+  const appView = import_react64.useMemo(() => {
     if (!showing || !entry)
       return;
     return {
@@ -80800,7 +80898,7 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react62.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
+  const menuActions = import_react64.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
     {
       id: MAP_VIEW,
       label: MAP_LABEL,
@@ -80910,18 +81008,18 @@ function scriptoriumEndWarning(state) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const prefs = import_react63.useRef(state?.prefs ?? NO_PREFS);
+  const prefs = import_react65.useRef(state?.prefs ?? NO_PREFS);
   prefs.current = state?.prefs ?? NO_PREFS;
-  const connection = import_react63.useRef(daemon.connection);
+  const connection = import_react65.useRef(daemon.connection);
   connection.current = daemon.connection;
-  const sendRef = import_react63.useRef(send);
+  const sendRef = import_react65.useRef(send);
   sendRef.current = send;
-  const storage = import_react63.useMemo(() => prefsStorage({
+  const storage = import_react65.useMemo(() => prefsStorage({
     read: () => prefs.current,
     write: (key, value) => sendRef.current({ op: "prefs.set", key, value }),
     ended: () => connection.current === "ended"
   }), []);
-  import_react63.useEffect(() => {
+  import_react65.useEffect(() => {
     const flush = () => storage.flush();
     window.addEventListener("pagehide", flush);
     return () => {
@@ -80929,15 +81027,15 @@ function Frame({ daemon }) {
       flush();
     };
   }, [storage]);
-  const hints = import_react63.useRef(new Map);
-  import_react63.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react65.useRef(new Map);
+  import_react65.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react63.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react65.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
   const noBlock = noFrontmatterOf(state);
-  const textOffer = import_react63.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
+  const textOffer = import_react65.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -80948,12 +81046,12 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react63.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react65.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map = useMapView(daemon);
   const hidden = state ? hiddenOf(state) : null;
-  const menuActions = import_react63.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
-  const [showDiff, setShowDiff] = import_react63.useState(null);
-  const requestDiff = import_react63.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
+  const menuActions = import_react65.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
+  const [showDiff, setShowDiff] = import_react65.useState(null);
+  const requestDiff = import_react65.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
   return /* @__PURE__ */ jsx_runtime61.jsx(WorkspaceShell, {
     daemon,
