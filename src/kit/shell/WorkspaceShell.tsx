@@ -36,24 +36,13 @@
 // It is a subpath of its own (`kit/shell`) because composing `context` and
 // `chat` is its whole job, which `ui` must not do.
 
-import {
-  MessageSquareIcon,
-  MoonIcon,
-  PanelLeftCloseIcon,
-  PanelLeftOpenIcon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
-  PowerIcon,
-  SettingsIcon,
-  SunIcon,
-} from "lucide-react";
+import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -121,9 +110,6 @@ import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
-  DisabledReason,
-  Dot,
-  disabledReasonProps,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -147,6 +133,8 @@ import type {
   ServerOp,
   TrashPreview,
 } from "../workspace/protocol";
+import { ChatColumn } from "./ChatColumn.tsx";
+import { COLUMN_INPUT, ColumnButton, FLOAT_INPUT, Rail } from "./ColumnChrome.tsx";
 import {
   type Collapsed,
   collapsedFrom,
@@ -170,13 +158,13 @@ import {
 import { ImageDescriptionPanel } from "./ImageDescription.tsx";
 import { ImageLinkedFrom } from "./ImageLinkedFrom.tsx";
 import { ImageViewer } from "./ImageViewer.tsx";
-import { LinkCheck } from "./LinkCheck.tsx";
 import { messageParts } from "./messageRefs.ts";
 import { lastMessageId, unseenFromAgent, waitingOnAgent } from "./rail.ts";
-import { SearchBox } from "./SearchBox.tsx";
-import { EndedChip, type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
+import { type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
+import { StatusBar } from "./StatusBar.tsx";
 import { keptTheme, localShellStorage, type ShellStorage, THEME_KEY } from "./storage.ts";
+import { TopBar } from "./TopBar.tsx";
 
 /** A tab an app adds to the right column. */
 export type ShellPanel = { id: string; label: string; node: ReactNode };
@@ -288,120 +276,7 @@ const HANDLE_REACH = 6;
 const UNREACHABLE =
   "The workspace daemon is not answering, so the session cannot be ended from here. Try again once it is back.";
 
-const CONNECTION_LABEL = {
-  connecting: "connecting…",
-  open: "connected",
-  closed: "daemon unreachable, retrying",
-  ended: "session ended",
-} as const;
-
-/** The connection mark's tooltip: what the dot is about, which is this page only. */
-const CONNECTION_TITLE = {
-  connecting: "This page is connecting to the session",
-  open: "This page is connected to the session. Whether an agent is listening shows beside it.",
-  closed: "This page cannot reach the session's daemon, and keeps trying",
-  ended: "The session has ended",
-} as const;
-
-/** The agent's mark: derived by the daemon from the agent's attached tails. */
-const PRESENCE = {
-  listening: {
-    label: "agent listening",
-    title: "An agent is following this session's events, so what you send is heard",
-  },
-  absent: {
-    label: "no agent listening",
-    title: "No agent is following this session's events, so what you send waits until one does",
-  },
-} as const;
-
-/** The floating composer's input, and the column's: where focus is handed. */
-const FLOAT_INPUT = '[data-slot="floating-composer"] [data-slot="composer-input"]';
-const COLUMN_INPUT = '[data-pane="chat"] [data-slot="composer-input"]';
-
-/** A small icon button for a column's own chrome: collapse, reopen. */
-function ColumnButton({
-  label,
-  onClick,
-  control,
-  disabled,
-  disabledReason,
-  className,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  /**
-   * Why it is off, when `disabled`: it then stays focusable, with this as its
-   * description and tooltip (`disabledReason.tsx`), rather than leaving the
-   * tab order with nothing said.
-   */
-  disabledReason?: string;
-  /** Names the control so focus can be handed to it when its twin goes away. */
-  control?: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  const whyId = useId();
-  const why = disabled ? disabledReason : undefined;
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          if (!why) onClick();
-        }}
-        disabled={disabled && !why}
-        {...disabledReasonProps(why, whyId)}
-        data-column-control={control}
-        aria-label={label}
-        title={why ?? label}
-        className={cn(
-          "flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40 aria-disabled:opacity-40 aria-disabled:cursor-not-allowed [&_svg]:size-3.5",
-          className,
-        )}
-      >
-        {children}
-      </button>
-      <DisabledReason reason={why} id={whyId} />
-    </>
-  );
-}
-
-/** Why End session and Settings are off while the daemon is not answering. */
-export const NOT_CONNECTED_REASON =
-  "Not connected to the workspace daemon: this waits until it answers again";
-
-/**
- * A collapsed column's rail: the reopen button alone, on a row as tall as the pane
- * headings beside it, so the icons line up across the window. The column's body
- * stays mounted (hidden and inert) beside it.
- */
-function Rail({
-  quiet,
-  below,
-  children,
-}: {
-  quiet: boolean;
-  /** Under the button, centred on the rail: a mark asking for attention. */
-  below?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div data-slot="column-rail" className="flex min-h-0 flex-1 flex-col">
-      <div
-        className={cn(
-          "flex h-9 shrink-0 items-center justify-center border-b",
-          quiet ? `${QUIET_GROUP} border-transparent` : "border-edge",
-        )}
-      >
-        {children}
-      </div>
-      {below && <div className="flex shrink-0 justify-center">{below}</div>}
-    </div>
-  );
-}
+export { NOT_CONNECTED_REASON } from "./TopBar.tsx";
 
 /**
  * The pinned control never clips: at the narrowest width the layout allows, the
@@ -1801,83 +1676,21 @@ function ShellBody({
         data-theme={theme}
         className="flex h-full min-h-0 flex-col bg-bg text-ink"
       >
-        {/* THE TOP BAR, across the window: which app and which session, search over
-            every document in the session, and what acts on the session itself.
-            Three columns, the outer two equal while their content fits, so search
-            is centred against the WINDOW rather than drifting with the title's
-            length. Search gives way as the window narrows, down to its icon, and
-            the session id is dropped before anything clips. Quieter in reader
-            mode, like the rest of the chrome. */}
-        <header
-          data-slot="shell-top-bar"
-          className={cn(
-            "@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3",
-            quiet ? `${QUIET_GROUP} border-transparent` : "border-edge",
-          )}
-        >
-          <div className="flex min-w-0 items-baseline gap-2">
-            {/* The id hides on a narrow bar, so the title carries it as a tooltip. */}
-            <span
-              data-slot="app-title"
-              title={sessionLabel}
-              className={cn("text-sm font-medium text-ink", fade)}
-            >
-              {state.appTitle ?? state.app}
-            </span>
-            {/* Ended is news, so it is never faded, like the status bar's mark. */}
-            <span
-              data-slot="session-id"
-              className={cn(
-                "hidden font-mono text-xs @[34rem]:inline",
-                daemon.connection === "ended" ? "text-ink-dim" : "text-ink-faint",
-                daemon.connection !== "ended" && fade,
-              )}
-            >
-              {sessionLabel}
-            </span>
-          </div>
-          <div className="flex min-w-0 justify-center">
-            <SearchBox
-              request={daemon.request}
-              connected={daemon.connection === "open"}
-              onOpen={openResult}
-              className={fade}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-1">
-            {ended ? (
-              <EndedChip command={restoreCommand} by={daemon.endedBy} chipRef={chipRef} />
-            ) : (
-              <ColumnButton
-                label="End session"
-                control="end-session"
-                onClick={() => setEndPhase("confirm")}
-                disabled={daemon.connection !== "open"}
-                disabledReason={NOT_CONNECTED_REASON}
-                className={fade}
-              >
-                <PowerIcon aria-hidden />
-              </ColumnButton>
-            )}
-            <ColumnButton
-              label="Settings"
-              control="settings"
-              onClick={() => setSettingsOpen(true)}
-              disabled={daemon.connection !== "open"}
-              disabledReason={NOT_CONNECTED_REASON}
-              className={fade}
-            >
-              <SettingsIcon aria-hidden />
-            </ColumnButton>
-            <ColumnButton
-              label={theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className={fade}
-            >
-              {theme === "dark" ? <SunIcon aria-hidden /> : <MoonIcon aria-hidden />}
-            </ColumnButton>
-          </div>
-        </header>
+        <TopBar
+          daemon={daemon}
+          state={state}
+          quiet={quiet}
+          fade={fade}
+          sessionLabel={sessionLabel}
+          openResult={openResult}
+          ended={ended}
+          restoreCommand={restoreCommand}
+          chipRef={chipRef}
+          setEndPhase={setEndPhase}
+          setSettingsOpen={setSettingsOpen}
+          theme={theme}
+          setTheme={setTheme}
+        />
         {daemon.connection === "closed" && (
           <div
             role="status"
@@ -2062,241 +1875,32 @@ function ShellBody({
             data-handle-for="chat"
             onKeyDownCapture={handleEnter("chat")}
           />
-          <ResizablePanel
-            id="chat"
-            panelRef={chatPanel}
-            collapsible
-            defaultSize={`${DEFAULT_SIZE.chat}`}
-            minSize={`${MIN_SIZE.chat}`}
-            collapsedSize={`${RAIL_PX}px`}
-            className="flex flex-col bg-surface"
-          >
-            {collapsed.chat && (
-              <Rail
-                quiet={quiet}
-                below={
-                  (floatIcon || chatUnseen) && (
-                    <div className="flex flex-col items-center">
-                      {/* The float closed: this brings it back. Idle, so it fades. */}
-                      {floatIcon && (
-                        <span className="relative flex">
-                          <ColumnButton
-                            label={
-                              composerWaiting
-                                ? `Show the composer (${composerWaiting.label})`
-                                : "Show the composer"
-                            }
-                            control="chat-float-show"
-                            onClick={() => {
-                              setFloatClosed(false);
-                              focusNext.current = FLOAT_INPUT;
-                            }}
-                            className={fade}
-                          >
-                            <MessageSquareIcon aria-hidden />
-                          </ColumnButton>
-                          {/* E53's waiting mark, which the closed float would
-                          otherwise take with it: on the composer's own button,
-                          since an answer lands in the composer's line. Its words
-                          are the button's name; it never fades, as a stuck wait
-                          asks for attention. Not the unseen mark below: that one
-                          is the agent's news, this one the human's question. */}
-                          {composerWaiting && (
-                            <span
-                              aria-hidden
-                              data-slot="chat-rail-waiting"
-                              className="pointer-events-none absolute top-0.5 right-0.5 flex"
-                            >
-                              <WaitingDot
-                                badge={composerWaiting.badge}
-                                label={composerWaiting.label}
-                              />
-                            </span>
-                          )}
-                          {/* The mark's words, read out when they change: the
-                          open float's badge is a live region, and closing it
-                          must not make a wait going quiet ("may be stuck")
-                          silent. Polite, as that badge is. Here only while the
-                          float is closed, so the two never speak at once; it
-                          stays while nothing waits, so the next wait is a
-                          change it can announce. */}
-                          <span
-                            aria-live="polite"
-                            aria-atomic="true"
-                            data-slot="chat-rail-waiting-live"
-                            className="sr-only"
-                          >
-                            {composerWaiting?.label ?? ""}
-                          </span>
-                        </span>
-                      )}
-                      {/* Asks for attention, so it never fades with the rail. A button
-                      of its own: the 8 px dot sits centred in a 24 px target, which
-                      also puts it under the reopen row. A press opens the
-                      conversation on the Chat tab, where the new message is. */}
-                      {chatUnseen && (
-                        <button
-                          type="button"
-                          data-slot="chat-unseen"
-                          aria-label="Open the conversation: the agent has said something new"
-                          title="Open the conversation: the agent has said something new"
-                          onClick={() => {
-                            setPanelId("chat");
-                            toggleFrom("chat", "expand");
-                          }}
-                          className="flex size-6 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                        >
-                          <span aria-hidden className="size-2 rounded-full bg-attention" />
-                        </button>
-                      )}
-                    </div>
-                  )
-                }
-              >
-                <ColumnButton
-                  label={
-                    chatUnseen
-                      ? "Reopen the conversation column: the agent has said something new"
-                      : "Reopen the conversation column"
-                  }
-                  control="chat-reopen"
-                  onClick={() => toggleFrom("chat", "expand")}
-                  className={fade}
-                >
-                  <PanelRightOpenIcon aria-hidden />
-                </ColumnButton>
-              </Rail>
-            )}
-            <div
-              data-pane="chat"
-              tabIndex={-1}
-              inert={collapsed.chat}
-              hidden={collapsed.chat}
-              className={cn(
-                "min-h-0 flex-1 flex-col outline-none",
-                collapsed.chat ? "hidden" : "flex",
-              )}
-            >
-              {/* The collapse button is pinned; the tabs give way. */}
-              <div className="flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1">
-                <div
-                  role="tablist"
-                  aria-label="Conversation column"
-                  className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden"
-                  onKeyDown={(e) => {
-                    // Arrow keys move between tabs, the tablist pattern.
-                    const i = tabs.findIndex((t) => t.id === activePanel.id);
-                    const to =
-                      e.key === "ArrowRight"
-                        ? tabs[(i + 1) % tabs.length]
-                        : e.key === "ArrowLeft"
-                          ? tabs[(i - 1 + tabs.length) % tabs.length]
-                          : e.key === "Home"
-                            ? tabs[0]
-                            : e.key === "End"
-                              ? tabs.at(-1)
-                              : undefined;
-                    if (!to) return;
-                    e.preventDefault();
-                    setPanelId(to.id);
-                    requestAnimationFrame(() =>
-                      document.getElementById(`${storageKey}-tab-${to.id}`)?.focus(),
-                    );
-                  }}
-                >
-                  {tabs.map((p) => (
-                    <button
-                      key={p.id}
-                      id={`${storageKey}-tab-${p.id}`}
-                      type="button"
-                      role="tab"
-                      aria-selected={activePanel.id === p.id}
-                      aria-controls={`${storageKey}-tabpanel`}
-                      tabIndex={activePanel.id === p.id ? 0 : -1}
-                      onClick={() => setPanelId(p.id)}
-                      className={cn(
-                        "rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase",
-                        "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-                        activePanel.id === p.id && "bg-surface-raised text-ink",
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="shrink-0">
-                  <ColumnButton
-                    label="Collapse the conversation column"
-                    control="chat-collapse"
-                    onClick={() => toggleFrom("chat", "collapse")}
-                  >
-                    <PanelRightCloseIcon aria-hidden />
-                  </ColumnButton>
-                </div>
-              </div>
-              <div
-                id={`${storageKey}-tabpanel`}
-                role="tabpanel"
-                aria-labelledby={`${storageKey}-tab-${activePanel.id}`}
-                className="flex min-h-0 flex-1 flex-col"
-              >
-                {activePanel.node}
-              </div>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-        <footer
-          data-slot="shell-status"
-          className={cn(
-            "flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim",
-            quiet && QUIET_GROUP,
-          )}
-        >
-          {/* Connected is idle and fades; anything else (retrying, ended) is news. */}
-          <span
-            className={cn(
-              "flex shrink-0 items-center gap-1.5",
-              daemon.connection === "open" && fade,
-            )}
-            title={`${CONNECTION_TITLE[daemon.connection]}\n${state.dir}`}
-          >
-            <Dot
-              tone={
-                daemon.connection === "open"
-                  ? "bg-added"
-                  : daemon.connection === "closed"
-                    ? "bg-danger"
-                    : "bg-attention"
-              }
-              pulse={daemon.connection === "connecting"}
-            />
-            {CONNECTION_LABEL[daemon.connection]}
-          </span>
-          {/* The agent, apart from the page: only while the page can know. Listening
-              is idle and fades; nobody listening is news. */}
-          {daemon.connection === "open" && (
-            <span
-              data-slot="agent-presence"
-              data-listening={agentListening}
-              className={cn("flex shrink-0 items-center gap-1.5", agentListening && fade)}
-              title={PRESENCE[agentListening ? "listening" : "absent"].title}
-            >
-              <Dot tone={agentListening ? "bg-brand" : "bg-ink-faint"} />
-              {PRESENCE[agentListening ? "listening" : "absent"].label}
-            </span>
-          )}
-          <div className={cn("flex min-w-0 flex-1 items-center", fade)}>{status}</div>
-          {/* The link check: nothing at all while the session's links are sound. */}
-          <LinkCheck
-            request={daemon.request}
-            onFrame={daemon.onFrame}
-            connected={daemon.connection === "open"}
-            snapshot={state}
-            edits={daemon.texts}
-            onOpen={openAt}
-            className={fade}
+          <ChatColumn
+            chatPanel={chatPanel}
+            collapsed={collapsed}
+            quiet={quiet}
+            fade={fade}
+            floatIcon={floatIcon}
+            chatUnseen={chatUnseen}
+            composerWaiting={composerWaiting}
+            setFloatClosed={setFloatClosed}
+            focusNext={focusNext}
+            setPanelId={setPanelId}
+            toggleFrom={toggleFrom}
+            tabs={tabs}
+            activePanel={activePanel}
+            storageKey={storageKey}
           />
-        </footer>
+        </ResizablePanelGroup>
+        <StatusBar
+          daemon={daemon}
+          state={state}
+          quiet={quiet}
+          fade={fade}
+          agentListening={agentListening}
+          status={status}
+          openAt={openAt}
+        />
       </div>
       <SettingsDialog
         open={settingsOpen}

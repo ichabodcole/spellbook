@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const STYLES = join(import.meta.dir, "surface", "styles.css");
-const SHELL = join(import.meta.dir, "..", "kit", "shell", "WorkspaceShell.tsx");
+const SHELL = join(import.meta.dir, "..", "kit", "shell", "TopBar.tsx");
 
 /** The sheet with its comments out, and each rule's selector with the layer it sits in. */
 function rules(css: string): { selector: string; body: string; layered: boolean }[] {
