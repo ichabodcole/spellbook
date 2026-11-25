@@ -80,3 +80,4 @@ _Written at close._
 - chore/kit-split-g0 (landed 2026-11-24)
 - fix/grapevine-hold-has-no-way-out (landed 2026-11-24)
 - chore/kit-split-g1 (landed 2026-11-24)
+- fix/grapevine-paused-daemon-reads-as-gone (open)
