@@ -12763,7 +12763,7 @@ var __iconNode80 = [
 ];
 var X = createLucideIcon("x", __iconNode80);
 // src/scriptorium/surface/Frame.tsx
-var import_react57 = __toESM(require_react(), 1);
+var import_react58 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
 var React8 = __toESM(require_react(), 1);
@@ -68902,7 +68902,7 @@ function DocumentPane({
 }
 
 // src/kit/shell/WorkspaceShell.tsx
-var import_react53 = __toESM(require_react(), 1);
+var import_react54 = __toESM(require_react(), 1);
 var import_react_dom6 = __toESM(require_react_dom(), 1);
 
 // src/kit/chat/ChatMessageView.tsx
@@ -74701,6 +74701,66 @@ function quoteLabel(quote, max = 60) {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
 }
 
+// src/kit/shell/ColumnChrome.tsx
+var import_react45 = __toESM(require_react(), 1);
+var jsx_runtime46 = __toESM(require_jsx_runtime(), 1);
+var FLOAT_INPUT = '[data-slot="floating-composer"] [data-slot="composer-input"]';
+var COLUMN_INPUT = '[data-pane="chat"] [data-slot="composer-input"]';
+function ColumnButton({
+  label,
+  onClick,
+  control,
+  disabled,
+  disabledReason,
+  className,
+  children
+}) {
+  const whyId = import_react45.useId();
+  const why = disabled ? disabledReason : undefined;
+  return /* @__PURE__ */ jsx_runtime46.jsxs(jsx_runtime46.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_runtime46.jsx("button", {
+        type: "button",
+        onClick: () => {
+          if (!why)
+            onClick();
+        },
+        disabled: disabled && !why,
+        ...disabledReasonProps(why, whyId),
+        "data-column-control": control,
+        "aria-label": label,
+        title: why ?? label,
+        className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40 aria-disabled:opacity-40 aria-disabled:cursor-not-allowed [&_svg]:size-3.5", className),
+        children
+      }),
+      /* @__PURE__ */ jsx_runtime46.jsx(DisabledReason, {
+        reason: why,
+        id: whyId
+      })
+    ]
+  });
+}
+function Rail({
+  quiet,
+  below,
+  children
+}) {
+  return /* @__PURE__ */ jsx_runtime46.jsxs("div", {
+    "data-slot": "column-rail",
+    className: "flex min-h-0 flex-1 flex-col",
+    children: [
+      /* @__PURE__ */ jsx_runtime46.jsx("div", {
+        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+        children
+      }),
+      below && /* @__PURE__ */ jsx_runtime46.jsx("div", {
+        className: "flex shrink-0 justify-center",
+        children: below
+      })
+    ]
+  });
+}
+
 // src/kit/shell/columns.ts
 var SIDES = COLUMN_SIDES;
 var DEFAULT_SIZE = { context: 22, chat: 28 };
@@ -74783,9 +74843,162 @@ function floatOnRail(collapsed, closed) {
   return collapsed.chat && closed;
 }
 
+// src/kit/shell/ChatColumn.tsx
+var jsx_runtime47 = __toESM(require_jsx_runtime(), 1);
+function ChatColumn({
+  chatPanel,
+  collapsed,
+  quiet,
+  fade,
+  floatIcon,
+  chatUnseen,
+  composerWaiting,
+  setFloatClosed,
+  focusNext,
+  setPanelId,
+  toggleFrom,
+  tabs,
+  activePanel,
+  storageKey
+}) {
+  return /* @__PURE__ */ jsx_runtime47.jsxs(ResizablePanel, {
+    id: "chat",
+    panelRef: chatPanel,
+    collapsible: true,
+    defaultSize: `${DEFAULT_SIZE.chat}`,
+    minSize: `${MIN_SIZE.chat}`,
+    collapsedSize: `${RAIL_PX}px`,
+    className: "flex flex-col bg-surface",
+    children: [
+      collapsed.chat && /* @__PURE__ */ jsx_runtime47.jsx(Rail, {
+        quiet,
+        below: (floatIcon || chatUnseen) && /* @__PURE__ */ jsx_runtime47.jsxs("div", {
+          className: "flex flex-col items-center",
+          children: [
+            floatIcon && /* @__PURE__ */ jsx_runtime47.jsxs("span", {
+              className: "relative flex",
+              children: [
+                /* @__PURE__ */ jsx_runtime47.jsx(ColumnButton, {
+                  label: composerWaiting ? `Show the composer (${composerWaiting.label})` : "Show the composer",
+                  control: "chat-float-show",
+                  onClick: () => {
+                    setFloatClosed(false);
+                    focusNext.current = FLOAT_INPUT;
+                  },
+                  className: fade,
+                  children: /* @__PURE__ */ jsx_runtime47.jsx(MessageSquare, {
+                    "aria-hidden": true
+                  })
+                }),
+                composerWaiting && /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                  "aria-hidden": true,
+                  "data-slot": "chat-rail-waiting",
+                  className: "pointer-events-none absolute top-0.5 right-0.5 flex",
+                  children: /* @__PURE__ */ jsx_runtime47.jsx(WaitingDot, {
+                    badge: composerWaiting.badge,
+                    label: composerWaiting.label
+                  })
+                }),
+                /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                  "aria-live": "polite",
+                  "aria-atomic": "true",
+                  "data-slot": "chat-rail-waiting-live",
+                  className: "sr-only",
+                  children: composerWaiting?.label ?? ""
+                })
+              ]
+            }),
+            chatUnseen && /* @__PURE__ */ jsx_runtime47.jsx("button", {
+              type: "button",
+              "data-slot": "chat-unseen",
+              "aria-label": "Open the conversation: the agent has said something new",
+              title: "Open the conversation: the agent has said something new",
+              onClick: () => {
+                setPanelId("chat");
+                toggleFrom("chat", "expand");
+              },
+              className: "flex size-6 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+              children: /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                "aria-hidden": true,
+                className: "size-2 rounded-full bg-attention"
+              })
+            })
+          ]
+        }),
+        children: /* @__PURE__ */ jsx_runtime47.jsx(ColumnButton, {
+          label: chatUnseen ? "Reopen the conversation column: the agent has said something new" : "Reopen the conversation column",
+          control: "chat-reopen",
+          onClick: () => toggleFrom("chat", "expand"),
+          className: fade,
+          children: /* @__PURE__ */ jsx_runtime47.jsx(PanelRightOpen, {
+            "aria-hidden": true
+          })
+        })
+      }),
+      /* @__PURE__ */ jsx_runtime47.jsxs("div", {
+        "data-pane": "chat",
+        tabIndex: -1,
+        inert: collapsed.chat,
+        hidden: collapsed.chat,
+        className: cn("min-h-0 flex-1 flex-col outline-none", collapsed.chat ? "hidden" : "flex"),
+        children: [
+          /* @__PURE__ */ jsx_runtime47.jsxs("div", {
+            className: "flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1",
+            children: [
+              /* @__PURE__ */ jsx_runtime47.jsx("div", {
+                role: "tablist",
+                "aria-label": "Conversation column",
+                className: "flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden",
+                onKeyDown: (e) => {
+                  const i = tabs.findIndex((t) => t.id === activePanel.id);
+                  const to = e.key === "ArrowRight" ? tabs[(i + 1) % tabs.length] : e.key === "ArrowLeft" ? tabs[(i - 1 + tabs.length) % tabs.length] : e.key === "Home" ? tabs[0] : e.key === "End" ? tabs.at(-1) : undefined;
+                  if (!to)
+                    return;
+                  e.preventDefault();
+                  setPanelId(to.id);
+                  requestAnimationFrame(() => document.getElementById(`${storageKey}-tab-${to.id}`)?.focus());
+                },
+                children: tabs.map((p) => /* @__PURE__ */ jsx_runtime47.jsx("button", {
+                  id: `${storageKey}-tab-${p.id}`,
+                  type: "button",
+                  role: "tab",
+                  "aria-selected": activePanel.id === p.id,
+                  "aria-controls": `${storageKey}-tabpanel`,
+                  tabIndex: activePanel.id === p.id ? 0 : -1,
+                  onClick: () => setPanelId(p.id),
+                  className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", activePanel.id === p.id && "bg-surface-raised text-ink"),
+                  children: p.label
+                }, p.id))
+              }),
+              /* @__PURE__ */ jsx_runtime47.jsx("div", {
+                className: "shrink-0",
+                children: /* @__PURE__ */ jsx_runtime47.jsx(ColumnButton, {
+                  label: "Collapse the conversation column",
+                  control: "chat-collapse",
+                  onClick: () => toggleFrom("chat", "collapse"),
+                  children: /* @__PURE__ */ jsx_runtime47.jsx(PanelRightClose, {
+                    "aria-hidden": true
+                  })
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime47.jsx("div", {
+            id: `${storageKey}-tabpanel`,
+            role: "tabpanel",
+            "aria-labelledby": `${storageKey}-tab-${activePanel.id}`,
+            className: "flex min-h-0 flex-1 flex-col",
+            children: activePanel.node
+          })
+        ]
+      })
+    ]
+  });
+}
+
 // src/kit/shell/ImageDescription.tsx
-var import_react45 = __toESM(require_react(), 1);
-var jsx_runtime46 = __toESM(require_jsx_runtime(), 1);
+var import_react46 = __toESM(require_react(), 1);
+var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 var ICON = { user: Upload, web: Globe };
 function paragraphs(body) {
   return body.split(/\n[ \t]*\n/).map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -74794,17 +75007,17 @@ function openPage(href) {
   window.open(href, "_blank", "noopener,noreferrer");
 }
 function OriginMark({ description }) {
-  const [open, setOpen] = import_react45.useState(false);
+  const [open, setOpen] = import_react46.useState(false);
   const source = description.source;
   const amber = description.licenceUnknown === true;
   const Icon = source ? ICON[source] : TriangleAlert;
   const label = source ? `${SOURCE_LABEL[source]}${amber ? ", licence unknown" : ""}` : description.sourceWritten ? `Origin "${description.sourceWritten}" is not one of ${IMAGE_SOURCES.join(" or ")}` : "Origin not recorded";
   const page = source === "web" ? description.page : undefined;
-  return /* @__PURE__ */ jsx_runtime46.jsxs(Popover, {
+  return /* @__PURE__ */ jsx_runtime48.jsxs(Popover, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime46.jsx(PopoverTrigger2, {
+      /* @__PURE__ */ jsx_runtime48.jsx(PopoverTrigger2, {
         openOnHover: true,
         delay: 150,
         "data-slot": "origin-mark",
@@ -74813,58 +75026,58 @@ function OriginMark({ description }) {
         "aria-label": page ? `${label}: open the source page` : `${label}: show where it came from`,
         onClick: page ? () => openPage(page) : undefined,
         className: cn("flex size-6 shrink-0 items-center justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/60", amber ? "bg-attention/15 text-attention ring-1 ring-attention/30 ring-inset hover:bg-attention/25" : source ? "text-ink-dim hover:bg-surface-raised hover:text-ink" : "text-ink-faint hover:bg-surface-raised"),
-        children: /* @__PURE__ */ jsx_runtime46.jsx(Icon, {
+        children: /* @__PURE__ */ jsx_runtime48.jsx(Icon, {
           "aria-hidden": true,
           className: "size-3.5"
         })
       }),
-      /* @__PURE__ */ jsx_runtime46.jsxs(PopoverContent, {
+      /* @__PURE__ */ jsx_runtime48.jsxs(PopoverContent, {
         side: "bottom",
         align: "start",
         "data-slot": "origin-popover",
         className: "w-[min(24rem,calc(100vw-1rem))]",
         children: [
-          /* @__PURE__ */ jsx_runtime46.jsx(PopoverTitle2, {
+          /* @__PURE__ */ jsx_runtime48.jsx(PopoverTitle2, {
             className: "text-[13px]",
             children: label
           }),
-          description.provenance.length > 0 ? /* @__PURE__ */ jsx_runtime46.jsx("dl", {
+          description.provenance.length > 0 ? /* @__PURE__ */ jsx_runtime48.jsx("dl", {
             "data-slot": "provenance",
             className: "mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1",
             children: description.provenance.map(({ field, value }) => {
               const unknown = field === "licence" && value.toLowerCase() === LICENCE_UNKNOWN;
-              return /* @__PURE__ */ jsx_runtime46.jsxs("div", {
+              return /* @__PURE__ */ jsx_runtime48.jsxs("div", {
                 "data-field": field,
                 className: "contents",
                 children: [
-                  /* @__PURE__ */ jsx_runtime46.jsx("dt", {
+                  /* @__PURE__ */ jsx_runtime48.jsx("dt", {
                     className: "font-mono text-[10px] leading-5 text-ink-faint",
                     children: field
                   }),
-                  /* @__PURE__ */ jsx_runtime46.jsx("dd", {
+                  /* @__PURE__ */ jsx_runtime48.jsx("dd", {
                     className: cn("min-w-0 text-[12px] leading-5 break-words", unknown ? "font-medium text-attention" : "text-ink"),
                     children: value
                   })
                 ]
               }, field);
             })
-          }) : /* @__PURE__ */ jsx_runtime46.jsx("p", {
+          }) : /* @__PURE__ */ jsx_runtime48.jsx("p", {
             className: "mt-1 text-[12px] text-ink-dim",
             children: source ? "No fields recorded yet." : "The description does not say where it came from."
           }),
-          amber && /* @__PURE__ */ jsx_runtime46.jsx("p", {
+          amber && /* @__PURE__ */ jsx_runtime48.jsx("p", {
             "data-slot": "licence-unknown",
             className: "mt-2 text-[12px] text-attention",
             children: "The licence was not found. Check it before anything using this image is published."
           }),
-          page && /* @__PURE__ */ jsx_runtime46.jsxs("a", {
+          page && /* @__PURE__ */ jsx_runtime48.jsxs("a", {
             href: page,
             target: "_blank",
             rel: "noopener noreferrer",
             "data-slot": "source-page",
             className: "mt-2 inline-flex items-center gap-1 text-[12px] text-brand underline-offset-2 hover:underline",
             children: [
-              /* @__PURE__ */ jsx_runtime46.jsx(Globe, {
+              /* @__PURE__ */ jsx_runtime48.jsx(Globe, {
                 "aria-hidden": true,
                 className: "size-3"
               }),
@@ -74882,19 +75095,19 @@ function ImageDescriptionPanel({
   onEdit,
   onAsk
 }) {
-  const [asked, setAsked] = import_react45.useState(false);
+  const [asked, setAsked] = import_react46.useState(false);
   if (!description)
-    return /* @__PURE__ */ jsx_runtime46.jsxs("aside", {
+    return /* @__PURE__ */ jsx_runtime48.jsxs("aside", {
       "data-slot": "image-description",
       "data-state": "none",
       className: "flex flex-col gap-1.5 p-3 text-xs text-ink-dim",
       children: [
-        /* @__PURE__ */ jsx_runtime46.jsx("p", {
+        /* @__PURE__ */ jsx_runtime48.jsx("p", {
           "data-slot": "no-description",
           className: "text-ink-faint",
           children: "No description yet"
         }),
-        onAsk && /* @__PURE__ */ jsx_runtime46.jsx("button", {
+        onAsk && /* @__PURE__ */ jsx_runtime48.jsx("button", {
           type: "button",
           "data-slot": "describe-ask",
           "aria-label": asked ? `Asked the agent to describe ${name}` : `Ask the agent to describe ${name}`,
@@ -74905,9 +75118,9 @@ function ImageDescriptionPanel({
             setAsked(true);
           },
           className: cn("inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60", asked ? "text-ink-faint" : "-ml-1.5 text-brand hover:bg-brand/10"),
-          children: asked ? /* @__PURE__ */ jsx_runtime46.jsxs(jsx_runtime46.Fragment, {
+          children: asked ? /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime46.jsx(Check, {
+              /* @__PURE__ */ jsx_runtime48.jsx(Check, {
                 "aria-hidden": true,
                 className: "size-3"
               }),
@@ -74917,56 +75130,56 @@ function ImageDescriptionPanel({
         })
       ]
     });
-  return /* @__PURE__ */ jsx_runtime46.jsxs("aside", {
+  return /* @__PURE__ */ jsx_runtime48.jsxs("aside", {
     "data-slot": "image-description",
     "data-state": "described",
     className: "flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain p-3 text-xs",
     children: [
-      /* @__PURE__ */ jsx_runtime46.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime48.jsxs("div", {
         className: "flex items-start gap-2",
         children: [
-          /* @__PURE__ */ jsx_runtime46.jsx(OriginMark, {
+          /* @__PURE__ */ jsx_runtime48.jsx(OriginMark, {
             description
           }),
-          /* @__PURE__ */ jsx_runtime46.jsx("h2", {
+          /* @__PURE__ */ jsx_runtime48.jsx("h2", {
             "data-slot": "description-title",
             className: "min-w-0 flex-1 pt-0.5 text-sm font-medium leading-5 break-words text-ink",
             children: description.title ?? name
           }),
-          onEdit && /* @__PURE__ */ jsx_runtime46.jsx("button", {
+          onEdit && /* @__PURE__ */ jsx_runtime48.jsx("button", {
             type: "button",
             "data-slot": "description-edit",
             onClick: () => onEdit(description.path),
             "aria-label": "Edit description",
             title: "Edit the description (opens it as a document)",
             className: "flex size-6 shrink-0 items-center justify-center rounded-md text-ink-faint outline-none hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-            children: /* @__PURE__ */ jsx_runtime46.jsx(FilePenLine, {
+            children: /* @__PURE__ */ jsx_runtime48.jsx(FilePenLine, {
               "aria-hidden": true,
               className: "size-3.5"
             })
           })
         ]
       }),
-      description.summary && /* @__PURE__ */ jsx_runtime46.jsx("p", {
+      description.summary && /* @__PURE__ */ jsx_runtime48.jsx("p", {
         "data-slot": "description-summary",
         className: "text-[12px] leading-5 text-ink",
         children: description.summary
       }),
-      description.body && /* @__PURE__ */ jsx_runtime46.jsx("div", {
+      description.body && /* @__PURE__ */ jsx_runtime48.jsx("div", {
         "data-slot": "description-body",
         className: "flex flex-col gap-2",
-        children: paragraphs(description.body).map((p, i) => /* @__PURE__ */ jsx_runtime46.jsx("p", {
+        children: paragraphs(description.body).map((p, i) => /* @__PURE__ */ jsx_runtime48.jsx("p", {
           className: "text-[12px] leading-5 text-ink-dim",
           children: p
         }, i))
       }),
-      description.more && onEdit && /* @__PURE__ */ jsx_runtime46.jsx("button", {
+      description.more && onEdit && /* @__PURE__ */ jsx_runtime48.jsx("button", {
         type: "button",
         onClick: () => onEdit(description.path),
         className: "w-fit text-[11px] text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60",
         children: "Read the whole description"
       }),
-      description.unparsed && /* @__PURE__ */ jsx_runtime46.jsxs("p", {
+      description.unparsed && /* @__PURE__ */ jsx_runtime48.jsxs("p", {
         "data-slot": "description-unparsed",
         className: "text-[11px] text-attention",
         children: [
@@ -74980,8 +75193,8 @@ function ImageDescriptionPanel({
 }
 
 // src/kit/shell/ImageLinkedFrom.tsx
-var import_react46 = __toESM(require_react(), 1);
-var jsx_runtime47 = __toESM(require_jsx_runtime(), 1);
+var import_react47 = __toESM(require_react(), 1);
+var jsx_runtime49 = __toESM(require_jsx_runtime(), 1);
 function folderOf3(shown) {
   const slash = shown.lastIndexOf("/");
   return slash === -1 ? "" : shown.slice(0, slash + 1);
@@ -74990,34 +75203,34 @@ function ImageLinkedFrom({
   data,
   onOpen
 }) {
-  const [open, setOpen] = import_react46.useState(false);
+  const [open, setOpen] = import_react47.useState(false);
   if (!data || data.count === 0)
     return null;
   const label = `Linked from ${data.count === 1 ? "1 place" : `${data.count} places`}`;
-  return /* @__PURE__ */ jsx_runtime47.jsxs(DropdownMenu, {
+  return /* @__PURE__ */ jsx_runtime49.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime47.jsxs(DropdownMenuTrigger, {
+      /* @__PURE__ */ jsx_runtime49.jsxs(DropdownMenuTrigger, {
         "data-slot": "image-linked-from",
         "aria-label": `${label}: open one`,
         className: "flex h-5 shrink-0 items-center gap-1 rounded-sm px-1.5 text-ink-dim outline-none hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
         children: [
           label,
-          /* @__PURE__ */ jsx_runtime47.jsx(ChevronDown, {
+          /* @__PURE__ */ jsx_runtime49.jsx(ChevronDown, {
             "aria-hidden": true,
             className: "size-3 shrink-0 text-ink-faint"
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime47.jsxs(DropdownMenuContent, {
+      /* @__PURE__ */ jsx_runtime49.jsxs(DropdownMenuContent, {
         align: "start",
         side: "top",
         className: "w-80",
         children: [
-          /* @__PURE__ */ jsx_runtime47.jsx("div", {
+          /* @__PURE__ */ jsx_runtime49.jsx("div", {
             className: "max-h-72 overflow-y-auto py-0.5",
-            children: data.backlinks.map((b) => /* @__PURE__ */ jsx_runtime47.jsxs(DropdownMenuItem, {
+            children: data.backlinks.map((b) => /* @__PURE__ */ jsx_runtime49.jsxs(DropdownMenuItem, {
               "data-slot": "image-backlink",
               "data-source": b.source,
               onClick: () => {
@@ -75026,18 +75239,18 @@ function ImageLinkedFrom({
               },
               className: "flex-col items-start gap-0 py-1",
               children: [
-                /* @__PURE__ */ jsx_runtime47.jsxs("span", {
+                /* @__PURE__ */ jsx_runtime49.jsxs("span", {
                   className: "flex w-full items-baseline gap-2 text-xs",
                   children: [
-                    /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
                       className: "truncate font-medium text-ink",
                       children: b.name.replace(/\.(md|markdown|txt)$/i, "")
                     }),
-                    /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
                       className: "truncate text-[11px] text-ink-faint",
                       children: folderOf3(b.shown)
                     }),
-                    /* @__PURE__ */ jsx_runtime47.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime49.jsxs("span", {
                       className: "ml-auto shrink-0 text-[11px] text-ink-faint",
                       children: [
                         b.embed ? "shown" : "linked",
@@ -75047,14 +75260,14 @@ function ImageLinkedFrom({
                     })
                   ]
                 }),
-                /* @__PURE__ */ jsx_runtime47.jsx("span", {
+                /* @__PURE__ */ jsx_runtime49.jsx("span", {
                   className: "w-full truncate text-[11px] text-ink-faint",
                   children: b.context
                 })
               ]
             }, `${b.source}:${b.from}`))
           }),
-          data.truncated && /* @__PURE__ */ jsx_runtime47.jsxs("p", {
+          data.truncated && /* @__PURE__ */ jsx_runtime49.jsxs("p", {
             className: "px-2 py-1 text-[11px] text-ink-faint",
             children: [
               "Showing the first ",
@@ -75071,7 +75284,7 @@ function ImageLinkedFrom({
 }
 
 // src/kit/shell/ImageViewer.tsx
-var import_react48 = __toESM(require_react(), 1);
+var import_react49 = __toESM(require_react(), 1);
 
 // src/kit/lib/viewport.ts
 var ZOOM_MIN = 0.2;
@@ -75133,10 +75346,10 @@ function wheelView(view, e, cx, cy, limits = MAP_ZOOM) {
 }
 
 // src/kit/shell/usePaneSize.ts
-var import_react47 = __toESM(require_react(), 1);
+var import_react48 = __toESM(require_react(), 1);
 function usePaneSize(ref) {
-  const [size, setSize] = import_react47.useState(FALLBACK_SIZE);
-  import_react47.useLayoutEffect(() => {
+  const [size, setSize] = import_react48.useState(FALLBACK_SIZE);
+  import_react48.useLayoutEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -75158,7 +75371,7 @@ function usePaneSize(ref) {
 }
 
 // src/kit/shell/ImageViewer.tsx
-var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime50 = __toESM(require_jsx_runtime(), 1);
 var IMAGE_ZOOM = { min: 0.02, max: 16 };
 var PIXELATED_FROM = 2;
 function formatBytes(n) {
@@ -75179,22 +75392,22 @@ function ImageViewer({
   aside,
   className
 }) {
-  const pane = import_react48.useRef(null);
+  const pane = import_react49.useRef(null);
   const paneSize = usePaneSize(pane);
-  const [natural, setNatural] = import_react48.useState(null);
-  const [failed, setFailed] = import_react48.useState(false);
-  import_react48.useEffect(() => {
+  const [natural, setNatural] = import_react49.useState(null);
+  const [failed, setFailed] = import_react49.useState(false);
+  import_react49.useEffect(() => {
     setNatural(null);
     setFailed(false);
   }, [src]);
   const fit = () => natural ? fitView(paneSize, natural, { ceil: 1, floor: IMAGE_ZOOM.min, limits: IMAGE_ZOOM }) : { k: 1, x: 0, y: 0 };
-  const [view, setView] = import_react48.useState({ k: 1, x: 0, y: 0 });
-  const viewRef = import_react48.useRef(view);
+  const [view, setView] = import_react49.useState({ k: 1, x: 0, y: 0 });
+  const viewRef = import_react49.useRef(view);
   viewRef.current = view;
-  import_react48.useLayoutEffect(() => {
+  import_react49.useLayoutEffect(() => {
     setView(fit());
   }, [paneSize.w, paneSize.h, natural?.w, natural?.h]);
-  import_react48.useEffect(() => {
+  import_react49.useEffect(() => {
     const el = pane.current;
     if (!el)
       return;
@@ -75208,8 +75421,8 @@ function ImageViewer({
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
-  const pan = import_react48.useRef(null);
-  const [panning, setPanning] = import_react48.useState(false);
+  const pan = import_react49.useRef(null);
+  const [panning, setPanning] = import_react49.useState(false);
   const zoomBy = (factor) => setView((v) => zoomAt(v, factor, paneSize.w / 2, paneSize.h / 2, IMAGE_ZOOM));
   const actualAt = (cx, cy) => setView((v) => zoomAt(v, 1 / v.k, cx, cy, IMAGE_ZOOM));
   const onKeyDown = (e) => {
@@ -75245,16 +75458,16 @@ function ImageViewer({
   const button = cn(control, "size-6");
   const wordButton = cn(control, "h-6 px-1.5");
   const kind = type ? imageTypeLabel(type) : "not an image";
-  return /* @__PURE__ */ jsx_runtime48.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime50.jsxs("div", {
     "data-slot": "image-viewer",
     className: cn("flex min-h-0 flex-1 flex-col", className),
     children: [
-      /* @__PURE__ */ jsx_runtime48.jsx("div", {
+      /* @__PURE__ */ jsx_runtime50.jsx("div", {
         className: "@container flex min-h-0 flex-1 flex-col",
-        children: /* @__PURE__ */ jsx_runtime48.jsxs("div", {
+        children: /* @__PURE__ */ jsx_runtime50.jsxs("div", {
           className: "flex min-h-0 flex-1 flex-col @2xl:flex-row",
           children: [
-            /* @__PURE__ */ jsx_runtime48.jsxs("div", {
+            /* @__PURE__ */ jsx_runtime50.jsxs("div", {
               ref: pane,
               role: "application",
               "aria-roledescription": "image viewer",
@@ -75283,11 +75496,11 @@ function ImageViewer({
                 backgroundSize: "16px 16px"
               },
               children: [
-                failed || type === null ? /* @__PURE__ */ jsx_runtime48.jsx("p", {
+                failed || type === null ? /* @__PURE__ */ jsx_runtime50.jsx("p", {
                   "data-slot": "image-failed",
                   className: "absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-ink-dim",
                   children: type === null ? `${name} is not a PNG, JPEG, WebP, GIF or AVIF image inside, so it is not shown.` : `${name} could not be shown: this browser cannot read it, or the file is damaged.`
-                }) : /* @__PURE__ */ jsx_runtime48.jsx("img", {
+                }) : /* @__PURE__ */ jsx_runtime50.jsx("img", {
                   src,
                   alt: name,
                   draggable: false,
@@ -75306,14 +75519,14 @@ function ImageViewer({
                     ...natural ? { width: natural.w, height: natural.h } : {}
                   }
                 }),
-                /* @__PURE__ */ jsx_runtime48.jsxs("div", {
+                /* @__PURE__ */ jsx_runtime50.jsxs("div", {
                   role: "toolbar",
                   "aria-label": "Zoom",
                   className: "absolute right-2 bottom-2 flex items-center gap-0.5 rounded-md border border-edge bg-surface p-0.5 shadow-sm",
                   onPointerDown: (e) => e.stopPropagation(),
                   onDoubleClick: (e) => e.stopPropagation(),
                   children: [
-                    /* @__PURE__ */ jsx_runtime48.jsx("button", {
+                    /* @__PURE__ */ jsx_runtime50.jsx("button", {
                       type: "button",
                       className: button,
                       "aria-label": "Zoom out (−)",
@@ -75321,7 +75534,7 @@ function ImageViewer({
                       onClick: () => zoomBy(1 / ZOOM_STEP),
                       children: "−"
                     }),
-                    /* @__PURE__ */ jsx_runtime48.jsx("button", {
+                    /* @__PURE__ */ jsx_runtime50.jsx("button", {
                       type: "button",
                       className: button,
                       "aria-label": "Zoom in (+)",
@@ -75329,7 +75542,7 @@ function ImageViewer({
                       onClick: () => zoomBy(ZOOM_STEP),
                       children: "+"
                     }),
-                    /* @__PURE__ */ jsx_runtime48.jsx("button", {
+                    /* @__PURE__ */ jsx_runtime50.jsx("button", {
                       type: "button",
                       className: wordButton,
                       "aria-label": "Fit the image to the pane (0)",
@@ -75337,7 +75550,7 @@ function ImageViewer({
                       onClick: () => setView(fit()),
                       children: "fit"
                     }),
-                    /* @__PURE__ */ jsx_runtime48.jsx("button", {
+                    /* @__PURE__ */ jsx_runtime50.jsx("button", {
                       type: "button",
                       className: wordButton,
                       "aria-label": "Actual size (1)",
@@ -75349,7 +75562,7 @@ function ImageViewer({
                 })
               ]
             }),
-            aside && /* @__PURE__ */ jsx_runtime48.jsx("div", {
+            aside && /* @__PURE__ */ jsx_runtime50.jsx("div", {
               "data-slot": "image-aside",
               className: "flex max-h-[40%] min-h-0 shrink-0 flex-col border-t border-edge bg-surface @2xl:max-h-none @2xl:w-72 @2xl:border-t-0 @2xl:border-l",
               children: aside
@@ -75357,31 +75570,31 @@ function ImageViewer({
           ]
         })
       }),
-      /* @__PURE__ */ jsx_runtime48.jsxs("footer", {
+      /* @__PURE__ */ jsx_runtime50.jsxs("footer", {
         "data-slot": "image-footer",
         className: "flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
+          /* @__PURE__ */ jsx_runtime50.jsx("span", {
             className: "min-w-0 truncate font-medium text-ink",
             children: name
           }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
+          /* @__PURE__ */ jsx_runtime50.jsx("span", {
             "data-slot": "image-dimensions",
             className: "shrink-0 tabular-nums",
             children: natural ? `${natural.w} × ${natural.h} px` : "…"
           }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
+          /* @__PURE__ */ jsx_runtime50.jsx("span", {
             "data-slot": "image-size",
             className: "shrink-0 tabular-nums",
             children: formatBytes(size)
           }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
+          /* @__PURE__ */ jsx_runtime50.jsx("span", {
             "data-slot": "image-type",
             className: "shrink-0",
             children: kind
           }),
           footer,
-          /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime50.jsxs("span", {
             "data-slot": "image-zoom",
             className: "ml-auto shrink-0 tabular-nums",
             children: [
@@ -75389,767 +75602,16 @@ function ImageViewer({
               "%"
             ]
           }),
-          onClose && /* @__PURE__ */ jsx_runtime48.jsx("button", {
+          onClose && /* @__PURE__ */ jsx_runtime50.jsx("button", {
             type: "button",
             onClick: onClose,
             "aria-label": `Close ${name}`,
             title: "Close the image",
             className: "-mr-1.5 flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-            children: /* @__PURE__ */ jsx_runtime48.jsx(X, {
+            children: /* @__PURE__ */ jsx_runtime50.jsx(X, {
               "aria-hidden": true,
               className: "size-3.5"
             })
-          })
-        ]
-      })
-    ]
-  });
-}
-
-// src/kit/shell/LinkCheck.tsx
-var import_react49 = __toESM(require_react(), 1);
-var jsx_runtime49 = __toESM(require_jsx_runtime(), 1);
-var LINK_CHECK_PAUSE_MS = 1200;
-var LINK_CHECK_FALLBACK_MS = 300000;
-var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
-var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
-function linkCheckQuietLabel(d) {
-  const listed = [];
-  if (d.leaving && d.leaving.count > 0)
-    listed.push(`links leaving the ${nounOf(d)}`);
-  if (d.unresolved && d.unresolved.count > 0)
-    listed.push("unresolved references");
-  return listed.length > 0 ? `nothing broken; listed: ${listed.join(" and ")}` : "nothing to report";
-}
-function linkCheckQuietWord(d) {
-  const words = [];
-  if (d.leaving && d.leaving.count > 0)
-    words.push(`${d.leaving.count} leaving`);
-  if (d.unresolved && d.unresolved.count > 0)
-    words.push(`${d.unresolved.count} unresolved`);
-  return words.join(", ");
-}
-var nounOf = (d) => d.noun ?? "folder";
-var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
-var count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-function linkCheckLabel(d) {
-  const parts = [];
-  if (d.duplicates.count > 0)
-    parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
-  if (d.dangling.count > 0)
-    parts.push(count(d.dangling.count, "broken link", "broken links"));
-  if (d.proposed && d.proposed.count > 0)
-    parts.push(count(d.proposed.count, "broken link in a proposed version", "broken links in proposed versions"));
-  if (d.references.count > 0)
-    parts.push(count(d.references.count, "broken reference", "broken references"));
-  if (d.edges && d.edges.count > 0) {
-    const noun = edgeNoun(d.edges.kinds);
-    parts.push(count(d.edges.count, `broken ${noun}`, `broken ${noun}s`));
-  }
-  if (d.unsupported.count > 0)
-    parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
-  if (d.headings.count > 0)
-    parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
-  if (d.unusedImages.count > 0)
-    parts.push(count(d.unusedImages.count, "image nothing links to or embeds", "images nothing links to or embeds"));
-  if (d.symmetry.count > 0)
-    parts.push(count(d.symmetry.count, "one-way symmetric link", "one-way symmetric links"));
-  if (d.ambiguousHeadings.count > 0)
-    parts.push(count(d.ambiguousHeadings.count, "link to a repeated heading", "links to a repeated heading"));
-  return parts.join(", ");
-}
-var ENTRY = "group/entry w-full rounded-md px-2 py-1 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60";
-function LinkEntry({
-  link,
-  note,
-  onOpen
-}) {
-  return /* @__PURE__ */ jsx_runtime49.jsx("li", {
-    children: /* @__PURE__ */ jsx_runtime49.jsxs("button", {
-      type: "button",
-      "data-slot": "link-check-entry",
-      "data-source": link.source,
-      "data-line": link.line,
-      onClick: () => onOpen(link),
-      title: `Open ${link.shown} at line ${link.line}`,
-      className: ENTRY,
-      children: [
-        /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "flex items-baseline gap-1.5 text-[12px]",
-          children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "truncate text-ink group-hover/entry:text-brand",
-              children: link.shown
-            }),
-            /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
-              children: [
-                "line ",
-                link.line
-              ]
-            })
-          ]
-        }),
-        /* @__PURE__ */ jsx_runtime49.jsx("span", {
-          className: "block truncate font-mono text-[11px] text-ink-dim",
-          "data-slot": "raw",
-          children: link.raw
-        }),
-        note && /* @__PURE__ */ jsx_runtime49.jsx("span", {
-          className: "block truncate text-[10px] text-ink-faint",
-          children: note
-        })
-      ]
-    })
-  });
-}
-function EdgeEntry2({
-  edge,
-  unresolved,
-  onOpen
-}) {
-  const at = edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
-  return /* @__PURE__ */ jsx_runtime49.jsx("li", {
-    children: /* @__PURE__ */ jsx_runtime49.jsxs("button", {
-      type: "button",
-      "data-slot": "link-check-entry",
-      "data-edge": edge.edge,
-      "data-unresolved": unresolved ? "" : undefined,
-      "data-source": edge.source,
-      "data-line": edge.line,
-      onClick: () => onOpen(edge.source, at),
-      title: edge.line ? `Open ${edge.shown} at line ${edge.line}` : `Open ${edge.shown}`,
-      className: ENTRY,
-      children: [
-        /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "flex items-baseline gap-1.5 text-[12px]",
-          children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "truncate text-ink group-hover/entry:text-brand",
-              children: edge.shown
-            }),
-            edge.line !== undefined && /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
-              children: [
-                "line ",
-                edge.line
-              ]
-            })
-          ]
-        }),
-        /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "block truncate font-mono text-[11px] text-ink-dim",
-          "data-slot": "raw",
-          children: [
-            edge.key ? `${edge.key}: ` : "",
-            edge.raw
-          ]
-        }),
-        !unresolved && edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "block truncate text-[10px] text-ink-faint",
-          children: [
-            "nothing at ",
-            edge.tried.join(", ")
-          ]
-        })
-      ]
-    })
-  });
-}
-function LeavingEntry({
-  link,
-  noun,
-  onOpen
-}) {
-  const at = link.from !== undefined && link.to !== undefined ? { from: link.from, to: link.to } : undefined;
-  return /* @__PURE__ */ jsx_runtime49.jsx("li", {
-    children: /* @__PURE__ */ jsx_runtime49.jsxs("button", {
-      type: "button",
-      "data-slot": "link-check-entry",
-      "data-leaving": "",
-      "data-source": link.source,
-      "data-line": link.line,
-      onClick: () => onOpen(link.source, at),
-      title: link.line ? `Open ${link.shown} at line ${link.line}` : `Open ${link.shown}`,
-      className: ENTRY,
-      children: [
-        /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "flex items-baseline gap-1.5 text-[12px]",
-          children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "truncate text-ink group-hover/entry:text-brand",
-              children: link.shown
-            }),
-            link.line !== undefined && /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
-              children: [
-                "line ",
-                link.line
-              ]
-            })
-          ]
-        }),
-        /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "block truncate font-mono text-[11px] text-ink-dim",
-          "data-slot": "raw",
-          children: [
-            link.key ? `${link.key}: ` : "",
-            link.raw
-          ]
-        }),
-        /* @__PURE__ */ jsx_runtime49.jsx("span", {
-          className: "block truncate text-[10px] text-ink-faint",
-          "data-slot": "lands",
-          children: link.targetSet ? `lands in ${link.targetSet}: ${link.targetShown}` : `lands outside every ${noun}: ${link.targetShown}`
-        })
-      ]
-    })
-  });
-}
-function Section({
-  title,
-  note,
-  total,
-  shown,
-  quiet,
-  children
-}) {
-  if (total === 0)
-    return null;
-  return /* @__PURE__ */ jsx_runtime49.jsxs("section", {
-    "aria-label": title,
-    "data-slot": "link-check-section",
-    "data-quiet": quiet ? "" : undefined,
-    className: "flex flex-col",
-    children: [
-      /* @__PURE__ */ jsx_runtime49.jsxs("h3", {
-        className: "sticky top-0 z-10 bg-surface px-2 pt-2 pb-0.5",
-        children: [
-          /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-            className: cn("flex items-baseline gap-1.5 text-[11px] tracking-wide uppercase", quiet ? "font-normal text-ink-faint" : "font-medium text-ink-dim"),
-            children: [
-              title,
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                className: "font-normal text-ink-faint normal-case tracking-normal",
-                children: total
-              })
-            ]
-          }),
-          note && /* @__PURE__ */ jsx_runtime49.jsx("span", {
-            "data-slot": "section-note",
-            className: "block text-[10px] font-normal text-ink-faint",
-            children: note
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx("ul", {
-        className: "flex flex-col",
-        children
-      }),
-      shown < total && /* @__PURE__ */ jsx_runtime49.jsxs("p", {
-        className: "px-2 text-[10px] text-ink-faint",
-        children: [
-          "Showing the first ",
-          shown,
-          " of ",
-          total,
-          "."
-        ]
-      })
-    ]
-  });
-}
-function onlySet(d, keep) {
-  function pick(list) {
-    return list.filter((x) => keep(x.set));
-  }
-  const dangling = pick(d.dangling.links);
-  const proposed = d.proposed ? pick(d.proposed.links) : undefined;
-  const unsupported = pick(d.unsupported.links);
-  const headings = pick(d.headings.links);
-  const references = pick(d.references.links);
-  const edges = d.edges ? pick(d.edges.links) : undefined;
-  const unresolved = d.unresolved ? pick(d.unresolved.links) : undefined;
-  const images = pick(d.unusedImages.images);
-  const symmetry = pick(d.symmetry.hints);
-  const ambiguous = pick(d.ambiguousHeadings.hints);
-  const leaving = d.leaving ? pick(d.leaving.links) : undefined;
-  return {
-    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0) + (proposed?.length ?? 0),
-    dangling: { count: dangling.length, links: dangling },
-    ...proposed ? { proposed: { count: proposed.length, links: proposed } } : {},
-    unsupported: {
-      count: unsupported.length,
-      schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
-      links: unsupported
-    },
-    duplicates: { count: 0, names: [] },
-    unusedImages: { count: images.length, images },
-    symmetry: { count: symmetry.length, hints: symmetry },
-    headings: { count: headings.length, links: headings },
-    ambiguousHeadings: { count: ambiguous.length, hints: ambiguous },
-    references: { count: references.length, links: references },
-    ...d.edges && edges ? {
-      edges: {
-        count: edges.length,
-        kinds: [...new Set(edges.map((e) => e.edge))].sort(),
-        links: edges
-      }
-    } : {},
-    ...unresolved ? {
-      unresolved: {
-        count: unresolved.length,
-        kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
-        links: unresolved
-      }
-    } : {},
-    ...leaving ? { leaving: { count: leaving.length, links: leaving } } : {},
-    ...d.noun !== undefined ? { noun: d.noun } : {}
-  };
-}
-function linkCheckGroups(d) {
-  const sets = d.sets ?? [];
-  const known = new Set(sets.map((x) => x.id));
-  const groups = sets.map((x) => ({
-    id: x.id,
-    label: x.label,
-    total: x.total,
-    data: onlySet(d, (set) => set === x.id)
-  }));
-  groups.push({
-    id: null,
-    label: null,
-    data: onlySet(d, (set) => set === undefined || !known.has(set))
-  });
-  return groups.filter((g) => linkCheckListed(g.data) > 0);
-}
-var quietCount = (d) => (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
-function KindSections({
-  data,
-  part,
-  onOpen
-}) {
-  if (part === "quiet")
-    return /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-      children: [
-        data.unresolved && /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-          title: "Unresolved references",
-          note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
-          total: data.unresolved.count,
-          shown: data.unresolved.links.length,
-          quiet: true,
-          children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime49.jsx(EdgeEntry2, {
-            edge: e,
-            unresolved: true,
-            onOpen
-          }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
-        }),
-        data.leaving && /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-          title: `Leaving the ${nounOf(data)}`,
-          note: `Not broken, and not counted: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
-          total: data.leaving.count,
-          shown: data.leaving.links.length,
-          quiet: true,
-          children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LeavingEntry, {
-            link: l,
-            noun: nounOf(data),
-            onOpen
-          }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
-        })
-      ]
-    });
-  const openLink = (l) => onOpen(l.source, { from: l.from, to: l.to });
-  const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
-  return /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-    children: [
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Broken links",
-        total: data.dangling.count,
-        shown: data.dangling.links.length,
-        children: data.dangling.links.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: l,
-          note: l.tried.length > 0 ? `nothing at ${l.tried.join(", ")}` : undefined,
-          onOpen: openLink
-        }, `${l.source}:${l.from}`))
-      }),
-      data.proposed && /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Broken in a proposed version",
-        note: "A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken.",
-        total: data.proposed.count,
-        shown: data.proposed.links.length,
-        children: data.proposed.links.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: l,
-          note: `in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`,
-          onOpen: (x) => onOpen(x.source)
-        }, `${l.source}:${l.version}:${l.from}`))
-      }),
-      data.edges && /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: `Broken ${edgeNoun(data.edges.kinds)}s`,
-        note: "References the app reads beside the links, and nothing answers them.",
-        total: data.edges.count,
-        shown: data.edges.links.length,
-        children: data.edges.links.map((e) => /* @__PURE__ */ jsx_runtime49.jsx(EdgeEntry2, {
-          edge: e,
-          onOpen
-        }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Broken references",
-        total: data.references.count,
-        shown: data.references.links.length,
-        children: data.references.links.map((r) => /* @__PURE__ */ jsx_runtime49.jsx("li", {
-          children: /* @__PURE__ */ jsx_runtime49.jsxs("button", {
-            type: "button",
-            "data-slot": "link-check-reference",
-            "data-source": r.source,
-            "data-line": r.line,
-            onClick: () => onOpen(r.source),
-            title: `Open the ${r.noun} ${r.name}`,
-            className: ENTRY,
-            children: [
-              /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-                className: "flex items-baseline gap-1.5 text-[12px]",
-                children: [
-                  /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                    className: "truncate text-ink group-hover/entry:text-brand",
-                    children: r.shown
-                  }),
-                  /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-                    className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
-                    children: [
-                      "line ",
-                      r.line
-                    ]
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                className: "block truncate text-[11px] text-ink-dim",
-                "data-slot": "text",
-                children: r.text
-              })
-            ]
-          })
-        }, `${r.source}:${r.id}:${r.from}`))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Unsupported links",
-        note: `${schemes} links do not open here.`,
-        total: data.unsupported.count,
-        shown: data.unsupported.links.length,
-        children: data.unsupported.links.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: l,
-          onOpen: openLink
-        }, `${l.source}:${l.from}`))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Links to a heading that is not there",
-        note: "The document opens, but no heading has this name: often a heading reworded since.",
-        total: data.headings.count,
-        shown: data.headings.links.length,
-        children: data.headings.links.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: l,
-          note: `no “${l.heading}” in ${l.targetShown}${l.nearest ? `; nearest: “${l.nearest}”` : ""}`,
-          onOpen: openLink
-        }, `${l.source}:${l.from}`))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Images nothing links to or embeds",
-        note: "In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash.",
-        total: data.unusedImages.count,
-        shown: data.unusedImages.images.length,
-        children: data.unusedImages.images.map((i) => /* @__PURE__ */ jsx_runtime49.jsx("li", {
-          children: /* @__PURE__ */ jsx_runtime49.jsx("button", {
-            type: "button",
-            "data-slot": "link-check-entry",
-            "data-source": i.path,
-            onClick: () => onOpen(i.path),
-            title: `Open ${i.shown}`,
-            className: ENTRY,
-            children: /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
-              children: i.shown
-            })
-          })
-        }, i.path))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Symmetric links written one way",
-        note: "A hint, not a problem: these relations read the same both ways, and the document linked to does not link back. Add the link back if you want it.",
-        total: data.symmetry.count,
-        shown: data.symmetry.hints.length,
-        children: data.symmetry.hints.map((h) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: h,
-          note: h.hint,
-          onOpen: openLink
-        }, `${h.source}:${h.from}:${h.rel}`))
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Links to a repeated heading",
-        note: "A hint, not a problem: more than one heading has this name, and the link opens at the first. Its path of headings (Parent#Child) names one alone.",
-        total: data.ambiguousHeadings.count,
-        shown: data.ambiguousHeadings.hints.length,
-        children: data.ambiguousHeadings.hints.map((l) => /* @__PURE__ */ jsx_runtime49.jsx(LinkEntry, {
-          link: l,
-          note: `“${l.heading}” is repeated in ${l.targetShown}`,
-          onOpen: openLink
-        }, `${l.source}:${l.from}`))
-      })
-    ]
-  });
-}
-function LinkCheckList({
-  data,
-  onOpen
-}) {
-  if (linkCheckListed(data) === 0)
-    return /* @__PURE__ */ jsx_runtime49.jsx("p", {
-      "data-slot": "link-check-list",
-      className: "pt-2 text-[12px] text-ink-dim",
-      children: "Nothing to report now: every link answers, and no two documents share a name."
-    });
-  const groups = data.sets ? linkCheckGroups(data) : null;
-  const elsewhere = data.noun ? `In no ${data.noun}` : "Elsewhere";
-  return /* @__PURE__ */ jsx_runtime49.jsxs("div", {
-    "data-slot": "link-check-list",
-    className: "-mx-2 flex max-h-[60vh] flex-col overflow-y-auto",
-    children: [
-      /* @__PURE__ */ jsx_runtime49.jsx(Section, {
-        title: "Shared file names",
-        note: "A link to the name may open the other file. Each could be renamed as shown.",
-        total: data.duplicates.count,
-        shown: data.duplicates.names.length,
-        children: data.duplicates.names.map((d) => /* @__PURE__ */ jsx_runtime49.jsxs("li", {
-          "data-slot": "link-check-name",
-          className: "flex flex-col",
-          children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "px-2 pt-1 font-mono text-[11px] text-ink-dim",
-              children: d.name
-            }),
-            /* @__PURE__ */ jsx_runtime49.jsx("ul", {
-              className: "flex flex-col",
-              children: d.files.map((f) => /* @__PURE__ */ jsx_runtime49.jsx("li", {
-                children: /* @__PURE__ */ jsx_runtime49.jsxs("button", {
-                  type: "button",
-                  "data-slot": "link-check-entry",
-                  "data-source": f.path,
-                  onClick: () => onOpen(f.path),
-                  title: `Open ${f.shown}`,
-                  className: ENTRY,
-                  children: [
-                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                      className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
-                      children: f.shown
-                    }),
-                    /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-                      className: "block truncate text-[10px] text-ink-faint",
-                      "data-slot": "suggest",
-                      children: [
-                        "could be ",
-                        f.suggest
-                      ]
-                    })
-                  ]
-                })
-              }, f.path))
-            })
-          ]
-        }, d.name))
-      }),
-      groups === null ? /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-        children: [
-          /* @__PURE__ */ jsx_runtime49.jsx(KindSections, {
-            data,
-            part: "counted",
-            onOpen
-          }),
-          /* @__PURE__ */ jsx_runtime49.jsx(KindSections, {
-            data,
-            part: "quiet",
-            onOpen
-          })
-        ]
-      }) : /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-        children: [
-          groups.filter((g) => linkCheckTotal(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime49.jsxs("section", {
-            "data-slot": "link-check-set",
-            "data-part": "counted",
-            "data-set": g.id ?? undefined,
-            "aria-label": g.label ? `In ${g.label}` : elsewhere,
-            className: "flex flex-col",
-            children: [
-              /* @__PURE__ */ jsx_runtime49.jsxs("h3", {
-                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
-                children: [
-                  /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                    className: "truncate",
-                    children: g.label ?? elsewhere
-                  }),
-                  /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                    className: "font-normal text-ink-faint",
-                    "data-slot": "set-total",
-                    children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx(KindSections, {
-                data: g.data,
-                part: "counted",
-                onOpen
-              })
-            ]
-          }, g.id ?? "")),
-          groups.filter((g) => quietCount(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime49.jsxs("section", {
-            "data-slot": "link-check-set",
-            "data-part": "quiet",
-            "data-set": g.id ?? undefined,
-            "aria-label": `${g.label ? `In ${g.label}` : elsewhere}, listed, not counted`,
-            className: "flex flex-col",
-            children: [
-              /* @__PURE__ */ jsx_runtime49.jsx("h3", {
-                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-normal text-ink-dim",
-                children: /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                  className: "truncate",
-                  children: g.label ?? elsewhere
-                })
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx(KindSections, {
-                data: g.data,
-                part: "quiet",
-                onOpen
-              })
-            ]
-          }, `quiet:${g.id ?? ""}`))
-        ]
-      }),
-      groups !== null && data.truncated && /* @__PURE__ */ jsx_runtime49.jsx("p", {
-        className: "px-2 pt-2 text-[10px] text-ink-faint",
-        children: "Each list was cut at its first entries, and a group shows only what was kept of it (“N of M”); the status bar's counts are the whole."
-      })
-    ]
-  });
-}
-function LinkCheck({
-  request,
-  onFrame,
-  connected,
-  snapshot,
-  edits,
-  onOpen,
-  className
-}) {
-  const [data, setData] = import_react49.useState(null);
-  const [open, setOpen] = import_react49.useState(false);
-  const last = import_react49.useRef("");
-  const [pushed, setPushed] = import_react49.useState(0);
-  import_react49.useEffect(() => onFrame((f) => {
-    if (f.op === "context.changed")
-      setPushed((n) => n + 1);
-  }), [onFrame]);
-  const [tick, setTick] = import_react49.useState(0);
-  import_react49.useEffect(() => {
-    if (!connected)
-      return;
-    const i = setInterval(() => setTick((n) => n + 1), LINK_CHECK_FALLBACK_MS);
-    return () => clearInterval(i);
-  }, [connected]);
-  import_react49.useEffect(() => {
-    if (!connected)
-      return;
-    let current = true;
-    const t = setTimeout(() => {
-      request({ op: "link.check" }).then((frame) => {
-        if (!current)
-          return;
-        const {
-          op: _op,
-          requestId: _rid,
-          ...rest
-        } = frame;
-        const key = JSON.stringify(rest);
-        if (key === last.current)
-          return;
-        last.current = key;
-        setData(rest);
-      }).catch(() => {});
-    }, last.current === "" || open ? 0 : LINK_CHECK_PAUSE_MS);
-    return () => {
-      current = false;
-      clearTimeout(t);
-    };
-  }, [connected, request, snapshot, edits, pushed, open, tick]);
-  if (!data || linkCheckListed(data) === 0 && !open)
-    return null;
-  const quiet = linkCheckTotal(data) === 0;
-  const label = quiet ? linkCheckQuietLabel(data) : linkCheckLabel(data);
-  const Icon = quiet ? Link2 : Link2Off;
-  return /* @__PURE__ */ jsx_runtime49.jsxs(Popover, {
-    open,
-    onOpenChange: setOpen,
-    children: [
-      /* @__PURE__ */ jsx_runtime49.jsxs(PopoverTrigger2, {
-        "data-slot": "link-check",
-        "data-quiet": quiet ? "" : undefined,
-        "aria-label": `Link check: ${label}`,
-        title: label,
-        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", quiet ? "text-ink-faint" : "text-ink-dim", className),
-        children: [
-          /* @__PURE__ */ jsx_runtime49.jsx(Icon, {
-            "aria-hidden": true,
-            className: "size-3.5 shrink-0"
-          }),
-          quiet ? /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-            children: [
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                "data-slot": "link-check-quiet-total",
-                "aria-hidden": true,
-                className: "text-[11px] sm:hidden",
-                children: quietCount(data)
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                "data-slot": "link-check-quiet-word",
-                "aria-hidden": true,
-                className: "hidden truncate text-[11px] sm:inline",
-                children: linkCheckQuietWord(data)
-              })
-            ]
-          }) : /* @__PURE__ */ jsx_runtime49.jsxs(jsx_runtime49.Fragment, {
-            children: [
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                "data-slot": "link-check-total",
-                "aria-hidden": true,
-                className: "sm:hidden",
-                children: linkCheckTotal(data)
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx("span", {
-                "data-slot": "link-check-label",
-                "aria-hidden": true,
-                className: "hidden truncate sm:inline",
-                children: label
-              })
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime49.jsxs(PopoverContent, {
-        side: "top",
-        align: "end",
-        className: "w-[min(30rem,calc(100vw-1rem))]",
-        children: [
-          /* @__PURE__ */ jsx_runtime49.jsx(PopoverTitle2, {
-            children: "Link check"
-          }),
-          /* @__PURE__ */ jsx_runtime49.jsx(PopoverDescription2, {
-            className: "text-[12px]",
-            children: "Reported, not errors. Choose one to open it."
-          }),
-          /* @__PURE__ */ jsx_runtime49.jsx(LinkCheckList, {
-            data,
-            onOpen: (path, at) => {
-              setOpen(false);
-              onOpen(path, at);
-            }
           })
         ]
       })
@@ -76232,385 +75694,8 @@ function waitingOnAgent(waiting, notes, agentListening, ended = false) {
 }
 var LOUDNESS = ["stalled", "unheard", "working", "ended"];
 
-// src/kit/shell/SearchBox.tsx
-var import_react50 = __toESM(require_react(), 1);
-var jsx_runtime50 = __toESM(require_jsx_runtime(), 1);
-var SEARCH_DEBOUNCE_MS = 140;
-var ASK_LIMIT = 30;
-function isSearchShortcut(e, mac = onMac()) {
-  if (e.key.toLowerCase() !== "k" || e.shiftKey || e.altKey)
-    return false;
-  return mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
-}
-function fileLabel2(r) {
-  const imageName = r.image ? r.image.slice(r.image.lastIndexOf("/") + 1) : null;
-  const name = imageName ? `${imageName} · description` : r.bundle ? `in the ${r.bundle.label} ${r.bundle.name}` : r.name;
-  return !imageName && r.version !== null ? `${name} · v${r.version}` : name;
-}
-function groupResults(results) {
-  const names = results.filter((r) => r.kind === "name");
-  const byFile = new Map;
-  for (const r of results) {
-    if (r.kind !== "text")
-      continue;
-    const group = byFile.get(r.path);
-    if (group)
-      group.hits.push(r);
-    else
-      byFile.set(r.path, { key: r.path, label: fileLabel2(r), hits: [r] });
-  }
-  const files = [...byFile.values()];
-  return { names, files, ordered: [...names, ...files.flatMap((f) => f.hits)] };
-}
-function SearchBox({
-  request,
-  connected,
-  onOpen,
-  className
-}) {
-  const [query, setQuery] = import_react50.useState("");
-  const [open, setOpen] = import_react50.useState(false);
-  const [report, setReport] = import_react50.useState(null);
-  const [failure, setFailure] = import_react50.useState(null);
-  const [active, setActive] = import_react50.useState(0);
-  const [focusSeq, setFocusSeq] = import_react50.useState(0);
-  const box = import_react50.useRef(null);
-  const field = import_react50.useRef(null);
-  const listId = import_react50.useId();
-  const mac = onMac();
-  const q = query.trim();
-  import_react50.useEffect(() => {
-    const onKey = (e) => {
-      if (!isSearchShortcut(e))
-        return;
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(true);
-      setFocusSeq((n) => n + 1);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, []);
-  import_react50.useEffect(() => {
-    if (focusSeq === 0)
-      return;
-    field.current?.focus();
-    field.current?.select();
-  }, [focusSeq]);
-  import_react50.useEffect(() => {
-    const onDown = (e) => {
-      if (box.current && !box.current.contains(e.target))
-        setOpen(false);
-    };
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
-  }, []);
-  import_react50.useEffect(() => {
-    if (q === "") {
-      setReport(null);
-      setFailure(null);
-      return;
-    }
-    if (!connected)
-      return;
-    let current = true;
-    const t = setTimeout(() => {
-      request({ op: "search", query: q, limit: ASK_LIMIT }).then((frame) => {
-        if (!current)
-          return;
-        setFailure(null);
-        setReport(frame);
-        setActive(0);
-      }).catch((e) => {
-        if (current)
-          setFailure(e instanceof Error ? e.message : String(e));
-      });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => {
-      current = false;
-      clearTimeout(t);
-    };
-  }, [q, connected, request]);
-  const fresh = report && report.query === q ? report : null;
-  const grouped = groupResults(fresh?.results ?? []);
-  const results = grouped.ordered;
-  const showing = open && q !== "";
-  const choose = import_react50.useCallback((r) => {
-    setOpen(false);
-    field.current?.blur();
-    onOpen(r);
-  }, [onOpen]);
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(false);
-      field.current?.blur();
-      return;
-    }
-    if (!showing || results.length === 0)
-      return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const step = e.key === "ArrowDown" ? 1 : -1;
-      setActive((i) => (i + step + results.length) % results.length);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const r = results[active];
-      if (r)
-        choose(r);
-    }
-  };
-  import_react50.useEffect(() => {
-    if (!showing)
-      return;
-    document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" });
-  }, [showing, active, listId]);
-  return /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-    ref: box,
-    "data-slot": "search-box",
-    className: cn("@container relative flex h-6 min-w-6 flex-1 justify-center", className),
-    children: [
-      /* @__PURE__ */ jsx_runtime50.jsx("button", {
-        type: "button",
-        "aria-label": "Search documents",
-        title: `Search (${mac ? "⌘K" : "Ctrl K"})`,
-        onClick: () => {
-          setOpen(true);
-          setFocusSeq((n) => n + 1);
-        },
-        className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 @min-[9rem]:hidden [&_svg]:size-3.5", open && "hidden"),
-        children: /* @__PURE__ */ jsx_runtime50.jsx(Search, {
-          "aria-hidden": true
-        })
-      }),
-      /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-        className: cn("h-6 w-full max-w-md items-center gap-1.5 rounded-md border border-edge bg-bg px-2 focus-within:ring-2 focus-within:ring-ring/60 @max-[9rem]:absolute @max-[9rem]:top-0 @max-[9rem]:left-1/2 @max-[9rem]:z-50 @max-[9rem]:-translate-x-1/2 @max-[9rem]:w-56", open ? "flex" : "hidden @min-[9rem]:flex"),
-        children: [
-          /* @__PURE__ */ jsx_runtime50.jsx(Search, {
-            "aria-hidden": true,
-            className: "size-3.5 shrink-0 text-ink-faint"
-          }),
-          /* @__PURE__ */ jsx_runtime50.jsx("input", {
-            ref: field,
-            value: query,
-            onChange: (e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            },
-            onFocus: () => setOpen(true),
-            onKeyDown,
-            placeholder: `Search (${mac ? "⌘K" : "Ctrl K"})`,
-            "aria-label": "Search documents",
-            role: "combobox",
-            "aria-expanded": showing,
-            "aria-controls": listId,
-            "aria-activedescendant": showing && results.length > 0 ? `${listId}-${active}` : undefined,
-            "aria-autocomplete": "list",
-            spellCheck: false,
-            autoComplete: "off",
-            className: "min-w-0 flex-1 bg-transparent text-xs text-ink outline-none placeholder:text-ink-faint"
-          }),
-          q !== "" && /* @__PURE__ */ jsx_runtime50.jsx("button", {
-            type: "button",
-            "aria-label": "Clear the search",
-            onClick: () => {
-              setQuery("");
-              setOpen(false);
-              field.current?.focus();
-            },
-            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime50.jsx(X, {
-              "aria-hidden": true,
-              className: "size-3"
-            })
-          })
-        ]
-      }),
-      showing && /* @__PURE__ */ jsx_runtime50.jsx("div", {
-        "data-slot": "search-results",
-        className: "absolute top-full left-1/2 z-50 mt-1 -translate-x-1/2 max-h-[60vh] w-[min(30rem,90vw)] overflow-auto rounded-md border border-edge bg-surface-raised shadow-lg",
-        children: failure ? /* @__PURE__ */ jsx_runtime50.jsxs("p", {
-          className: "px-3 py-2 text-xs text-ink-dim",
-          children: [
-            "The search failed: ",
-            failure
-          ]
-        }) : !connected ? /* @__PURE__ */ jsx_runtime50.jsx("p", {
-          className: "px-3 py-2 text-xs text-ink-dim",
-          children: "The workspace daemon is not answering."
-        }) : fresh === null ? /* @__PURE__ */ jsx_runtime50.jsx("p", {
-          className: "px-3 py-2 text-xs text-ink-faint",
-          children: "Searching…"
-        }) : results.length === 0 ? /* @__PURE__ */ jsx_runtime50.jsxs("p", {
-          className: "px-3 py-2 text-xs text-ink-dim",
-          children: [
-            "Nothing matches ",
-            /* @__PURE__ */ jsx_runtime50.jsx("span", {
-              className: "font-mono text-ink",
-              children: q
-            }),
-            "."
-          ]
-        }) : /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-          role: "listbox",
-          id: listId,
-          "aria-label": "Search results",
-          children: [
-            grouped.names.length > 0 && /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-              children: [
-                /* @__PURE__ */ jsx_runtime50.jsx("h2", {
-                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
-                  children: "Documents"
-                }),
-                grouped.names.map((r, i) => /* @__PURE__ */ jsx_runtime50.jsx(Row3, {
-                  id: `${listId}-${i}`,
-                  result: r,
-                  active: i === active,
-                  onHover: () => setActive(i),
-                  onChoose: () => choose(r)
-                }, `name:${r.path}`))
-              ]
-            }),
-            grouped.files.length > 0 && /* @__PURE__ */ jsx_runtime50.jsxs("h2", {
-              className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
-              children: [
-                "In text (",
-                results.length - grouped.names.length,
-                fresh.truncated ? ", and more" : "",
-                ")"
-              ]
-            }),
-            grouped.files.map((f) => /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-              "data-slot": "search-file",
-              children: [
-                /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-                  className: "flex items-baseline gap-2 px-3 pt-1 text-[11px]",
-                  children: [
-                    /* @__PURE__ */ jsx_runtime50.jsx("span", {
-                      className: "min-w-0 truncate text-ink",
-                      children: f.label
-                    }),
-                    /* @__PURE__ */ jsx_runtime50.jsx("span", {
-                      "data-slot": "search-file-count",
-                      className: "shrink-0 text-ink-faint",
-                      children: f.hits.length
-                    })
-                  ]
-                }),
-                f.hits.map((r) => {
-                  const i = results.indexOf(r);
-                  return /* @__PURE__ */ jsx_runtime50.jsx(Row3, {
-                    id: `${listId}-${i}`,
-                    result: r,
-                    fileLabel: f.label,
-                    active: i === active,
-                    onHover: () => setActive(i),
-                    onChoose: () => choose(r)
-                  }, `text:${r.path}:${r.from ?? ""}`);
-                })
-              ]
-            }, f.key))
-          ]
-        })
-      })
-    ]
-  });
-}
-function Row3({
-  id,
-  result: r,
-  fileLabel,
-  active,
-  onHover,
-  onChoose
-}) {
-  const imageName = r.image ? r.image.slice(r.image.lastIndexOf("/") + 1) : null;
-  return /* @__PURE__ */ jsx_runtime50.jsx("div", {
-    id,
-    role: "option",
-    tabIndex: -1,
-    "aria-selected": active,
-    "data-kind": r.kind,
-    "data-image": r.image ? "" : undefined,
-    onMouseMove: onHover,
-    onMouseDown: (e) => e.preventDefault(),
-    onClick: onChoose,
-    className: cn("flex cursor-pointer items-baseline gap-2 px-3 py-1.5 text-left text-xs", active && "bg-bg"),
-    children: r.kind === "name" ? /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
-      children: [
-        imageName ? /* @__PURE__ */ jsx_runtime50.jsx(Image, {
-          "aria-hidden": true,
-          className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
-        }) : /* @__PURE__ */ jsx_runtime50.jsx(FileText, {
-          "aria-hidden": true,
-          className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
-        }),
-        /* @__PURE__ */ jsx_runtime50.jsx("span", {
-          className: "truncate text-ink",
-          children: imageName ?? r.name
-        }),
-        imageName ? /* @__PURE__ */ jsx_runtime50.jsx("span", {
-          className: "shrink-0 text-ink-faint",
-          children: "description"
-        }) : r.bundle ? /* @__PURE__ */ jsx_runtime50.jsx("span", {
-          className: "shrink-0 text-ink-faint",
-          children: r.bundle.label
-        }) : r.version !== null && /* @__PURE__ */ jsx_runtime50.jsxs("span", {
-          className: "shrink-0 text-ink-faint",
-          children: [
-            "v",
-            r.version
-          ]
-        })
-      ]
-    }) : /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
-      children: [
-        /* @__PURE__ */ jsx_runtime50.jsx("span", {
-          className: "w-7 shrink-0 text-right font-mono text-[10px] text-ink-faint",
-          children: r.line
-        }),
-        /* @__PURE__ */ jsx_runtime50.jsxs("span", {
-          className: "min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim",
-          children: [
-            /* @__PURE__ */ jsx_runtime50.jsx(Highlighted, {
-              text: r.snippet ?? "",
-              from: r.snippetFrom,
-              to: r.snippetTo
-            }),
-            fileLabel && /* @__PURE__ */ jsx_runtime50.jsxs("span", {
-              className: "sr-only",
-              children: [
-                ", in ",
-                fileLabel
-              ]
-            })
-          ]
-        })
-      ]
-    })
-  });
-}
-function Highlighted({ text, from, to }) {
-  if (from === undefined || to === undefined || from >= to || to > text.length)
-    return /* @__PURE__ */ jsx_runtime50.jsx(jsx_runtime50.Fragment, {
-      children: text
-    });
-  return /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
-    children: [
-      text.slice(0, from),
-      /* @__PURE__ */ jsx_runtime50.jsx("mark", {
-        "data-slot": "search-match",
-        className: "rounded-sm bg-attention/30 text-ink",
-        children: text.slice(from, to)
-      }),
-      text.slice(to)
-    ]
-  });
-}
-
 // src/kit/shell/SessionEnd.tsx
-var import_react51 = __toESM(require_react(), 1);
+var import_react50 = __toESM(require_react(), 1);
 var jsx_runtime51 = __toESM(require_jsx_runtime(), 1);
 var FIT = "grid-cols-[minmax(0,1fr)]";
 var WRAP = "wrap-anywhere";
@@ -76646,7 +75731,7 @@ function CopyCommand({
   command,
   codeRef
 }) {
-  const [state, setState] = import_react51.useState("idle");
+  const [state, setState] = import_react50.useState("idle");
   const selectIt = () => {
     const code = codeRef.current;
     const sel = typeof window !== "undefined" ? window.getSelection() : null;
@@ -76682,7 +75767,7 @@ function CopyCommand({
   });
 }
 function EndedDetails({ command, by }) {
-  const codeRef = import_react51.useRef(null);
+  const codeRef = import_react50.useRef(null);
   return /* @__PURE__ */ jsx_runtime51.jsxs("div", {
     "data-slot": "session-ended-details",
     className: cn("grid gap-3", FIT),
@@ -76711,7 +75796,7 @@ function SessionEndDialog({
   warning,
   finalFocus
 }) {
-  const codeRef = import_react51.useRef(null);
+  const codeRef = import_react50.useRef(null);
   return /* @__PURE__ */ jsx_runtime51.jsx(Dialog, {
     open: phase !== null,
     onOpenChange,
@@ -76832,7 +75917,7 @@ function EndedChip({
 }
 
 // src/kit/shell/SettingsDialog.tsx
-var import_react52 = __toESM(require_react(), 1);
+var import_react51 = __toESM(require_react(), 1);
 
 // src/kit/lib/imageImport.ts
 var IMAGE_PREF_KEYS = {
@@ -76908,19 +75993,19 @@ function SettingsDialog({
   send,
   connected
 }) {
-  const [draft, setDraft] = import_react52.useState(() => draftOf(prefs));
-  const [touched, setTouched] = import_react52.useState(() => new Set);
+  const [draft, setDraft] = import_react51.useState(() => draftOf(prefs));
+  const [touched, setTouched] = import_react51.useState(() => new Set);
   const edit = (field, change) => {
     setTouched((t) => t.has(field) ? t : new Set([...t, field]));
     setDraft((d) => ({ ...d, ...change }));
   };
-  import_react52.useEffect(() => {
+  import_react51.useEffect(() => {
     if (!open)
       return;
     setDraft(draftOf(prefs));
     setTouched(new Set);
   }, [open]);
-  import_react52.useEffect(() => {
+  import_react51.useEffect(() => {
     if (!open)
       return;
     const now = draftOf(prefs);
@@ -76931,7 +76016,7 @@ function SettingsDialog({
       maxSide: touched.has("maxSide") ? d.maxSide : now.maxSide
     }));
   }, [prefs]);
-  const ids = { quality: import_react52.useId(), capped: import_react52.useId(), maxSide: import_react52.useId() };
+  const ids = { quality: import_react51.useId(), capped: import_react51.useId(), maxSide: import_react51.useId() };
   const qualityWhy = imagePrefRefusal(IMAGE_PREF_KEYS.quality, draft.quality.trim());
   const maxSideWhy = draft.capped ? imagePrefRefusal(IMAGE_PREF_KEYS.maxSide, draft.maxSide.trim() || "x") : null;
   const valid = qualityWhy === null && maxSideWhy === null;
@@ -77108,23 +76193,759 @@ function isDefault(key, value) {
   return d[key] === value;
 }
 
-// src/kit/shell/storage.ts
-function localShellStorage(storageKey) {
+// src/kit/shell/LinkCheck.tsx
+var import_react52 = __toESM(require_react(), 1);
+var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
+var LINK_CHECK_PAUSE_MS = 1200;
+var LINK_CHECK_FALLBACK_MS = 300000;
+var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+function linkCheckQuietLabel(d) {
+  const listed = [];
+  if (d.leaving && d.leaving.count > 0)
+    listed.push(`links leaving the ${nounOf(d)}`);
+  if (d.unresolved && d.unresolved.count > 0)
+    listed.push("unresolved references");
+  return listed.length > 0 ? `nothing broken; listed: ${listed.join(" and ")}` : "nothing to report";
+}
+function linkCheckQuietWord(d) {
+  const words = [];
+  if (d.leaving && d.leaving.count > 0)
+    words.push(`${d.leaving.count} leaving`);
+  if (d.unresolved && d.unresolved.count > 0)
+    words.push(`${d.unresolved.count} unresolved`);
+  return words.join(", ");
+}
+var nounOf = (d) => d.noun ?? "folder";
+var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
+var count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+function linkCheckLabel(d) {
+  const parts = [];
+  if (d.duplicates.count > 0)
+    parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
+  if (d.dangling.count > 0)
+    parts.push(count(d.dangling.count, "broken link", "broken links"));
+  if (d.proposed && d.proposed.count > 0)
+    parts.push(count(d.proposed.count, "broken link in a proposed version", "broken links in proposed versions"));
+  if (d.references.count > 0)
+    parts.push(count(d.references.count, "broken reference", "broken references"));
+  if (d.edges && d.edges.count > 0) {
+    const noun = edgeNoun(d.edges.kinds);
+    parts.push(count(d.edges.count, `broken ${noun}`, `broken ${noun}s`));
+  }
+  if (d.unsupported.count > 0)
+    parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
+  if (d.headings.count > 0)
+    parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
+  if (d.unusedImages.count > 0)
+    parts.push(count(d.unusedImages.count, "image nothing links to or embeds", "images nothing links to or embeds"));
+  if (d.symmetry.count > 0)
+    parts.push(count(d.symmetry.count, "one-way symmetric link", "one-way symmetric links"));
+  if (d.ambiguousHeadings.count > 0)
+    parts.push(count(d.ambiguousHeadings.count, "link to a repeated heading", "links to a repeated heading"));
+  return parts.join(", ");
+}
+var ENTRY = "group/entry w-full rounded-md px-2 py-1 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60";
+function LinkEntry({
+  link,
+  note,
+  onOpen
+}) {
+  return /* @__PURE__ */ jsx_runtime53.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime53.jsxs("button", {
+      type: "button",
+      "data-slot": "link-check-entry",
+      "data-source": link.source,
+      "data-line": link.line,
+      onClick: () => onOpen(link),
+      title: `Open ${link.shown} at line ${link.line}`,
+      className: ENTRY,
+      children: [
+        /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "flex items-baseline gap-1.5 text-[12px]",
+          children: [
+            /* @__PURE__ */ jsx_runtime53.jsx("span", {
+              className: "truncate text-ink group-hover/entry:text-brand",
+              children: link.shown
+            }),
+            /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+              children: [
+                "line ",
+                link.line
+              ]
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx("span", {
+          className: "block truncate font-mono text-[11px] text-ink-dim",
+          "data-slot": "raw",
+          children: link.raw
+        }),
+        note && /* @__PURE__ */ jsx_runtime53.jsx("span", {
+          className: "block truncate text-[10px] text-ink-faint",
+          children: note
+        })
+      ]
+    })
+  });
+}
+function EdgeEntry2({
+  edge,
+  unresolved,
+  onOpen
+}) {
+  const at = edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
+  return /* @__PURE__ */ jsx_runtime53.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime53.jsxs("button", {
+      type: "button",
+      "data-slot": "link-check-entry",
+      "data-edge": edge.edge,
+      "data-unresolved": unresolved ? "" : undefined,
+      "data-source": edge.source,
+      "data-line": edge.line,
+      onClick: () => onOpen(edge.source, at),
+      title: edge.line ? `Open ${edge.shown} at line ${edge.line}` : `Open ${edge.shown}`,
+      className: ENTRY,
+      children: [
+        /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "flex items-baseline gap-1.5 text-[12px]",
+          children: [
+            /* @__PURE__ */ jsx_runtime53.jsx("span", {
+              className: "truncate text-ink group-hover/entry:text-brand",
+              children: edge.shown
+            }),
+            edge.line !== undefined && /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+              children: [
+                "line ",
+                edge.line
+              ]
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "block truncate font-mono text-[11px] text-ink-dim",
+          "data-slot": "raw",
+          children: [
+            edge.key ? `${edge.key}: ` : "",
+            edge.raw
+          ]
+        }),
+        !unresolved && edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "block truncate text-[10px] text-ink-faint",
+          children: [
+            "nothing at ",
+            edge.tried.join(", ")
+          ]
+        })
+      ]
+    })
+  });
+}
+function LeavingEntry({
+  link,
+  noun,
+  onOpen
+}) {
+  const at = link.from !== undefined && link.to !== undefined ? { from: link.from, to: link.to } : undefined;
+  return /* @__PURE__ */ jsx_runtime53.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime53.jsxs("button", {
+      type: "button",
+      "data-slot": "link-check-entry",
+      "data-leaving": "",
+      "data-source": link.source,
+      "data-line": link.line,
+      onClick: () => onOpen(link.source, at),
+      title: link.line ? `Open ${link.shown} at line ${link.line}` : `Open ${link.shown}`,
+      className: ENTRY,
+      children: [
+        /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "flex items-baseline gap-1.5 text-[12px]",
+          children: [
+            /* @__PURE__ */ jsx_runtime53.jsx("span", {
+              className: "truncate text-ink group-hover/entry:text-brand",
+              children: link.shown
+            }),
+            link.line !== undefined && /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+              children: [
+                "line ",
+                link.line
+              ]
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+          className: "block truncate font-mono text-[11px] text-ink-dim",
+          "data-slot": "raw",
+          children: [
+            link.key ? `${link.key}: ` : "",
+            link.raw
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx("span", {
+          className: "block truncate text-[10px] text-ink-faint",
+          "data-slot": "lands",
+          children: link.targetSet ? `lands in ${link.targetSet}: ${link.targetShown}` : `lands outside every ${noun}: ${link.targetShown}`
+        })
+      ]
+    })
+  });
+}
+function Section({
+  title,
+  note,
+  total,
+  shown,
+  quiet,
+  children
+}) {
+  if (total === 0)
+    return null;
+  return /* @__PURE__ */ jsx_runtime53.jsxs("section", {
+    "aria-label": title,
+    "data-slot": "link-check-section",
+    "data-quiet": quiet ? "" : undefined,
+    className: "flex flex-col",
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsxs("h3", {
+        className: "sticky top-0 z-10 bg-surface px-2 pt-2 pb-0.5",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+            className: cn("flex items-baseline gap-1.5 text-[11px] tracking-wide uppercase", quiet ? "font-normal text-ink-faint" : "font-medium text-ink-dim"),
+            children: [
+              title,
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                className: "font-normal text-ink-faint normal-case tracking-normal",
+                children: total
+              })
+            ]
+          }),
+          note && /* @__PURE__ */ jsx_runtime53.jsx("span", {
+            "data-slot": "section-note",
+            className: "block text-[10px] font-normal text-ink-faint",
+            children: note
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx("ul", {
+        className: "flex flex-col",
+        children
+      }),
+      shown < total && /* @__PURE__ */ jsx_runtime53.jsxs("p", {
+        className: "px-2 text-[10px] text-ink-faint",
+        children: [
+          "Showing the first ",
+          shown,
+          " of ",
+          total,
+          "."
+        ]
+      })
+    ]
+  });
+}
+function onlySet(d, keep) {
+  function pick(list) {
+    return list.filter((x) => keep(x.set));
+  }
+  const dangling = pick(d.dangling.links);
+  const proposed = d.proposed ? pick(d.proposed.links) : undefined;
+  const unsupported = pick(d.unsupported.links);
+  const headings = pick(d.headings.links);
+  const references = pick(d.references.links);
+  const edges = d.edges ? pick(d.edges.links) : undefined;
+  const unresolved = d.unresolved ? pick(d.unresolved.links) : undefined;
+  const images = pick(d.unusedImages.images);
+  const symmetry = pick(d.symmetry.hints);
+  const ambiguous = pick(d.ambiguousHeadings.hints);
+  const leaving = d.leaving ? pick(d.leaving.links) : undefined;
   return {
-    getItem: (key) => safeStorage.getItem(`${storageKey}:${key}`),
-    setItem: (key, value) => safeStorage.setItem(`${storageKey}:${key}`, value)
+    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0) + (proposed?.length ?? 0),
+    dangling: { count: dangling.length, links: dangling },
+    ...proposed ? { proposed: { count: proposed.length, links: proposed } } : {},
+    unsupported: {
+      count: unsupported.length,
+      schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
+      links: unsupported
+    },
+    duplicates: { count: 0, names: [] },
+    unusedImages: { count: images.length, images },
+    symmetry: { count: symmetry.length, hints: symmetry },
+    headings: { count: headings.length, links: headings },
+    ambiguousHeadings: { count: ambiguous.length, hints: ambiguous },
+    references: { count: references.length, links: references },
+    ...d.edges && edges ? {
+      edges: {
+        count: edges.length,
+        kinds: [...new Set(edges.map((e) => e.edge))].sort(),
+        links: edges
+      }
+    } : {},
+    ...unresolved ? {
+      unresolved: {
+        count: unresolved.length,
+        kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
+        links: unresolved
+      }
+    } : {},
+    ...leaving ? { leaving: { count: leaving.length, links: leaving } } : {},
+    ...d.noun !== undefined ? { noun: d.noun } : {}
   };
 }
-var THEME_KEY = "theme";
-function keptTheme(raw) {
-  return raw === "light" || raw === "dark" ? raw : null;
+function linkCheckGroups(d) {
+  const sets = d.sets ?? [];
+  const known = new Set(sets.map((x) => x.id));
+  const groups = sets.map((x) => ({
+    id: x.id,
+    label: x.label,
+    total: x.total,
+    data: onlySet(d, (set) => set === x.id)
+  }));
+  groups.push({
+    id: null,
+    label: null,
+    data: onlySet(d, (set) => set === undefined || !known.has(set))
+  });
+  return groups.filter((g) => linkCheckListed(g.data) > 0);
+}
+var quietCount = (d) => (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+function KindSections({
+  data,
+  part,
+  onOpen
+}) {
+  if (part === "quiet")
+    return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+      children: [
+        data.unresolved && /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+          title: "Unresolved references",
+          note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
+          total: data.unresolved.count,
+          shown: data.unresolved.links.length,
+          quiet: true,
+          children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime53.jsx(EdgeEntry2, {
+            edge: e,
+            unresolved: true,
+            onOpen
+          }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
+        }),
+        data.leaving && /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+          title: `Leaving the ${nounOf(data)}`,
+          note: `Not broken, and not counted: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
+          total: data.leaving.count,
+          shown: data.leaving.links.length,
+          quiet: true,
+          children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LeavingEntry, {
+            link: l,
+            noun: nounOf(data),
+            onOpen
+          }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
+        })
+      ]
+    });
+  const openLink = (l) => onOpen(l.source, { from: l.from, to: l.to });
+  const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
+  return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Broken links",
+        total: data.dangling.count,
+        shown: data.dangling.links.length,
+        children: data.dangling.links.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: l,
+          note: l.tried.length > 0 ? `nothing at ${l.tried.join(", ")}` : undefined,
+          onOpen: openLink
+        }, `${l.source}:${l.from}`))
+      }),
+      data.proposed && /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Broken in a proposed version",
+        note: "A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken.",
+        total: data.proposed.count,
+        shown: data.proposed.links.length,
+        children: data.proposed.links.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: l,
+          note: `in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`,
+          onOpen: (x) => onOpen(x.source)
+        }, `${l.source}:${l.version}:${l.from}`))
+      }),
+      data.edges && /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: `Broken ${edgeNoun(data.edges.kinds)}s`,
+        note: "References the app reads beside the links, and nothing answers them.",
+        total: data.edges.count,
+        shown: data.edges.links.length,
+        children: data.edges.links.map((e) => /* @__PURE__ */ jsx_runtime53.jsx(EdgeEntry2, {
+          edge: e,
+          onOpen
+        }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Broken references",
+        total: data.references.count,
+        shown: data.references.links.length,
+        children: data.references.links.map((r) => /* @__PURE__ */ jsx_runtime53.jsx("li", {
+          children: /* @__PURE__ */ jsx_runtime53.jsxs("button", {
+            type: "button",
+            "data-slot": "link-check-reference",
+            "data-source": r.source,
+            "data-line": r.line,
+            onClick: () => onOpen(r.source),
+            title: `Open the ${r.noun} ${r.name}`,
+            className: ENTRY,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+                className: "flex items-baseline gap-1.5 text-[12px]",
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                    className: "truncate text-ink group-hover/entry:text-brand",
+                    children: r.shown
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+                    className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+                    children: [
+                      "line ",
+                      r.line
+                    ]
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                className: "block truncate text-[11px] text-ink-dim",
+                "data-slot": "text",
+                children: r.text
+              })
+            ]
+          })
+        }, `${r.source}:${r.id}:${r.from}`))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Unsupported links",
+        note: `${schemes} links do not open here.`,
+        total: data.unsupported.count,
+        shown: data.unsupported.links.length,
+        children: data.unsupported.links.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: l,
+          onOpen: openLink
+        }, `${l.source}:${l.from}`))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Links to a heading that is not there",
+        note: "The document opens, but no heading has this name: often a heading reworded since.",
+        total: data.headings.count,
+        shown: data.headings.links.length,
+        children: data.headings.links.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: l,
+          note: `no “${l.heading}” in ${l.targetShown}${l.nearest ? `; nearest: “${l.nearest}”` : ""}`,
+          onOpen: openLink
+        }, `${l.source}:${l.from}`))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Images nothing links to or embeds",
+        note: "In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash.",
+        total: data.unusedImages.count,
+        shown: data.unusedImages.images.length,
+        children: data.unusedImages.images.map((i) => /* @__PURE__ */ jsx_runtime53.jsx("li", {
+          children: /* @__PURE__ */ jsx_runtime53.jsx("button", {
+            type: "button",
+            "data-slot": "link-check-entry",
+            "data-source": i.path,
+            onClick: () => onOpen(i.path),
+            title: `Open ${i.shown}`,
+            className: ENTRY,
+            children: /* @__PURE__ */ jsx_runtime53.jsx("span", {
+              className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
+              children: i.shown
+            })
+          })
+        }, i.path))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Symmetric links written one way",
+        note: "A hint, not a problem: these relations read the same both ways, and the document linked to does not link back. Add the link back if you want it.",
+        total: data.symmetry.count,
+        shown: data.symmetry.hints.length,
+        children: data.symmetry.hints.map((h) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: h,
+          note: h.hint,
+          onOpen: openLink
+        }, `${h.source}:${h.from}:${h.rel}`))
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Links to a repeated heading",
+        note: "A hint, not a problem: more than one heading has this name, and the link opens at the first. Its path of headings (Parent#Child) names one alone.",
+        total: data.ambiguousHeadings.count,
+        shown: data.ambiguousHeadings.hints.length,
+        children: data.ambiguousHeadings.hints.map((l) => /* @__PURE__ */ jsx_runtime53.jsx(LinkEntry, {
+          link: l,
+          note: `“${l.heading}” is repeated in ${l.targetShown}`,
+          onOpen: openLink
+        }, `${l.source}:${l.from}`))
+      })
+    ]
+  });
+}
+function LinkCheckList({
+  data,
+  onOpen
+}) {
+  if (linkCheckListed(data) === 0)
+    return /* @__PURE__ */ jsx_runtime53.jsx("p", {
+      "data-slot": "link-check-list",
+      className: "pt-2 text-[12px] text-ink-dim",
+      children: "Nothing to report now: every link answers, and no two documents share a name."
+    });
+  const groups = data.sets ? linkCheckGroups(data) : null;
+  const elsewhere = data.noun ? `In no ${data.noun}` : "Elsewhere";
+  return /* @__PURE__ */ jsx_runtime53.jsxs("div", {
+    "data-slot": "link-check-list",
+    className: "-mx-2 flex max-h-[60vh] flex-col overflow-y-auto",
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(Section, {
+        title: "Shared file names",
+        note: "A link to the name may open the other file. Each could be renamed as shown.",
+        total: data.duplicates.count,
+        shown: data.duplicates.names.length,
+        children: data.duplicates.names.map((d) => /* @__PURE__ */ jsx_runtime53.jsxs("li", {
+          "data-slot": "link-check-name",
+          className: "flex flex-col",
+          children: [
+            /* @__PURE__ */ jsx_runtime53.jsx("span", {
+              className: "px-2 pt-1 font-mono text-[11px] text-ink-dim",
+              children: d.name
+            }),
+            /* @__PURE__ */ jsx_runtime53.jsx("ul", {
+              className: "flex flex-col",
+              children: d.files.map((f) => /* @__PURE__ */ jsx_runtime53.jsx("li", {
+                children: /* @__PURE__ */ jsx_runtime53.jsxs("button", {
+                  type: "button",
+                  "data-slot": "link-check-entry",
+                  "data-source": f.path,
+                  onClick: () => onOpen(f.path),
+                  title: `Open ${f.shown}`,
+                  className: ENTRY,
+                  children: [
+                    /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                      className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
+                      children: f.shown
+                    }),
+                    /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+                      className: "block truncate text-[10px] text-ink-faint",
+                      "data-slot": "suggest",
+                      children: [
+                        "could be ",
+                        f.suggest
+                      ]
+                    })
+                  ]
+                })
+              }, f.path))
+            })
+          ]
+        }, d.name))
+      }),
+      groups === null ? /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(KindSections, {
+            data,
+            part: "counted",
+            onOpen
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(KindSections, {
+            data,
+            part: "quiet",
+            onOpen
+          })
+        ]
+      }) : /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+        children: [
+          groups.filter((g) => linkCheckTotal(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime53.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "counted",
+            "data-set": g.id ?? undefined,
+            "aria-label": g.label ? `In ${g.label}` : elsewhere,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                    className: "truncate",
+                    children: g.label ?? elsewhere
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                    className: "font-normal text-ink-faint",
+                    "data-slot": "set-total",
+                    children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(KindSections, {
+                data: g.data,
+                part: "counted",
+                onOpen
+              })
+            ]
+          }, g.id ?? "")),
+          groups.filter((g) => quietCount(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime53.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "quiet",
+            "data-set": g.id ?? undefined,
+            "aria-label": `${g.label ? `In ${g.label}` : elsewhere}, listed, not counted`,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-normal text-ink-dim",
+                children: /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                  className: "truncate",
+                  children: g.label ?? elsewhere
+                })
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(KindSections, {
+                data: g.data,
+                part: "quiet",
+                onOpen
+              })
+            ]
+          }, `quiet:${g.id ?? ""}`))
+        ]
+      }),
+      groups !== null && data.truncated && /* @__PURE__ */ jsx_runtime53.jsx("p", {
+        className: "px-2 pt-2 text-[10px] text-ink-faint",
+        children: "Each list was cut at its first entries, and a group shows only what was kept of it (“N of M”); the status bar's counts are the whole."
+      })
+    ]
+  });
+}
+function LinkCheck({
+  request,
+  onFrame,
+  connected,
+  snapshot,
+  edits,
+  onOpen,
+  className
+}) {
+  const [data, setData] = import_react52.useState(null);
+  const [open, setOpen] = import_react52.useState(false);
+  const last = import_react52.useRef("");
+  const [pushed, setPushed] = import_react52.useState(0);
+  import_react52.useEffect(() => onFrame((f) => {
+    if (f.op === "context.changed")
+      setPushed((n) => n + 1);
+  }), [onFrame]);
+  const [tick, setTick] = import_react52.useState(0);
+  import_react52.useEffect(() => {
+    if (!connected)
+      return;
+    const i = setInterval(() => setTick((n) => n + 1), LINK_CHECK_FALLBACK_MS);
+    return () => clearInterval(i);
+  }, [connected]);
+  import_react52.useEffect(() => {
+    if (!connected)
+      return;
+    let current = true;
+    const t = setTimeout(() => {
+      request({ op: "link.check" }).then((frame) => {
+        if (!current)
+          return;
+        const {
+          op: _op,
+          requestId: _rid,
+          ...rest
+        } = frame;
+        const key = JSON.stringify(rest);
+        if (key === last.current)
+          return;
+        last.current = key;
+        setData(rest);
+      }).catch(() => {});
+    }, last.current === "" || open ? 0 : LINK_CHECK_PAUSE_MS);
+    return () => {
+      current = false;
+      clearTimeout(t);
+    };
+  }, [connected, request, snapshot, edits, pushed, open, tick]);
+  if (!data || linkCheckListed(data) === 0 && !open)
+    return null;
+  const quiet = linkCheckTotal(data) === 0;
+  const label = quiet ? linkCheckQuietLabel(data) : linkCheckLabel(data);
+  const Icon = quiet ? Link2 : Link2Off;
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Popover, {
+    open,
+    onOpenChange: setOpen,
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsxs(PopoverTrigger2, {
+        "data-slot": "link-check",
+        "data-quiet": quiet ? "" : undefined,
+        "aria-label": `Link check: ${label}`,
+        title: label,
+        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", quiet ? "text-ink-faint" : "text-ink-dim", className),
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Icon, {
+            "aria-hidden": true,
+            className: "size-3.5 shrink-0"
+          }),
+          quiet ? /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                "data-slot": "link-check-quiet-total",
+                "aria-hidden": true,
+                className: "text-[11px] sm:hidden",
+                children: quietCount(data)
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                "data-slot": "link-check-quiet-word",
+                "aria-hidden": true,
+                className: "hidden truncate text-[11px] sm:inline",
+                children: linkCheckQuietWord(data)
+              })
+            ]
+          }) : /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                "data-slot": "link-check-total",
+                "aria-hidden": true,
+                className: "sm:hidden",
+                children: linkCheckTotal(data)
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx("span", {
+                "data-slot": "link-check-label",
+                "aria-hidden": true,
+                className: "hidden truncate sm:inline",
+                children: label
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(PopoverContent, {
+        side: "top",
+        align: "end",
+        className: "w-[min(30rem,calc(100vw-1rem))]",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(PopoverTitle2, {
+            children: "Link check"
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(PopoverDescription2, {
+            className: "text-[12px]",
+            children: "Reported, not errors. Choose one to open it."
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(LinkCheckList, {
+            data,
+            onOpen: (path, at) => {
+              setOpen(false);
+              onOpen(path, at);
+            }
+          })
+        ]
+      })
+    ]
+  });
 }
 
-// src/kit/shell/WorkspaceShell.tsx
-var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
-var PANES = ["context", "centre", "chat"];
-var HANDLE_REACH = 6;
-var UNREACHABLE = "The workspace daemon is not answering, so the session cannot be ended from here. Try again once it is back.";
+// src/kit/shell/StatusBar.tsx
+var jsx_runtime54 = __toESM(require_jsx_runtime(), 1);
 var CONNECTION_LABEL = {
   connecting: "connecting…",
   open: "connected",
@@ -77147,80 +76968,565 @@ var PRESENCE = {
     title: "No agent is following this session's events, so what you send waits until one does"
   }
 };
-var FLOAT_INPUT = '[data-slot="floating-composer"] [data-slot="composer-input"]';
-var COLUMN_INPUT = '[data-pane="chat"] [data-slot="composer-input"]';
-function ColumnButton({
-  label,
-  onClick,
-  control,
-  disabled,
-  disabledReason,
-  className,
-  children
-}) {
-  const whyId = import_react53.useId();
-  const why = disabled ? disabledReason : undefined;
-  return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsx("button", {
-        type: "button",
-        onClick: () => {
-          if (!why)
-            onClick();
-        },
-        disabled: disabled && !why,
-        ...disabledReasonProps(why, whyId),
-        "data-column-control": control,
-        "aria-label": label,
-        title: why ?? label,
-        className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40 aria-disabled:opacity-40 aria-disabled:cursor-not-allowed [&_svg]:size-3.5", className),
-        children
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(DisabledReason, {
-        reason: why,
-        id: whyId
-      })
-    ]
-  });
-}
-var NOT_CONNECTED_REASON = "Not connected to the workspace daemon: this waits until it answers again";
-function Rail({
+function StatusBar({
+  daemon,
+  state,
   quiet,
-  below,
-  children
+  fade,
+  agentListening,
+  status,
+  openAt
 }) {
-  return /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-    "data-slot": "column-rail",
-    className: "flex min-h-0 flex-1 flex-col",
+  return /* @__PURE__ */ jsx_runtime54.jsxs("footer", {
+    "data-slot": "shell-status",
+    className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet && QUIET_GROUP),
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx("div", {
-        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet ? `${QUIET_GROUP} border-transparent` : "border-edge"),
-        children
+      /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+        className: cn("flex shrink-0 items-center gap-1.5", daemon.connection === "open" && fade),
+        title: `${CONNECTION_TITLE[daemon.connection]}
+${state.dir}`,
+        children: [
+          /* @__PURE__ */ jsx_runtime54.jsx(Dot, {
+            tone: daemon.connection === "open" ? "bg-added" : daemon.connection === "closed" ? "bg-danger" : "bg-attention",
+            pulse: daemon.connection === "connecting"
+          }),
+          CONNECTION_LABEL[daemon.connection]
+        ]
       }),
-      below && /* @__PURE__ */ jsx_runtime53.jsx("div", {
-        className: "flex shrink-0 justify-center",
-        children: below
+      daemon.connection === "open" && /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+        "data-slot": "agent-presence",
+        "data-listening": agentListening,
+        className: cn("flex shrink-0 items-center gap-1.5", agentListening && fade),
+        title: PRESENCE[agentListening ? "listening" : "absent"].title,
+        children: [
+          /* @__PURE__ */ jsx_runtime54.jsx(Dot, {
+            tone: agentListening ? "bg-brand" : "bg-ink-faint"
+          }),
+          PRESENCE[agentListening ? "listening" : "absent"].label
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime54.jsx("div", {
+        className: cn("flex min-w-0 flex-1 items-center", fade),
+        children: status
+      }),
+      /* @__PURE__ */ jsx_runtime54.jsx(LinkCheck, {
+        request: daemon.request,
+        onFrame: daemon.onFrame,
+        connected: daemon.connection === "open",
+        snapshot: state,
+        edits: daemon.texts,
+        onOpen: openAt,
+        className: fade
       })
     ]
   });
 }
+
+// src/kit/shell/storage.ts
+function localShellStorage(storageKey) {
+  return {
+    getItem: (key) => safeStorage.getItem(`${storageKey}:${key}`),
+    setItem: (key, value) => safeStorage.setItem(`${storageKey}:${key}`, value)
+  };
+}
+var THEME_KEY = "theme";
+function keptTheme(raw) {
+  return raw === "light" || raw === "dark" ? raw : null;
+}
+
+// src/kit/shell/SearchBox.tsx
+var import_react53 = __toESM(require_react(), 1);
+var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
+var SEARCH_DEBOUNCE_MS = 140;
+var ASK_LIMIT = 30;
+function isSearchShortcut(e, mac = onMac()) {
+  if (e.key.toLowerCase() !== "k" || e.shiftKey || e.altKey)
+    return false;
+  return mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+}
+function fileLabel2(r) {
+  const imageName = r.image ? r.image.slice(r.image.lastIndexOf("/") + 1) : null;
+  const name = imageName ? `${imageName} · description` : r.bundle ? `in the ${r.bundle.label} ${r.bundle.name}` : r.name;
+  return !imageName && r.version !== null ? `${name} · v${r.version}` : name;
+}
+function groupResults(results) {
+  const names = results.filter((r) => r.kind === "name");
+  const byFile = new Map;
+  for (const r of results) {
+    if (r.kind !== "text")
+      continue;
+    const group = byFile.get(r.path);
+    if (group)
+      group.hits.push(r);
+    else
+      byFile.set(r.path, { key: r.path, label: fileLabel2(r), hits: [r] });
+  }
+  const files = [...byFile.values()];
+  return { names, files, ordered: [...names, ...files.flatMap((f) => f.hits)] };
+}
+function SearchBox({
+  request,
+  connected,
+  onOpen,
+  className
+}) {
+  const [query, setQuery] = import_react53.useState("");
+  const [open, setOpen] = import_react53.useState(false);
+  const [report, setReport] = import_react53.useState(null);
+  const [failure, setFailure] = import_react53.useState(null);
+  const [active, setActive] = import_react53.useState(0);
+  const [focusSeq, setFocusSeq] = import_react53.useState(0);
+  const box = import_react53.useRef(null);
+  const field = import_react53.useRef(null);
+  const listId = import_react53.useId();
+  const mac = onMac();
+  const q = query.trim();
+  import_react53.useEffect(() => {
+    const onKey = (e) => {
+      if (!isSearchShortcut(e))
+        return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(true);
+      setFocusSeq((n) => n + 1);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, []);
+  import_react53.useEffect(() => {
+    if (focusSeq === 0)
+      return;
+    field.current?.focus();
+    field.current?.select();
+  }, [focusSeq]);
+  import_react53.useEffect(() => {
+    const onDown = (e) => {
+      if (box.current && !box.current.contains(e.target))
+        setOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, []);
+  import_react53.useEffect(() => {
+    if (q === "") {
+      setReport(null);
+      setFailure(null);
+      return;
+    }
+    if (!connected)
+      return;
+    let current = true;
+    const t = setTimeout(() => {
+      request({ op: "search", query: q, limit: ASK_LIMIT }).then((frame) => {
+        if (!current)
+          return;
+        setFailure(null);
+        setReport(frame);
+        setActive(0);
+      }).catch((e) => {
+        if (current)
+          setFailure(e instanceof Error ? e.message : String(e));
+      });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      current = false;
+      clearTimeout(t);
+    };
+  }, [q, connected, request]);
+  const fresh = report && report.query === q ? report : null;
+  const grouped = groupResults(fresh?.results ?? []);
+  const results = grouped.ordered;
+  const showing = open && q !== "";
+  const choose = import_react53.useCallback((r) => {
+    setOpen(false);
+    field.current?.blur();
+    onOpen(r);
+  }, [onOpen]);
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+      field.current?.blur();
+      return;
+    }
+    if (!showing || results.length === 0)
+      return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      setActive((i) => (i + step + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const r = results[active];
+      if (r)
+        choose(r);
+    }
+  };
+  import_react53.useEffect(() => {
+    if (!showing)
+      return;
+    document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" });
+  }, [showing, active, listId]);
+  return /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+    ref: box,
+    "data-slot": "search-box",
+    className: cn("@container relative flex h-6 min-w-6 flex-1 justify-center", className),
+    children: [
+      /* @__PURE__ */ jsx_runtime55.jsx("button", {
+        type: "button",
+        "aria-label": "Search documents",
+        title: `Search (${mac ? "⌘K" : "Ctrl K"})`,
+        onClick: () => {
+          setOpen(true);
+          setFocusSeq((n) => n + 1);
+        },
+        className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 @min-[9rem]:hidden [&_svg]:size-3.5", open && "hidden"),
+        children: /* @__PURE__ */ jsx_runtime55.jsx(Search, {
+          "aria-hidden": true
+        })
+      }),
+      /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+        className: cn("h-6 w-full max-w-md items-center gap-1.5 rounded-md border border-edge bg-bg px-2 focus-within:ring-2 focus-within:ring-ring/60 @max-[9rem]:absolute @max-[9rem]:top-0 @max-[9rem]:left-1/2 @max-[9rem]:z-50 @max-[9rem]:-translate-x-1/2 @max-[9rem]:w-56", open ? "flex" : "hidden @min-[9rem]:flex"),
+        children: [
+          /* @__PURE__ */ jsx_runtime55.jsx(Search, {
+            "aria-hidden": true,
+            className: "size-3.5 shrink-0 text-ink-faint"
+          }),
+          /* @__PURE__ */ jsx_runtime55.jsx("input", {
+            ref: field,
+            value: query,
+            onChange: (e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            },
+            onFocus: () => setOpen(true),
+            onKeyDown,
+            placeholder: `Search (${mac ? "⌘K" : "Ctrl K"})`,
+            "aria-label": "Search documents",
+            role: "combobox",
+            "aria-expanded": showing,
+            "aria-controls": listId,
+            "aria-activedescendant": showing && results.length > 0 ? `${listId}-${active}` : undefined,
+            "aria-autocomplete": "list",
+            spellCheck: false,
+            autoComplete: "off",
+            className: "min-w-0 flex-1 bg-transparent text-xs text-ink outline-none placeholder:text-ink-faint"
+          }),
+          q !== "" && /* @__PURE__ */ jsx_runtime55.jsx("button", {
+            type: "button",
+            "aria-label": "Clear the search",
+            onClick: () => {
+              setQuery("");
+              setOpen(false);
+              field.current?.focus();
+            },
+            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
+            children: /* @__PURE__ */ jsx_runtime55.jsx(X, {
+              "aria-hidden": true,
+              className: "size-3"
+            })
+          })
+        ]
+      }),
+      showing && /* @__PURE__ */ jsx_runtime55.jsx("div", {
+        "data-slot": "search-results",
+        className: "absolute top-full left-1/2 z-50 mt-1 -translate-x-1/2 max-h-[60vh] w-[min(30rem,90vw)] overflow-auto rounded-md border border-edge bg-surface-raised shadow-lg",
+        children: failure ? /* @__PURE__ */ jsx_runtime55.jsxs("p", {
+          className: "px-3 py-2 text-xs text-ink-dim",
+          children: [
+            "The search failed: ",
+            failure
+          ]
+        }) : !connected ? /* @__PURE__ */ jsx_runtime55.jsx("p", {
+          className: "px-3 py-2 text-xs text-ink-dim",
+          children: "The workspace daemon is not answering."
+        }) : fresh === null ? /* @__PURE__ */ jsx_runtime55.jsx("p", {
+          className: "px-3 py-2 text-xs text-ink-faint",
+          children: "Searching…"
+        }) : results.length === 0 ? /* @__PURE__ */ jsx_runtime55.jsxs("p", {
+          className: "px-3 py-2 text-xs text-ink-dim",
+          children: [
+            "Nothing matches ",
+            /* @__PURE__ */ jsx_runtime55.jsx("span", {
+              className: "font-mono text-ink",
+              children: q
+            }),
+            "."
+          ]
+        }) : /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+          role: "listbox",
+          id: listId,
+          "aria-label": "Search results",
+          children: [
+            grouped.names.length > 0 && /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+              children: [
+                /* @__PURE__ */ jsx_runtime55.jsx("h2", {
+                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+                  children: "Documents"
+                }),
+                grouped.names.map((r, i) => /* @__PURE__ */ jsx_runtime55.jsx(Row3, {
+                  id: `${listId}-${i}`,
+                  result: r,
+                  active: i === active,
+                  onHover: () => setActive(i),
+                  onChoose: () => choose(r)
+                }, `name:${r.path}`))
+              ]
+            }),
+            grouped.files.length > 0 && /* @__PURE__ */ jsx_runtime55.jsxs("h2", {
+              className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+              children: [
+                "In text (",
+                results.length - grouped.names.length,
+                fresh.truncated ? ", and more" : "",
+                ")"
+              ]
+            }),
+            grouped.files.map((f) => /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+              "data-slot": "search-file",
+              children: [
+                /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+                  className: "flex items-baseline gap-2 px-3 pt-1 text-[11px]",
+                  children: [
+                    /* @__PURE__ */ jsx_runtime55.jsx("span", {
+                      className: "min-w-0 truncate text-ink",
+                      children: f.label
+                    }),
+                    /* @__PURE__ */ jsx_runtime55.jsx("span", {
+                      "data-slot": "search-file-count",
+                      className: "shrink-0 text-ink-faint",
+                      children: f.hits.length
+                    })
+                  ]
+                }),
+                f.hits.map((r) => {
+                  const i = results.indexOf(r);
+                  return /* @__PURE__ */ jsx_runtime55.jsx(Row3, {
+                    id: `${listId}-${i}`,
+                    result: r,
+                    fileLabel: f.label,
+                    active: i === active,
+                    onHover: () => setActive(i),
+                    onChoose: () => choose(r)
+                  }, `text:${r.path}:${r.from ?? ""}`);
+                })
+              ]
+            }, f.key))
+          ]
+        })
+      })
+    ]
+  });
+}
+function Row3({
+  id,
+  result: r,
+  fileLabel,
+  active,
+  onHover,
+  onChoose
+}) {
+  const imageName = r.image ? r.image.slice(r.image.lastIndexOf("/") + 1) : null;
+  return /* @__PURE__ */ jsx_runtime55.jsx("div", {
+    id,
+    role: "option",
+    tabIndex: -1,
+    "aria-selected": active,
+    "data-kind": r.kind,
+    "data-image": r.image ? "" : undefined,
+    onMouseMove: onHover,
+    onMouseDown: (e) => e.preventDefault(),
+    onClick: onChoose,
+    className: cn("flex cursor-pointer items-baseline gap-2 px-3 py-1.5 text-left text-xs", active && "bg-bg"),
+    children: r.kind === "name" ? /* @__PURE__ */ jsx_runtime55.jsxs(jsx_runtime55.Fragment, {
+      children: [
+        imageName ? /* @__PURE__ */ jsx_runtime55.jsx(Image, {
+          "aria-hidden": true,
+          className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
+        }) : /* @__PURE__ */ jsx_runtime55.jsx(FileText, {
+          "aria-hidden": true,
+          className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
+        }),
+        /* @__PURE__ */ jsx_runtime55.jsx("span", {
+          className: "truncate text-ink",
+          children: imageName ?? r.name
+        }),
+        imageName ? /* @__PURE__ */ jsx_runtime55.jsx("span", {
+          className: "shrink-0 text-ink-faint",
+          children: "description"
+        }) : r.bundle ? /* @__PURE__ */ jsx_runtime55.jsx("span", {
+          className: "shrink-0 text-ink-faint",
+          children: r.bundle.label
+        }) : r.version !== null && /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+          className: "shrink-0 text-ink-faint",
+          children: [
+            "v",
+            r.version
+          ]
+        })
+      ]
+    }) : /* @__PURE__ */ jsx_runtime55.jsxs(jsx_runtime55.Fragment, {
+      children: [
+        /* @__PURE__ */ jsx_runtime55.jsx("span", {
+          className: "w-7 shrink-0 text-right font-mono text-[10px] text-ink-faint",
+          children: r.line
+        }),
+        /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+          className: "min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim",
+          children: [
+            /* @__PURE__ */ jsx_runtime55.jsx(Highlighted, {
+              text: r.snippet ?? "",
+              from: r.snippetFrom,
+              to: r.snippetTo
+            }),
+            fileLabel && /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+              className: "sr-only",
+              children: [
+                ", in ",
+                fileLabel
+              ]
+            })
+          ]
+        })
+      ]
+    })
+  });
+}
+function Highlighted({ text, from, to }) {
+  if (from === undefined || to === undefined || from >= to || to > text.length)
+    return /* @__PURE__ */ jsx_runtime55.jsx(jsx_runtime55.Fragment, {
+      children: text
+    });
+  return /* @__PURE__ */ jsx_runtime55.jsxs(jsx_runtime55.Fragment, {
+    children: [
+      text.slice(0, from),
+      /* @__PURE__ */ jsx_runtime55.jsx("mark", {
+        "data-slot": "search-match",
+        className: "rounded-sm bg-attention/30 text-ink",
+        children: text.slice(from, to)
+      }),
+      text.slice(to)
+    ]
+  });
+}
+
+// src/kit/shell/TopBar.tsx
+var jsx_runtime56 = __toESM(require_jsx_runtime(), 1);
+var NOT_CONNECTED_REASON = "Not connected to the workspace daemon: this waits until it answers again";
+function TopBar({
+  daemon,
+  state,
+  quiet,
+  fade,
+  sessionLabel,
+  openResult,
+  ended,
+  restoreCommand,
+  chipRef,
+  setEndPhase,
+  setSettingsOpen,
+  theme,
+  setTheme
+}) {
+  return /* @__PURE__ */ jsx_runtime56.jsx(jsx_runtime56.Fragment, {
+    children: /* @__PURE__ */ jsx_runtime56.jsxs("header", {
+      "data-slot": "shell-top-bar",
+      className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+      children: [
+        /* @__PURE__ */ jsx_runtime56.jsxs("div", {
+          className: "flex min-w-0 items-baseline gap-2",
+          children: [
+            /* @__PURE__ */ jsx_runtime56.jsx("span", {
+              "data-slot": "app-title",
+              title: sessionLabel,
+              className: cn("text-sm font-medium text-ink", fade),
+              children: state.appTitle ?? state.app
+            }),
+            /* @__PURE__ */ jsx_runtime56.jsx("span", {
+              "data-slot": "session-id",
+              className: cn("hidden font-mono text-xs @[34rem]:inline", daemon.connection === "ended" ? "text-ink-dim" : "text-ink-faint", daemon.connection !== "ended" && fade),
+              children: sessionLabel
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime56.jsx("div", {
+          className: "flex min-w-0 justify-center",
+          children: /* @__PURE__ */ jsx_runtime56.jsx(SearchBox, {
+            request: daemon.request,
+            connected: daemon.connection === "open",
+            onOpen: openResult,
+            className: fade
+          })
+        }),
+        /* @__PURE__ */ jsx_runtime56.jsxs("div", {
+          className: "flex items-center justify-end gap-1",
+          children: [
+            ended ? /* @__PURE__ */ jsx_runtime56.jsx(EndedChip, {
+              command: restoreCommand,
+              by: daemon.endedBy,
+              chipRef
+            }) : /* @__PURE__ */ jsx_runtime56.jsx(ColumnButton, {
+              label: "End session",
+              control: "end-session",
+              onClick: () => setEndPhase("confirm"),
+              disabled: daemon.connection !== "open",
+              disabledReason: NOT_CONNECTED_REASON,
+              className: fade,
+              children: /* @__PURE__ */ jsx_runtime56.jsx(Power, {
+                "aria-hidden": true
+              })
+            }),
+            /* @__PURE__ */ jsx_runtime56.jsx(ColumnButton, {
+              label: "Settings",
+              control: "settings",
+              onClick: () => setSettingsOpen(true),
+              disabled: daemon.connection !== "open",
+              disabledReason: NOT_CONNECTED_REASON,
+              className: fade,
+              children: /* @__PURE__ */ jsx_runtime56.jsx(Settings, {
+                "aria-hidden": true
+              })
+            }),
+            /* @__PURE__ */ jsx_runtime56.jsx(ColumnButton, {
+              label: theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme",
+              onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
+              className: fade,
+              children: theme === "dark" ? /* @__PURE__ */ jsx_runtime56.jsx(Sun, {
+                "aria-hidden": true
+              }) : /* @__PURE__ */ jsx_runtime56.jsx(Moon, {
+                "aria-hidden": true
+              })
+            })
+          ]
+        })
+      ]
+    })
+  });
+}
+
+// src/kit/shell/WorkspaceShell.tsx
+var jsx_runtime57 = __toESM(require_jsx_runtime(), 1);
+var PANES = ["context", "centre", "chat"];
+var HANDLE_REACH = 6;
+var UNREACHABLE = "The workspace daemon is not answering, so the session cannot be ended from here. Try again once it is back.";
 function PaneHeading({
   children,
   actions,
   pinned
 }) {
-  return /* @__PURE__ */ jsx_runtime53.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime57.jsxs("div", {
     className: "flex h-9 shrink-0 items-center gap-1 border-b border-edge px-2 text-xs font-medium tracking-wide text-ink-dim uppercase",
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx("span", {
+      /* @__PURE__ */ jsx_runtime57.jsx("span", {
         className: "min-w-0 truncate pl-1",
         children
       }),
-      actions && /* @__PURE__ */ jsx_runtime53.jsx("div", {
+      actions && /* @__PURE__ */ jsx_runtime57.jsx("div", {
         className: "ml-auto flex min-w-0 items-center gap-0.5 overflow-hidden",
         children: actions
       }),
-      pinned && /* @__PURE__ */ jsx_runtime53.jsx("div", {
+      pinned && /* @__PURE__ */ jsx_runtime57.jsx("div", {
         className: cn("shrink-0", !actions && "ml-auto"),
         children: pinned
       })
@@ -77230,16 +77536,16 @@ function PaneHeading({
 function WorkspaceShell(props) {
   const state = props.daemon.state;
   if (!state) {
-    return /* @__PURE__ */ jsx_runtime53.jsx("div", {
+    return /* @__PURE__ */ jsx_runtime57.jsx("div", {
       "data-slot": "workspace-shell",
       className: "flex h-full items-center justify-center bg-bg text-ink",
-      children: /* @__PURE__ */ jsx_runtime53.jsx(Empty, {
-        children: /* @__PURE__ */ jsx_runtime53.jsxs(EmptyHeader, {
+      children: /* @__PURE__ */ jsx_runtime57.jsx(Empty, {
+        children: /* @__PURE__ */ jsx_runtime57.jsxs(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_runtime53.jsx(EmptyTitle, {
+            /* @__PURE__ */ jsx_runtime57.jsx(EmptyTitle, {
               children: props.daemon.connection === "closed" ? "Daemon unreachable" : props.daemon.connection === "ended" ? "Session ended" : "Connecting"
             }),
-            /* @__PURE__ */ jsx_runtime53.jsx(EmptyDescription, {
+            /* @__PURE__ */ jsx_runtime57.jsx(EmptyDescription, {
               children: props.daemon.connection === "closed" ? "The workspace daemon is not answering. This page keeps trying." : props.daemon.connection === "ended" ? "The session was closed." : "Waiting for the workspace daemon."
             })
           ]
@@ -77247,7 +77553,7 @@ function WorkspaceShell(props) {
       })
     });
   }
-  return /* @__PURE__ */ jsx_runtime53.jsx(ShellBody, {
+  return /* @__PURE__ */ jsx_runtime57.jsx(ShellBody, {
     ...props,
     state
   });
@@ -77281,55 +77587,55 @@ function ShellBody({
   const { send } = daemon;
   const toasts = useToastStore();
   const restoreCommand = `${state.launcher ? `${state.launcher} ` : ""}open --restore ${state.sessionId}`;
-  const [endPhase, setEndPhase] = import_react53.useState(null);
+  const [endPhase, setEndPhase] = import_react54.useState(null);
   const ended = daemon.connection === "ended";
-  const endedBefore = import_react53.useRef(ended);
-  import_react53.useEffect(() => {
+  const endedBefore = import_react54.useRef(ended);
+  import_react54.useEffect(() => {
     if (ended && !endedBefore.current)
       setEndPhase("ended");
     endedBefore.current = ended;
   }, [ended]);
-  const [endNotice, setEndNotice] = import_react53.useState(null);
-  import_react53.useEffect(() => {
+  const [endNotice, setEndNotice] = import_react54.useState(null);
+  import_react54.useEffect(() => {
     if (endPhase === "ending" && daemon.connection !== "open" && !ended) {
       setEndPhase("confirm");
       setEndNotice(UNREACHABLE);
     }
   }, [endPhase, daemon.connection, ended]);
-  const chipRef = import_react53.useRef(null);
-  const [settingsOpen, setSettingsOpen] = import_react53.useState(false);
-  const [theme, setThemeState] = import_react53.useState(() => readAppliedTheme());
-  const setTheme = import_react53.useCallback((next) => {
+  const chipRef = import_react54.useRef(null);
+  const [settingsOpen, setSettingsOpen] = import_react54.useState(false);
+  const [theme, setThemeState] = import_react54.useState(() => readAppliedTheme());
+  const setTheme = import_react54.useCallback((next) => {
     applyTheme(next);
     setThemeState(next);
     storageProp?.setItem(THEME_KEY, next);
   }, [storageProp]);
   const themeKept = keptTheme(storageProp?.getItem(THEME_KEY));
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (themeKept && themeKept !== readAppliedTheme()) {
       applyTheme(themeKept);
       setThemeState(themeKept);
     }
   }, [themeKept]);
-  const storage = import_react53.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layoutStorage = import_react53.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const storage = import_react54.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
+  const layoutStorage = import_react54.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
   const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
-  const [collapsed, setCollapsed] = import_react53.useState(() => collapsedSides(layout.defaultLayout));
-  const collapsedRef = import_react53.useRef(collapsed);
+  const [collapsed, setCollapsed] = import_react54.useState(() => collapsedSides(layout.defaultLayout));
+  const collapsedRef = import_react54.useRef(collapsed);
   collapsedRef.current = collapsed;
-  const reopening = import_react53.useRef(new Set);
-  const openSizesRef = import_react53.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
+  const reopening = import_react54.useRef(new Set);
+  const openSizesRef = import_react54.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
   const contextPanel = fn();
   const chatPanel = fn();
-  const panelFor = import_react53.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
-  const collapse = import_react53.useCallback((side) => {
+  const panelFor = import_react54.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
+  const collapse = import_react54.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel || panel.isCollapsed())
       return false;
     panel.collapse();
     return true;
   }, [panelFor]);
-  const expand = import_react53.useCallback((side) => {
+  const expand = import_react54.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel?.isCollapsed())
       return false;
@@ -77374,12 +77680,12 @@ function ShellBody({
     else
       collapse(side);
   };
-  const focusNext = import_react53.useRef(null);
-  const toggleFrom = import_react53.useCallback((side, act, then) => {
+  const focusNext = import_react54.useRef(null);
+  const toggleFrom = import_react54.useCallback((side, act, then) => {
     const acted = act === "collapse" ? collapse(side) : expand(side);
     focusNext.current = acted ? then ?? `[data-column-control="${side}-${act === "collapse" ? "reopen" : "collapse"}"]` : null;
   }, [collapse, expand]);
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     const sel = focusNext.current;
     if (!sel)
       return;
@@ -77389,7 +77695,7 @@ function ShellBody({
     focusNext.current = null;
     el.focus();
   });
-  const onLayoutChanged = import_react53.useCallback((next, meta) => {
+  const onLayoutChanged = import_react54.useCallback((next, meta) => {
     layout.onLayoutChanged(next, meta);
     const panels = { context: contextPanel.current, chat: chatPanel.current };
     const now = collapsedFrom(next, panels);
@@ -77409,46 +77715,46 @@ function ShellBody({
       storage.setItem(OPEN_KEY, encodeOpenSizes(remembered));
     }
   }, [layout, storage, contextPanel, chatPanel]);
-  const columns = import_react53.useMemo(() => ({
+  const columns = import_react54.useMemo(() => ({
     collapsed: { context: collapsed.context, chat: collapsed.chat },
     collapse: (side) => void collapse(side),
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
-  const [quietWanted, setQuiet] = import_react53.useState(false);
+  const [quietWanted, setQuiet] = import_react54.useState(false);
   const quiet = quietWanted && !state.openImage;
   const fade = quiet ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
-  const [seenMessage, setSeenMessage] = import_react53.useState(newestMessage);
-  import_react53.useEffect(() => {
+  const [seenMessage, setSeenMessage] = import_react54.useState(newestMessage);
+  import_react54.useEffect(() => {
     if (!collapsed.chat && seenMessage !== newestMessage)
       setSeenMessage(newestMessage);
   }, [collapsed.chat, newestMessage, seenMessage]);
   const chatUnseen = collapsed.chat && unseenFromAgent(state.chat, seenMessage);
-  const [draft, setDraft] = import_react53.useState("");
-  const [floatClosed, setFloatClosedState] = import_react53.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
-  const setFloatClosed = import_react53.useCallback((closed) => {
+  const [draft, setDraft] = import_react54.useState("");
+  const [floatClosed, setFloatClosedState] = import_react54.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
+  const setFloatClosed = import_react54.useCallback((closed) => {
     setFloatClosedState(closed);
     storage.setItem(FLOAT_KEY, encodeFloatClosed(closed));
   }, [storage]);
-  const chatWasCollapsed = import_react53.useRef(collapsed.chat);
-  import_react53.useEffect(() => {
+  const chatWasCollapsed = import_react54.useRef(collapsed.chat);
+  import_react54.useEffect(() => {
     if (chatWasCollapsed.current && !collapsed.chat && floatClosed)
       setFloatClosed(false);
     chatWasCollapsed.current = collapsed.chat;
   }, [collapsed.chat, floatClosed, setFloatClosed]);
   const floating = floatShown(collapsed, floatClosed);
-  const [dock, setDock] = import_react53.useState(null);
+  const [dock, setDock] = import_react54.useState(null);
   const floatIcon = floatOnRail(collapsed, floatClosed);
   const sessionLabel = `session ${state.sessionId}${daemon.connection === "ended" ? " (ended)" : ""}`;
-  const focusPane = import_react53.useCallback((pane) => {
+  const focusPane = import_react54.useCallback((pane) => {
     if (pane === "context" && collapsed.context)
       expand("context");
     if (pane === "chat" && collapsed.chat)
       expand("chat");
     requestAnimationFrame(() => document.querySelector(`[data-pane="${pane}"]`)?.focus());
   }, [collapsed.context, collapsed.chat, expand]);
-  const showChatTab = import_react53.useRef(() => {});
-  const focusComposer = import_react53.useCallback(() => {
+  const showChatTab = import_react54.useRef(() => {});
+  const focusComposer = import_react54.useCallback(() => {
     if (floating) {
       requestAnimationFrame(() => document.querySelector(FLOAT_INPUT)?.focus());
       return;
@@ -77458,8 +77764,8 @@ function ShellBody({
     showChatTab.current();
     requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('[data-pane="chat"] [data-slot="composer-input"]')?.focus()));
   }, [collapsed.chat, expand, floating]);
-  const rootRef = import_react53.useRef(null);
-  import_react53.useEffect(() => {
+  const rootRef = import_react54.useRef(null);
+  import_react54.useEffect(() => {
     const onKey = (e) => {
       const root = rootRef.current;
       if (!root)
@@ -77504,23 +77810,23 @@ function ShellBody({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [collapsed, collapse, expand, focusPane, toggleFrom, floatClosed]);
-  const openDoc = import_react53.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
+  const openDoc = import_react54.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
   const openImage = state.openImage ?? null;
-  const [rawMain, setRawMain] = import_react53.useState(null);
+  const [rawMain, setRawMain] = import_react54.useState(null);
   const openOriginal = openDoc?.original ?? null;
-  const rawRef = import_react53.useRef(rawMain);
+  const rawRef = import_react54.useRef(rawMain);
   rawRef.current = rawMain;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (rawRef.current !== null && openOriginal !== rawRef.current)
       setRawMain(null);
   }, [openOriginal]);
-  const [selection, setSelection] = import_react53.useState(null);
-  const [clearSeq, setClearSeq] = import_react53.useState(0);
-  const [reveal, setReveal] = import_react53.useState(null);
-  const revealSeq = import_react53.useRef(0);
-  const selectionRef = import_react53.useRef(selection);
+  const [selection, setSelection] = import_react54.useState(null);
+  const [clearSeq, setClearSeq] = import_react54.useState(0);
+  const [reveal, setReveal] = import_react54.useState(null);
+  const revealSeq = import_react54.useRef(0);
+  const selectionRef = import_react54.useRef(selection);
   selectionRef.current = selection;
-  const onSelectionEvent = import_react53.useCallback((event) => {
+  const onSelectionEvent = import_react54.useCallback((event) => {
     const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
     selectionRef.current = held;
     setSelection(held);
@@ -77533,13 +77839,13 @@ function ShellBody({
   }, []);
   const shownDoc = openDoc?.slug ?? null;
   const shownVersion = openDoc?.active ?? null;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
   }, [shownDoc, shownVersion, onSelectionEvent]);
-  const [pointedAt, setPointedAt] = import_react53.useState(null);
+  const [pointedAt, setPointedAt] = import_react54.useState(null);
   const focusedNote = pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion ? pointedAt.id : null;
   const pickedState = focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!pointedAt || pickedState === undefined)
       return;
     if (pickedState && !pointedAt.resolved)
@@ -77547,11 +77853,11 @@ function ShellBody({
     else if (!pickedState && pointedAt.resolved)
       setPointedAt({ ...pointedAt, resolved: false });
   }, [pickedState, pointedAt]);
-  const [showResolvedNotes, setShowResolvedNotes] = import_react53.useState(false);
+  const [showResolvedNotes, setShowResolvedNotes] = import_react54.useState(false);
   const connected = daemon.connection === "open";
-  const docsRef = import_react53.useRef(state.docs);
+  const docsRef = import_react54.useRef(state.docs);
   docsRef.current = state.docs;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!connected)
       return;
     if (!selection) {
@@ -77574,30 +77880,30 @@ function ShellBody({
       }
     });
   }, [selection, send, connected]);
-  const [pointedDocs, setPointedDocs] = import_react53.useState(null);
-  const reportSelection = import_react53.useCallback((s) => {
+  const [pointedDocs, setPointedDocs] = import_react54.useState(null);
+  const reportSelection = import_react54.useCallback((s) => {
     if (s.from !== s.to)
       setPointedDocs(null);
     onSelectionEvent({ type: "report", selection: s });
   }, [onSelectionEvent]);
-  const dropSelection = import_react53.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
-  const pointDocs = import_react53.useCallback((p) => {
+  const dropSelection = import_react54.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
+  const pointDocs = import_react54.useCallback((p) => {
     const next = p && (p.docs.length > 0 || p.label) ? p : null;
     if (next && selectionRef.current)
       onSelectionEvent({ type: "drop" });
     setPointedDocs(next);
   }, [onSelectionEvent]);
-  const [treeSelected, setTreeSelected] = import_react53.useState([]);
-  const [addedRefs, setAddedRefs] = import_react53.useState([]);
-  const addRef = import_react53.useCallback((ref) => setAddedRefs((rs) => rs.some((r) => r.path === ref.path) ? rs : [...rs, ref]), []);
-  const removeRef = import_react53.useCallback((path) => setAddedRefs((rs) => rs.filter((r) => r.path !== path)), []);
-  const clearRefs = import_react53.useCallback(() => setAddedRefs([]), []);
-  const requestReveal = import_react53.useCallback((target) => {
+  const [treeSelected, setTreeSelected] = import_react54.useState([]);
+  const [addedRefs, setAddedRefs] = import_react54.useState([]);
+  const addRef = import_react54.useCallback((ref) => setAddedRefs((rs) => rs.some((r) => r.path === ref.path) ? rs : [...rs, ref]), []);
+  const removeRef = import_react54.useCallback((path) => setAddedRefs((rs) => rs.filter((r) => r.path !== path)), []);
+  const clearRefs = import_react54.useCallback(() => setAddedRefs([]), []);
+  const requestReveal = import_react54.useCallback((target) => {
     setReveal({ ...target, seq: ++revealSeq.current });
   }, []);
-  const revealApplied = import_react53.useCallback((seq) => setReveal((r) => revealAfter(r, { type: "applied", seq })), []);
-  const [pendingShow, setPendingShow] = import_react53.useState(null);
-  const openAt = import_react53.useCallback((path, at) => {
+  const revealApplied = import_react54.useCallback((seq) => setReveal((r) => revealAfter(r, { type: "applied", seq })), []);
+  const [pendingShow, setPendingShow] = import_react54.useState(null);
+  const openAt = import_react54.useCallback((path, at) => {
     if (openDoc && openDoc.original === path) {
       setPendingShow(null);
       if (at)
@@ -77607,7 +77913,7 @@ function ShellBody({
     setPendingShow(at ? { path, from: at.from, to: at.to, since: openDoc?.original ?? null } : null);
     send({ op: "open", path });
   }, [send, requestReveal, openDoc]);
-  const openResult = import_react53.useCallback((r) => {
+  const openResult = import_react54.useCallback((r) => {
     if (r.image) {
       setPendingShow(null);
       send({ op: "open", path: r.image });
@@ -77615,7 +77921,7 @@ function ShellBody({
     }
     openAt(r.path, r.kind === "text" && r.from !== undefined && r.to !== undefined ? { from: r.from, to: r.to } : undefined);
   }, [openAt, send]);
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!pendingShow)
       return;
     if (openDoc?.original !== pendingShow.path) {
@@ -77632,11 +77938,11 @@ function ShellBody({
       ...pendingShow.heading ? { heading: pendingShow.heading } : {}
     });
   }, [pendingShow, openDoc, requestReveal]);
-  const openDocRef = import_react53.useRef(openDoc);
+  const openDocRef = import_react54.useRef(openDoc);
   openDocRef.current = openDoc;
   const { onFrame: onDaemonFrame } = daemon;
   const { announce: announceToast } = toasts;
-  import_react53.useEffect(() => onDaemonFrame((frame) => {
+  import_react54.useEffect(() => onDaemonFrame((frame) => {
     if (frame.op !== "link.target")
       return;
     const f = frame;
@@ -77653,10 +77959,10 @@ function ShellBody({
       since: openDocRef.current?.original ?? null
     });
   }), [onDaemonFrame, announceToast]);
-  const [imageLinks, setImageLinks] = import_react53.useState(null);
+  const [imageLinks, setImageLinks] = import_react54.useState(null);
   const openImagePath = openImage?.path ?? null;
   const { request } = daemon;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (openImagePath === null) {
       setImageLinks(null);
       return;
@@ -77677,21 +77983,21 @@ function ShellBody({
     };
   }, [openImagePath, request, state]);
   const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
-  const endedToastAt = import_react53.useRef(0);
-  import_react53.useEffect(() => {
+  const endedToastAt = import_react54.useRef(0);
+  import_react54.useEffect(() => {
     if (lastError)
       setPendingShow(null);
   }, [lastError]);
   const noticeOwned = notice !== undefined;
-  const ownedToast = import_react53.useRef(null);
+  const ownedToast = import_react54.useRef(null);
   const { dismiss: dismissToast } = toasts;
-  const letOwnedToastGo = import_react53.useCallback(() => {
+  const letOwnedToastGo = import_react54.useCallback(() => {
     if (ownedToast.current === null)
       return;
     dismissToast(ownedToast.current);
     ownedToast.current = null;
   }, [dismissToast]);
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!lastError)
       return;
     if (noticeOwned && lastError !== SESSION_ENDED) {
@@ -77710,7 +78016,7 @@ function ShellBody({
     clearError();
   }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   const linkRefused = lastError !== null && lastErrorTitle === LINK_REFUSED;
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!linkRefused)
       return;
     const onKey = (e) => {
@@ -77720,19 +78026,19 @@ function ShellBody({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [linkRefused, clearError]);
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     if (!lastError || !collapsed.context)
       letOwnedToastGo();
   }, [lastError, collapsed.context, letOwnedToastGo]);
-  const moved = import_react53.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
-  const created = import_react53.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
-  import_react53.useEffect(() => {
+  const moved = import_react54.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const created = import_react54.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
+  import_react54.useEffect(() => {
     if (done?.stay === "rename")
       return;
     if (done?.of === "doc.create" || done?.of === "bundle.create")
       send({ op: "open", path: done.path });
   }, [done, send]);
-  const workspace = import_react53.useMemo(() => ({
+  const workspace = import_react54.useMemo(() => ({
     daemon,
     state,
     openDoc,
@@ -77800,7 +78106,7 @@ function ShellBody({
   } : null;
   const userHome = state.userHome || null;
   const contextEntries = state.context;
-  const askDescribe = import_react53.useCallback((path) => {
+  const askDescribe = import_react54.useCallback((path) => {
     const set = contextEntries.find((e) => e.membership === "mirrored" && path.startsWith(`${e.root}/`));
     const shown = set ? `${set.label}/${path.slice(set.root.length + 1)}` : tildify(path, userHome);
     send({
@@ -77811,7 +78117,7 @@ function ShellBody({
       about: { path }
     });
   }, [send, userHome, contextEntries]);
-  import_react53.useEffect(() => {
+  import_react54.useEffect(() => {
     setTreeSelected((rows) => {
       if (rows.length === 0)
         return rows;
@@ -77819,7 +78125,7 @@ function ShellBody({
       return kept.length === rows.length ? rows : kept;
     });
   }, [contextEntries]);
-  const contextBody = /* @__PURE__ */ jsx_runtime53.jsx(ContextSidebar, {
+  const contextBody = /* @__PURE__ */ jsx_runtime57.jsx(ContextSidebar, {
     entries: state.context,
     activeDoc,
     userHome,
@@ -77843,7 +78149,7 @@ function ShellBody({
         return badge;
       if (!badge)
         return mark;
-      return /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+      return /* @__PURE__ */ jsx_runtime57.jsxs("span", {
         className: "flex items-center gap-1",
         children: [
           badge,
@@ -77885,12 +78191,12 @@ function ShellBody({
   const openNotes = notes.filter((n) => !n.resolved);
   const tasks = state.tasks;
   const outstanding = tasks.filter((t) => !isFinishedStatus(t.status));
-  const docName = import_react53.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
-  const pathName = import_react53.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
+  const docName = import_react54.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
+  const pathName = import_react54.useCallback((path) => bundleLabelAt(state.context, path) ?? pathLabel(path), [state.context]);
   const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
   const agentListening = state.agentListening !== false;
   const owedNotes = state.notesWaiting ?? [];
-  const [askPressed, setAskPressed] = import_react53.useState(() => new Map);
+  const [askPressed, setAskPressed] = import_react54.useState(() => new Map);
   const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
   if (daemon.connection === "open") {
     for (const [id, at] of askPressed)
@@ -77914,7 +78220,7 @@ function ShellBody({
     if (sent !== null)
       setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
   } : undefined;
-  const noteReplies = import_react53.useMemo(() => repliesByNote(state.chat), [state.chat]);
+  const noteReplies = import_react54.useMemo(() => repliesByNote(state.chat), [state.chat]);
   const noteName = (noteId) => {
     for (const d of state.docs) {
       const n = d.notes.find((x) => x.id === noteId);
@@ -77948,7 +78254,7 @@ function ShellBody({
   const pointedLabel = pointedDocs?.label ?? null;
   const dropPointed = () => pointDocs(null);
   const activePath = openDoc?.versions.find((v) => v.n === openDoc.active)?.path;
-  const treeRefs = import_react53.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
+  const treeRefs = import_react54.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
   const parts = messageParts({
     selection: attachable !== null && !pointedDocs,
     pointed: pointedDocs?.inAppPart ? [] : pointedDocs?.docs ?? [],
@@ -78002,12 +78308,12 @@ function ShellBody({
     onDropRef: dropRef,
     onSend: say
   };
-  const chatPanel_ = /* @__PURE__ */ jsx_runtime53.jsx(ChatSidebar, {
+  const chatPanel_ = /* @__PURE__ */ jsx_runtime57.jsx(ChatSidebar, {
     messages: state.chat,
     waiting: state.waiting,
     agentListening,
     sessionEnded: ended,
-    composer: collapsed.chat ? null : /* @__PURE__ */ jsx_runtime53.jsx(ChatComposer, {
+    composer: collapsed.chat ? null : /* @__PURE__ */ jsx_runtime57.jsx(ChatComposer, {
       ...composerProps
     }),
     docName,
@@ -78016,7 +78322,7 @@ function ShellBody({
     onFollowLink: followChatLink,
     ...messageActions ? { messageActions } : {}
   });
-  const notesPanel_ = /* @__PURE__ */ jsx_runtime53.jsx(NotesPanel, {
+  const notesPanel_ = /* @__PURE__ */ jsx_runtime57.jsx(NotesPanel, {
     notes,
     waiting: noteBadges,
     others: notesElsewhere,
@@ -78072,7 +78378,7 @@ function ShellBody({
     onRemove: (id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id }),
     addUnavailable: notesAddUnavailable
   });
-  const tasksPanel_ = /* @__PURE__ */ jsx_runtime53.jsx(TasksPanel, {
+  const tasksPanel_ = /* @__PURE__ */ jsx_runtime57.jsx(TasksPanel, {
     tasks,
     onCancel: (id) => send({ op: "task.cancel", id }),
     onRemove: (id) => send({ op: "task.remove", id }),
@@ -78082,11 +78388,11 @@ function ShellBody({
   const tabs = [
     {
       id: "chat",
-      label: /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+      label: /* @__PURE__ */ jsx_runtime57.jsxs("span", {
         className: "flex items-center gap-1",
         children: [
           "Chat",
-          state.waiting && /* @__PURE__ */ jsx_runtime53.jsx(WaitingDot, {
+          state.waiting && /* @__PURE__ */ jsx_runtime57.jsx(WaitingDot, {
             badge: badgeFor(state.waiting, agentListening, ended)
           })
         ]
@@ -78095,11 +78401,11 @@ function ShellBody({
     },
     {
       id: "notes",
-      label: notesOwed ? /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+      label: notesOwed ? /* @__PURE__ */ jsx_runtime57.jsxs("span", {
         className: "flex items-center gap-1",
         children: [
           openNotes.length > 0 ? `Notes (${openNotes.length})` : "Notes",
-          /* @__PURE__ */ jsx_runtime53.jsx(WaitingDot, {
+          /* @__PURE__ */ jsx_runtime57.jsx(WaitingDot, {
             of: "note",
             badge: notesOwed.badge,
             label: notesOwed.label
@@ -78110,10 +78416,10 @@ function ShellBody({
     },
     {
       id: "tasks",
-      label: outstanding.length > 0 ? /* @__PURE__ */ jsx_runtime53.jsxs("span", {
+      label: outstanding.length > 0 ? /* @__PURE__ */ jsx_runtime57.jsxs("span", {
         className: "flex items-center gap-1",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Spinner, {
+          /* @__PURE__ */ jsx_runtime57.jsx(Spinner, {
             className: "text-ink-dim"
           }),
           `Tasks (${outstanding.length})`
@@ -78124,16 +78430,16 @@ function ShellBody({
     ...panels
   ];
   const TAB_KEY = "tab";
-  const [panelId, setPanelIdState] = import_react53.useState(() => storage.getItem(TAB_KEY));
+  const [panelId, setPanelIdState] = import_react54.useState(() => storage.getItem(TAB_KEY));
   const setPanelId = (id) => {
     setPanelIdState(id);
     storage.setItem(TAB_KEY, id);
   };
   const activePanel = tabs.find((p) => p.id === panelId) ?? tabs[0];
   showChatTab.current = () => setPanelId("chat");
-  const floatRow = floating && /* @__PURE__ */ jsx_runtime53.jsx("div", {
+  const floatRow = floating && /* @__PURE__ */ jsx_runtime57.jsx("div", {
     className: "shrink-0 px-3 pt-1 pb-2",
-    children: /* @__PURE__ */ jsx_runtime53.jsx(FloatingComposer, {
+    children: /* @__PURE__ */ jsx_runtime57.jsx(FloatingComposer, {
       messages: state.chat,
       waiting: state.waiting,
       notesWaiting,
@@ -78151,7 +78457,7 @@ function ShellBody({
         setFloatClosed(true);
         focusNext.current = '[data-column-control="chat-float-show"]';
       },
-      children: /* @__PURE__ */ jsx_runtime53.jsx(ChatComposer, {
+      children: /* @__PURE__ */ jsx_runtime57.jsx(ChatComposer, {
         floating: true,
         ...composerProps
       })
@@ -78159,22 +78465,22 @@ function ShellBody({
   });
   const docked = floating && dock !== null;
   const floatAtFoot = floating && dock === null;
-  return /* @__PURE__ */ jsx_runtime53.jsxs(WorkspaceContext.Provider, {
+  return /* @__PURE__ */ jsx_runtime57.jsxs(WorkspaceContext.Provider, {
     value: workspace,
     children: [
-      docked && import_react_dom6.createPortal(/* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+      docked && import_react_dom6.createPortal(/* @__PURE__ */ jsx_runtime57.jsxs(jsx_runtime57.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx("div", {
+          /* @__PURE__ */ jsx_runtime57.jsx("div", {
             "data-slot": "dock-toasts",
             className: "relative h-0 shrink-0",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Toasts, {
+            children: /* @__PURE__ */ jsx_runtime57.jsx(Toasts, {
               store: toasts
             })
           }),
           floatRow
         ]
       }), dock),
-      /* @__PURE__ */ jsx_runtime53.jsx(TaskToasts, {
+      /* @__PURE__ */ jsx_runtime57.jsx(TaskToasts, {
         tasks,
         announce: toasts.announce,
         startsInView: !collapsed.chat && (activePanel.id === "chat" || activePanel.id === "tasks"),
@@ -78183,7 +78489,7 @@ function ShellBody({
           toggleFrom("chat", "expand");
         }
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(OutsideChangeToasts, {
+      /* @__PURE__ */ jsx_runtime57.jsx(OutsideChangeToasts, {
         doc: openDoc,
         announce: toasts.announce,
         dismiss: toasts.dismiss,
@@ -78194,7 +78500,7 @@ function ShellBody({
             onShowOutsideDiff(d);
         } : undefined
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(NewVersionToasts, {
+      /* @__PURE__ */ jsx_runtime57.jsx(NewVersionToasts, {
         doc: openDoc,
         connected: daemon.connection === "open",
         announce: toasts.announce,
@@ -78206,97 +78512,40 @@ function ShellBody({
             onShowDiff(d, version);
         } : undefined
       }),
-      /* @__PURE__ */ jsx_runtime53.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime57.jsxs("div", {
         ref: rootRef,
         "data-slot": "workspace-shell",
         "data-theme": theme,
         className: "flex h-full min-h-0 flex-col bg-bg text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs("header", {
-            "data-slot": "shell-top-bar",
-            className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet ? `${QUIET_GROUP} border-transparent` : "border-edge"),
-            children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-                className: "flex min-w-0 items-baseline gap-2",
-                children: [
-                  /* @__PURE__ */ jsx_runtime53.jsx("span", {
-                    "data-slot": "app-title",
-                    title: sessionLabel,
-                    className: cn("text-sm font-medium text-ink", fade),
-                    children: state.appTitle ?? state.app
-                  }),
-                  /* @__PURE__ */ jsx_runtime53.jsx("span", {
-                    "data-slot": "session-id",
-                    className: cn("hidden font-mono text-xs @[34rem]:inline", daemon.connection === "ended" ? "text-ink-dim" : "text-ink-faint", daemon.connection !== "ended" && fade),
-                    children: sessionLabel
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsx("div", {
-                className: "flex min-w-0 justify-center",
-                children: /* @__PURE__ */ jsx_runtime53.jsx(SearchBox, {
-                  request: daemon.request,
-                  connected: daemon.connection === "open",
-                  onOpen: openResult,
-                  className: fade
-                })
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-                className: "flex items-center justify-end gap-1",
-                children: [
-                  ended ? /* @__PURE__ */ jsx_runtime53.jsx(EndedChip, {
-                    command: restoreCommand,
-                    by: daemon.endedBy,
-                    chipRef
-                  }) : /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                    label: "End session",
-                    control: "end-session",
-                    onClick: () => setEndPhase("confirm"),
-                    disabled: daemon.connection !== "open",
-                    disabledReason: NOT_CONNECTED_REASON,
-                    className: fade,
-                    children: /* @__PURE__ */ jsx_runtime53.jsx(Power, {
-                      "aria-hidden": true
-                    })
-                  }),
-                  /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                    label: "Settings",
-                    control: "settings",
-                    onClick: () => setSettingsOpen(true),
-                    disabled: daemon.connection !== "open",
-                    disabledReason: NOT_CONNECTED_REASON,
-                    className: fade,
-                    children: /* @__PURE__ */ jsx_runtime53.jsx(Settings, {
-                      "aria-hidden": true
-                    })
-                  }),
-                  /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                    label: theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme",
-                    onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
-                    className: fade,
-                    children: theme === "dark" ? /* @__PURE__ */ jsx_runtime53.jsx(Sun, {
-                      "aria-hidden": true
-                    }) : /* @__PURE__ */ jsx_runtime53.jsx(Moon, {
-                      "aria-hidden": true
-                    })
-                  })
-                ]
-              })
-            ]
+          /* @__PURE__ */ jsx_runtime57.jsx(TopBar, {
+            daemon,
+            state,
+            quiet,
+            fade,
+            sessionLabel,
+            openResult,
+            ended,
+            restoreCommand,
+            chipRef,
+            setEndPhase,
+            setSettingsOpen,
+            theme,
+            setTheme
           }),
-          daemon.connection === "closed" && /* @__PURE__ */ jsx_runtime53.jsx("div", {
+          daemon.connection === "closed" && /* @__PURE__ */ jsx_runtime57.jsx("div", {
             role: "status",
             className: "shrink-0 border-b border-attention/40 bg-attention/10 px-3 py-1 text-xs text-ink",
             children: "The workspace daemon is not answering. This page keeps trying, and what you see is how things were when it went quiet."
           }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(ResizablePanelGroup, {
+          /* @__PURE__ */ jsx_runtime57.jsxs(ResizablePanelGroup, {
             orientation: "horizontal",
             className: "min-h-0 flex-1",
             defaultLayout: layout.defaultLayout,
             onLayoutChanged,
             onDoubleClickCapture: onGroupDoubleClick,
             children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs(ResizablePanel, {
+              /* @__PURE__ */ jsx_runtime57.jsxs(ResizablePanel, {
                 id: "context",
                 panelRef: contextPanel,
                 collapsible: true,
@@ -78319,43 +78568,43 @@ function ShellBody({
                     send({ op: "history.undo" });
                 },
                 children: [
-                  collapsed.context && /* @__PURE__ */ jsx_runtime53.jsx(Rail, {
+                  collapsed.context && /* @__PURE__ */ jsx_runtime57.jsx(Rail, {
                     quiet,
-                    children: /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
+                    children: /* @__PURE__ */ jsx_runtime57.jsx(ColumnButton, {
                       label: "Reopen the context column",
                       control: "context-reopen",
                       onClick: () => toggleFrom("context", "expand"),
                       className: fade,
-                      children: /* @__PURE__ */ jsx_runtime53.jsx(PanelLeftOpen, {
+                      children: /* @__PURE__ */ jsx_runtime57.jsx(PanelLeftOpen, {
                         "aria-hidden": true
                       })
                     })
                   }),
-                  /* @__PURE__ */ jsx_runtime53.jsxs("div", {
+                  /* @__PURE__ */ jsx_runtime57.jsxs("div", {
                     "data-pane": "context",
                     tabIndex: -1,
                     inert: collapsed.context,
                     hidden: collapsed.context,
                     className: cn("min-h-0 flex-1 flex-col outline-none", collapsed.context ? "hidden" : "flex"),
                     children: [
-                      /* @__PURE__ */ jsx_runtime53.jsx(PaneHeading, {
-                        actions: /* @__PURE__ */ jsx_runtime53.jsx(HistoryArrows, {
+                      /* @__PURE__ */ jsx_runtime57.jsx(PaneHeading, {
+                        actions: /* @__PURE__ */ jsx_runtime57.jsx(HistoryArrows, {
                           history: state.history,
                           display: (p) => shortPath(p, userHome, 2),
                           onUndo: (confirmDelete) => send({ op: "history.undo", confirmDelete }),
                           onRedo: () => send({ op: "history.redo" })
                         }),
-                        pinned: /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
+                        pinned: /* @__PURE__ */ jsx_runtime57.jsx(ColumnButton, {
                           label: "Collapse the context column",
                           control: "context-collapse",
                           onClick: () => toggleFrom("context", "collapse"),
-                          children: /* @__PURE__ */ jsx_runtime53.jsx(PanelLeftClose, {
+                          children: /* @__PURE__ */ jsx_runtime57.jsx(PanelLeftClose, {
                             "aria-hidden": true
                           })
                         }),
                         children: "Context"
                       }),
-                      state.relink && /* @__PURE__ */ jsx_runtime53.jsx(RelinkBar, {
+                      state.relink && /* @__PURE__ */ jsx_runtime57.jsx(RelinkBar, {
                         offer: state.relink,
                         onUpdate: () => send({ op: "relink" }),
                         onLeave: () => send({ op: "relink.leave" }),
@@ -78366,56 +78615,56 @@ function ShellBody({
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime53.jsx(ResizableHandle, {
+              /* @__PURE__ */ jsx_runtime57.jsx(ResizableHandle, {
                 withHandle: true,
                 disableDoubleClick: true,
                 "data-handle-for": "context",
                 onKeyDownCapture: handleEnter("context")
               }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(ResizablePanel, {
+              /* @__PURE__ */ jsx_runtime57.jsxs(ResizablePanel, {
                 id: "centre",
                 minSize: "25",
                 className: "flex flex-col",
                 children: [
-                  toolbar && !openImage && /* @__PURE__ */ jsx_runtime53.jsx("div", {
+                  toolbar && !openImage && /* @__PURE__ */ jsx_runtime57.jsx("div", {
                     "data-slot": "shell-toolbar-row",
                     className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-0.5", quiet ? `${QUIET_GROUP} border-transparent` : "border-edge"),
-                    children: /* @__PURE__ */ jsx_runtime53.jsx("div", {
+                    children: /* @__PURE__ */ jsx_runtime57.jsx("div", {
                       "data-slot": "shell-toolbar",
                       className: cn("flex shrink-0 items-center gap-1", fade),
                       children: toolbar
                     })
                   }),
-                  /* @__PURE__ */ jsx_runtime53.jsxs("main", {
+                  /* @__PURE__ */ jsx_runtime57.jsxs("main", {
                     "data-pane": "centre",
                     tabIndex: -1,
                     className: "relative flex min-h-0 flex-1 flex-col outline-none",
                     children: [
-                      /* @__PURE__ */ jsx_runtime53.jsxs("div", {
+                      /* @__PURE__ */ jsx_runtime57.jsxs("div", {
                         "data-slot": "centre-body",
                         className: "relative flex min-h-0 flex-1 flex-col",
                         children: [
-                          openImage ? /* @__PURE__ */ jsx_runtime53.jsx(ImageViewer, {
+                          openImage ? /* @__PURE__ */ jsx_runtime57.jsx(ImageViewer, {
                             name: openImage.name,
                             src: daemon.imageUrl(openImage.path, { stamp: openImage.stamp }),
                             size: openImage.size,
                             type: openImage.type,
                             onClose: () => send({ op: "image.close" }),
-                            aside: /* @__PURE__ */ jsx_runtime53.jsx(ImageDescriptionPanel, {
+                            aside: /* @__PURE__ */ jsx_runtime57.jsx(ImageDescriptionPanel, {
                               name: openImage.name,
                               description: openImage.description,
                               onEdit: (path) => send({ op: "open", path }),
                               onAsk: () => askDescribe(openImage.path)
                             }),
-                            footer: /* @__PURE__ */ jsx_runtime53.jsx(ImageLinkedFrom, {
+                            footer: /* @__PURE__ */ jsx_runtime57.jsx(ImageLinkedFrom, {
                               data: imageLinks?.path === openImage.path ? imageLinks : null,
                               onOpen: (b) => openAt(b.source, { from: b.from, to: b.to })
                             })
-                          }, openImage.path) : /* @__PURE__ */ jsx_runtime53.jsx(CentreDockContext.Provider, {
+                          }, openImage.path) : /* @__PURE__ */ jsx_runtime57.jsx(CentreDockContext.Provider, {
                             value: setDock,
                             children: centre
                           }),
-                          !docked && /* @__PURE__ */ jsx_runtime53.jsx(Toasts, {
+                          !docked && /* @__PURE__ */ jsx_runtime57.jsx(Toasts, {
                             store: toasts
                           })
                         ]
@@ -78425,200 +78674,49 @@ function ShellBody({
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime53.jsx(ResizableHandle, {
+              /* @__PURE__ */ jsx_runtime57.jsx(ResizableHandle, {
                 withHandle: true,
                 disableDoubleClick: true,
                 "data-handle-for": "chat",
                 onKeyDownCapture: handleEnter("chat")
               }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(ResizablePanel, {
-                id: "chat",
-                panelRef: chatPanel,
-                collapsible: true,
-                defaultSize: `${DEFAULT_SIZE.chat}`,
-                minSize: `${MIN_SIZE.chat}`,
-                collapsedSize: `${RAIL_PX}px`,
-                className: "flex flex-col bg-surface",
-                children: [
-                  collapsed.chat && /* @__PURE__ */ jsx_runtime53.jsx(Rail, {
-                    quiet,
-                    below: (floatIcon || chatUnseen) && /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-                      className: "flex flex-col items-center",
-                      children: [
-                        floatIcon && /* @__PURE__ */ jsx_runtime53.jsxs("span", {
-                          className: "relative flex",
-                          children: [
-                            /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                              label: composerWaiting ? `Show the composer (${composerWaiting.label})` : "Show the composer",
-                              control: "chat-float-show",
-                              onClick: () => {
-                                setFloatClosed(false);
-                                focusNext.current = FLOAT_INPUT;
-                              },
-                              className: fade,
-                              children: /* @__PURE__ */ jsx_runtime53.jsx(MessageSquare, {
-                                "aria-hidden": true
-                              })
-                            }),
-                            composerWaiting && /* @__PURE__ */ jsx_runtime53.jsx("span", {
-                              "aria-hidden": true,
-                              "data-slot": "chat-rail-waiting",
-                              className: "pointer-events-none absolute top-0.5 right-0.5 flex",
-                              children: /* @__PURE__ */ jsx_runtime53.jsx(WaitingDot, {
-                                badge: composerWaiting.badge,
-                                label: composerWaiting.label
-                              })
-                            }),
-                            /* @__PURE__ */ jsx_runtime53.jsx("span", {
-                              "aria-live": "polite",
-                              "aria-atomic": "true",
-                              "data-slot": "chat-rail-waiting-live",
-                              className: "sr-only",
-                              children: composerWaiting?.label ?? ""
-                            })
-                          ]
-                        }),
-                        chatUnseen && /* @__PURE__ */ jsx_runtime53.jsx("button", {
-                          type: "button",
-                          "data-slot": "chat-unseen",
-                          "aria-label": "Open the conversation: the agent has said something new",
-                          title: "Open the conversation: the agent has said something new",
-                          onClick: () => {
-                            setPanelId("chat");
-                            toggleFrom("chat", "expand");
-                          },
-                          className: "flex size-6 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                          children: /* @__PURE__ */ jsx_runtime53.jsx("span", {
-                            "aria-hidden": true,
-                            className: "size-2 rounded-full bg-attention"
-                          })
-                        })
-                      ]
-                    }),
-                    children: /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                      label: chatUnseen ? "Reopen the conversation column: the agent has said something new" : "Reopen the conversation column",
-                      control: "chat-reopen",
-                      onClick: () => toggleFrom("chat", "expand"),
-                      className: fade,
-                      children: /* @__PURE__ */ jsx_runtime53.jsx(PanelRightOpen, {
-                        "aria-hidden": true
-                      })
-                    })
-                  }),
-                  /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-                    "data-pane": "chat",
-                    tabIndex: -1,
-                    inert: collapsed.chat,
-                    hidden: collapsed.chat,
-                    className: cn("min-h-0 flex-1 flex-col outline-none", collapsed.chat ? "hidden" : "flex"),
-                    children: [
-                      /* @__PURE__ */ jsx_runtime53.jsxs("div", {
-                        className: "flex min-h-9 shrink-0 items-center gap-0.5 border-b border-edge px-2 py-1",
-                        children: [
-                          /* @__PURE__ */ jsx_runtime53.jsx("div", {
-                            role: "tablist",
-                            "aria-label": "Conversation column",
-                            className: "flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden",
-                            onKeyDown: (e) => {
-                              const i = tabs.findIndex((t) => t.id === activePanel.id);
-                              const to = e.key === "ArrowRight" ? tabs[(i + 1) % tabs.length] : e.key === "ArrowLeft" ? tabs[(i - 1 + tabs.length) % tabs.length] : e.key === "Home" ? tabs[0] : e.key === "End" ? tabs.at(-1) : undefined;
-                              if (!to)
-                                return;
-                              e.preventDefault();
-                              setPanelId(to.id);
-                              requestAnimationFrame(() => document.getElementById(`${storageKey}-tab-${to.id}`)?.focus());
-                            },
-                            children: tabs.map((p) => /* @__PURE__ */ jsx_runtime53.jsx("button", {
-                              id: `${storageKey}-tab-${p.id}`,
-                              type: "button",
-                              role: "tab",
-                              "aria-selected": activePanel.id === p.id,
-                              "aria-controls": `${storageKey}-tabpanel`,
-                              tabIndex: activePanel.id === p.id ? 0 : -1,
-                              onClick: () => setPanelId(p.id),
-                              className: cn("rounded-sm px-2 py-1 text-xs font-medium tracking-wide uppercase", "text-ink-dim hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", activePanel.id === p.id && "bg-surface-raised text-ink"),
-                              children: p.label
-                            }, p.id))
-                          }),
-                          /* @__PURE__ */ jsx_runtime53.jsx("div", {
-                            className: "shrink-0",
-                            children: /* @__PURE__ */ jsx_runtime53.jsx(ColumnButton, {
-                              label: "Collapse the conversation column",
-                              control: "chat-collapse",
-                              onClick: () => toggleFrom("chat", "collapse"),
-                              children: /* @__PURE__ */ jsx_runtime53.jsx(PanelRightClose, {
-                                "aria-hidden": true
-                              })
-                            })
-                          })
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime53.jsx("div", {
-                        id: `${storageKey}-tabpanel`,
-                        role: "tabpanel",
-                        "aria-labelledby": `${storageKey}-tab-${activePanel.id}`,
-                        className: "flex min-h-0 flex-1 flex-col",
-                        children: activePanel.node
-                      })
-                    ]
-                  })
-                ]
+              /* @__PURE__ */ jsx_runtime57.jsx(ChatColumn, {
+                chatPanel,
+                collapsed,
+                quiet,
+                fade,
+                floatIcon,
+                chatUnseen,
+                composerWaiting,
+                setFloatClosed,
+                focusNext,
+                setPanelId,
+                toggleFrom,
+                tabs,
+                activePanel,
+                storageKey
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsxs("footer", {
-            "data-slot": "shell-status",
-            className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet && QUIET_GROUP),
-            children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs("span", {
-                className: cn("flex shrink-0 items-center gap-1.5", daemon.connection === "open" && fade),
-                title: `${CONNECTION_TITLE[daemon.connection]}
-${state.dir}`,
-                children: [
-                  /* @__PURE__ */ jsx_runtime53.jsx(Dot, {
-                    tone: daemon.connection === "open" ? "bg-added" : daemon.connection === "closed" ? "bg-danger" : "bg-attention",
-                    pulse: daemon.connection === "connecting"
-                  }),
-                  CONNECTION_LABEL[daemon.connection]
-                ]
-              }),
-              daemon.connection === "open" && /* @__PURE__ */ jsx_runtime53.jsxs("span", {
-                "data-slot": "agent-presence",
-                "data-listening": agentListening,
-                className: cn("flex shrink-0 items-center gap-1.5", agentListening && fade),
-                title: PRESENCE[agentListening ? "listening" : "absent"].title,
-                children: [
-                  /* @__PURE__ */ jsx_runtime53.jsx(Dot, {
-                    tone: agentListening ? "bg-brand" : "bg-ink-faint"
-                  }),
-                  PRESENCE[agentListening ? "listening" : "absent"].label
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsx("div", {
-                className: cn("flex min-w-0 flex-1 items-center", fade),
-                children: status
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsx(LinkCheck, {
-                request: daemon.request,
-                onFrame: daemon.onFrame,
-                connected: daemon.connection === "open",
-                snapshot: state,
-                edits: daemon.texts,
-                onOpen: openAt,
-                className: fade
-              })
-            ]
+          /* @__PURE__ */ jsx_runtime57.jsx(StatusBar, {
+            daemon,
+            state,
+            quiet,
+            fade,
+            agentListening,
+            status,
+            openAt
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(SettingsDialog, {
+      /* @__PURE__ */ jsx_runtime57.jsx(SettingsDialog, {
         open: settingsOpen,
         onOpenChange: setSettingsOpen,
         prefs: state.prefs,
         send,
         connected: daemon.connection === "open"
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(SessionEndDialog, {
+      /* @__PURE__ */ jsx_runtime57.jsx(SessionEndDialog, {
         phase: endPhase,
         onOpenChange: (open) => {
           if (open)
@@ -78667,15 +78765,15 @@ for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
   registerDocExtension(ext);
 
 // src/scriptorium/surface/movePlan.tsx
-var jsx_runtime54 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime58 = __toESM(require_jsx_runtime(), 1);
 var LISTED = 6;
 var plural3 = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 function listed2(items, line) {
   const more = items.length - LISTED;
-  return /* @__PURE__ */ jsx_runtime54.jsxs(jsx_runtime54.Fragment, {
+  return /* @__PURE__ */ jsx_runtime58.jsxs(jsx_runtime58.Fragment, {
     children: [
       items.slice(0, LISTED).map(line),
-      more > 0 && /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+      more > 0 && /* @__PURE__ */ jsx_runtime58.jsxs("span", {
         className: "block pl-2",
         children: [
           "and ",
@@ -78692,9 +78790,9 @@ function movePrompt(plan, userHome) {
   if (!plan.folder && !plan.leavesRepo && breaks === 0)
     return null;
   const short = (p) => shortPath(p, userHome, 2);
-  const message = /* @__PURE__ */ jsx_runtime54.jsxs(jsx_runtime54.Fragment, {
+  const message = /* @__PURE__ */ jsx_runtime58.jsxs(jsx_runtime58.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+      /* @__PURE__ */ jsx_runtime58.jsxs("span", {
         className: "block",
         children: [
           plural3(plan.docs, "document"),
@@ -78705,11 +78803,11 @@ function movePrompt(plan, userHome) {
           "."
         ]
       }),
-      breaks === 0 && /* @__PURE__ */ jsx_runtime54.jsx("span", {
+      breaks === 0 && /* @__PURE__ */ jsx_runtime58.jsx("span", {
         className: "mt-1 block",
         children: "It breaks no links."
       }),
-      fixes > 0 && /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+      fixes > 0 && /* @__PURE__ */ jsx_runtime58.jsxs("span", {
         className: "mt-2 block",
         children: [
           "It breaks ",
@@ -78717,7 +78815,7 @@ function movePrompt(plan, userHome) {
           " in ",
           plural3(plan.links.length, "document"),
           ". The move leaves them as they are; after it, the context column offers to update them. They are these, each with the rewrite that would land it again.",
-          listed2(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+          listed2(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime58.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(d.path),
@@ -78730,7 +78828,7 @@ function movePrompt(plan, userHome) {
           }, `l${i}`))
         ]
       }),
-      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime58.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural3(plan.wiki.length, "wiki link"),
@@ -78738,7 +78836,7 @@ function movePrompt(plan, userHome) {
           " ",
           plan.wiki.length === 1 ? "its page" : "their pages",
           ". A wiki link names a page, so it is never rewritten.",
-          listed2(plan.wiki, (w, i) => /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+          listed2(plan.wiki, (w, i) => /* @__PURE__ */ jsx_runtime58.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(w.path),
@@ -78750,12 +78848,12 @@ function movePrompt(plan, userHome) {
           }, `w${i}`))
         ]
       }),
-      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime58.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural3(plan.edges.length, "frontmatter reference"),
           " would point elsewhere. These are reported, never rewritten.",
-          listed2(plan.edges, (e, i) => /* @__PURE__ */ jsx_runtime54.jsxs("span", {
+          listed2(plan.edges, (e, i) => /* @__PURE__ */ jsx_runtime58.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(e.source),
@@ -78771,10 +78869,10 @@ function movePrompt(plan, userHome) {
   return {
     title: `Move “${plan.name}” into “${baseName(plan.into)}”?`,
     message,
-    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime54.jsxs(jsx_runtime54.Fragment, {
+    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime58.jsxs(jsx_runtime58.Fragment, {
       children: [
         "This takes it ",
-        /* @__PURE__ */ jsx_runtime54.jsx("strong", {
+        /* @__PURE__ */ jsx_runtime58.jsx("strong", {
           className: "font-semibold",
           children: "out of the git repository"
         }),
@@ -78789,13 +78887,13 @@ function movePrompt(plan, userHome) {
     confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90"
   };
 }
-var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime54.jsxs(jsx_runtime54.Fragment, {
+var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime58.jsxs(jsx_runtime58.Fragment, {
   children: [
-    /* @__PURE__ */ jsx_runtime54.jsx("span", {
+    /* @__PURE__ */ jsx_runtime58.jsx("span", {
       className: "block",
       children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move, and the context column offers to update them."
     }),
-    /* @__PURE__ */ jsx_runtime54.jsx("span", {
+    /* @__PURE__ */ jsx_runtime58.jsx("span", {
       className: "mt-1 block",
       children: "Nor was whether it leaves a git repository: if it does, git will see the files as deleted there until the move is committed."
     })
@@ -78920,10 +79018,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
 }
 
 // src/scriptorium/surface/useMapView.tsx
-var import_react56 = __toESM(require_react(), 1);
+var import_react57 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/MapView.tsx
-var import_react55 = __toESM(require_react(), 1);
+var import_react56 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -79897,14 +79995,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/forceLayout.ts
-var import_react54 = __toESM(require_react(), 1);
+var import_react55 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size, enabled) {
-  const [positions, setPositions] = import_react54.useState(new Map);
-  const sim = import_react54.useRef(null);
-  const bodies = import_react54.useRef(new Map);
-  const [dragging, setDragging] = import_react54.useState(null);
-  import_react54.useEffect(() => {
+  const [positions, setPositions] = import_react55.useState(new Map);
+  const sim = import_react55.useRef(null);
+  const bodies = import_react55.useRef(new Map);
+  const [dragging, setDragging] = import_react55.useState(null);
+  import_react55.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -79927,7 +80025,7 @@ function useForceLayout(nodes, edges, size, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size.width, size.height, enabled]);
-  const onDragStart = import_react54.useCallback((path, at) => {
+  const onDragStart = import_react55.useCallback((path, at) => {
     const body = bodies.current.get(path);
     if (!body)
       return;
@@ -79936,7 +80034,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fy = at.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react54.useCallback((at) => {
+  const onDragMove = import_react55.useCallback((at) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -79945,7 +80043,7 @@ function useForceLayout(nodes, edges, size, enabled) {
     body.fx = at.x;
     body.fy = at.y;
   }, [dragging]);
-  const onDragEnd = import_react54.useCallback(() => {
+  const onDragEnd = import_react55.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -79960,7 +80058,7 @@ function useForceLayout(nodes, edges, size, enabled) {
 }
 
 // src/scriptorium/surface/MapView.tsx
-var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime59 = __toESM(require_jsx_runtime(), 1);
 var NODE_W = 168;
 var NODE_H = 34;
 var COL_GAP = 96;
@@ -80021,10 +80119,10 @@ function MapView({
   onOpenDoc,
   onClose
 }) {
-  const root = import_react55.useRef(null);
-  const close = import_react55.useRef(onClose);
+  const root = import_react56.useRef(null);
+  const close = import_react56.useRef(onClose);
   close.current = onClose;
-  import_react55.useEffect(() => {
+  import_react56.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape" || e.defaultPrevented)
         return;
@@ -80039,15 +80137,15 @@ function MapView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [hover, setHover] = import_react55.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react55.useState(null);
-  const { placed, width, height, headings } = import_react55.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
-  const at = import_react55.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react55.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
+  const [hover, setHover] = import_react56.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react56.useState(null);
+  const { placed, width, height, headings } = import_react56.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at = import_react56.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react56.useMemo(() => (graph?.edges ?? []).filter((e) => at.has(e.from) && at.has(e.to)), [graph, at]);
   const links = drawn.reduce((sum, e) => sum + e.count, 0);
   const dense = links > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react55.useMemo(() => {
+  const connected = import_react56.useMemo(() => {
     if (!hover)
       return null;
     const set = new Set([hover]);
@@ -80061,23 +80159,23 @@ function MapView({
   }, [hover, drawn]);
   const lit = (path) => connected === null || connected.has(path);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react55.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react55.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
-  return /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+  const force = useForceLayout(import_react56.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react56.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  return /* @__PURE__ */ jsx_runtime59.jsxs("div", {
     ref: root,
     "data-slot": "map",
     className: "flex min-h-0 flex-1 flex-col overflow-hidden bg-surface",
     children: [
-      /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime59.jsxs("div", {
         className: "flex shrink-0 items-center gap-3 border-b border-edge px-4 py-2.5",
         children: [
-          /* @__PURE__ */ jsx_runtime55.jsxs("h2", {
+          /* @__PURE__ */ jsx_runtime59.jsxs("h2", {
             className: "text-sm font-medium text-ink",
             children: [
               "Map of ",
               label
             ]
           }),
-          graph && /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+          graph && /* @__PURE__ */ jsx_runtime59.jsxs("span", {
             "data-slot": "map-summary",
             className: "text-xs text-ink-dim",
             children: [
@@ -80089,11 +80187,11 @@ function MapView({
               graph.nodes.length > DRAW_CAP && ` · drawing the ${DRAW_CAP} best-connected`
             ]
           }),
-          /* @__PURE__ */ jsx_runtime55.jsx("div", {
+          /* @__PURE__ */ jsx_runtime59.jsx("div", {
             role: "toolbar",
             "aria-label": "How to lay the map out",
             className: "ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
-            children: ["columns", "force"].map((m) => /* @__PURE__ */ jsx_runtime55.jsx("button", {
+            children: ["columns", "force"].map((m) => /* @__PURE__ */ jsx_runtime59.jsx("button", {
               type: "button",
               onClick: () => onMode(m),
               "aria-pressed": mode === m,
@@ -80101,27 +80199,27 @@ function MapView({
               children: m === "columns" ? "columns" : "physics"
             }, m))
           }),
-          /* @__PURE__ */ jsx_runtime55.jsx("button", {
+          /* @__PURE__ */ jsx_runtime59.jsx("button", {
             type: "button",
             "aria-label": "Back to the document",
             title: "Back to the document",
             onClick: onClose,
             className: "rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime55.jsx(X, {
+            children: /* @__PURE__ */ jsx_runtime59.jsx(X, {
               className: "size-4"
             })
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime55.jsx("div", {
+      /* @__PURE__ */ jsx_runtime59.jsx("div", {
         className: "min-h-0 flex-1 overflow-auto p-2",
-        children: !graph ? /* @__PURE__ */ jsx_runtime55.jsx("p", {
+        children: !graph ? /* @__PURE__ */ jsx_runtime59.jsx("p", {
           className: "p-6 text-sm text-ink-dim",
           children: error ?? "Reading the set…"
-        }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime55.jsx("p", {
+        }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime59.jsx("p", {
           className: "p-6 text-sm text-ink-dim",
           children: "This set has no documents to map."
-        }) : mode === "force" ? /* @__PURE__ */ jsx_runtime55.jsx(ForceCanvas, {
+        }) : mode === "force" ? /* @__PURE__ */ jsx_runtime59.jsx(ForceCanvas, {
           nodes: graph.nodes,
           edges: drawn,
           size: forceSize,
@@ -80131,14 +80229,14 @@ function MapView({
           lit,
           showAll,
           onOpen: onOpenDoc
-        }) : /* @__PURE__ */ jsx_runtime55.jsxs("svg", {
+        }) : /* @__PURE__ */ jsx_runtime59.jsxs("svg", {
           "data-slot": "map-columns",
           width,
           height,
           role: "img",
           "aria-label": `${graph.nodes.length} documents and ${links} links`,
           children: [
-            /* @__PURE__ */ jsx_runtime55.jsxs("title", {
+            /* @__PURE__ */ jsx_runtime59.jsxs("title", {
               children: [
                 graph.nodes.length,
                 " documents, ",
@@ -80155,7 +80253,7 @@ function MapView({
               const lit = touching || showAll && hover === null;
               if (!lit && !showAll)
                 return null;
-              return /* @__PURE__ */ jsx_runtime55.jsx("path", {
+              return /* @__PURE__ */ jsx_runtime59.jsx("path", {
                 "data-source": e.source,
                 d: edgePath(a, b),
                 fill: "none",
@@ -80169,14 +80267,14 @@ function MapView({
               const first = placed.find((p) => p.column === type);
               if (!first)
                 return null;
-              return /* @__PURE__ */ jsx_runtime55.jsx("text", {
+              return /* @__PURE__ */ jsx_runtime59.jsx("text", {
                 x: first.x,
                 y: PAD + 12,
                 className: "fill-ink-faint text-[11px] font-medium",
                 children: headings.get(type) ?? type
               }, type);
             }),
-            placed.map((n) => /* @__PURE__ */ jsx_runtime55.jsxs("g", {
+            placed.map((n) => /* @__PURE__ */ jsx_runtime59.jsxs("g", {
               "data-path": n.path,
               transform: `translate(${n.x}, ${n.y})`,
               onMouseEnter: () => setHover(n.path),
@@ -80196,7 +80294,7 @@ function MapView({
               opacity: lit(n.path) ? 1 : 0.22,
               className: "cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-rubric",
               children: [
-                /* @__PURE__ */ jsx_runtime55.jsxs("title", {
+                /* @__PURE__ */ jsx_runtime59.jsxs("title", {
                   children: [
                     n.rel,
                     n.status ? ` · ${n.status}` : "",
@@ -80209,20 +80307,20 @@ function MapView({
                     n.tags.length ? ` · ${n.tags.join(", ")}` : ""
                   ]
                 }),
-                /* @__PURE__ */ jsx_runtime55.jsx("rect", {
+                /* @__PURE__ */ jsx_runtime59.jsx("rect", {
                   width: NODE_W,
                   height: NODE_H,
                   rx: 6,
                   className: cn("fill-bg stroke-edge", hover === n.path && "fill-surface-raised stroke-rubric"),
                   strokeWidth: 1
                 }),
-                /* @__PURE__ */ jsx_runtime55.jsx("circle", {
+                /* @__PURE__ */ jsx_runtime59.jsx("circle", {
                   cx: 12,
                   cy: NODE_H / 2,
                   r: 3,
                   className: dotTone(n, "fill-ink-faint")
                 }),
-                /* @__PURE__ */ jsx_runtime55.jsx("text", {
+                /* @__PURE__ */ jsx_runtime59.jsx("text", {
                   x: 24,
                   y: NODE_H / 2 + 4,
                   className: "fill-ink text-[11px]",
@@ -80235,22 +80333,22 @@ function MapView({
           ]
         })
       }),
-      /* @__PURE__ */ jsx_runtime55.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime59.jsxs("div", {
         className: "flex shrink-0 items-center gap-4 border-t border-edge px-4 py-2 text-[11px] text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime59.jsxs("span", {
             className: "flex items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime55.jsxs("svg", {
+              /* @__PURE__ */ jsx_runtime59.jsxs("svg", {
                 width: "22",
                 height: "6",
                 "aria-hidden": true,
                 role: "img",
                 children: [
-                  /* @__PURE__ */ jsx_runtime55.jsx("title", {
+                  /* @__PURE__ */ jsx_runtime59.jsx("title", {
                     children: "a solid line"
                   }),
-                  /* @__PURE__ */ jsx_runtime55.jsx("line", {
+                  /* @__PURE__ */ jsx_runtime59.jsx("line", {
                     x1: "0",
                     y1: "3",
                     x2: "22",
@@ -80263,19 +80361,19 @@ function MapView({
               "a link in the prose"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime55.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime59.jsxs("span", {
             className: "flex items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime55.jsxs("svg", {
+              /* @__PURE__ */ jsx_runtime59.jsxs("svg", {
                 width: "22",
                 height: "6",
                 "aria-hidden": true,
                 role: "img",
                 children: [
-                  /* @__PURE__ */ jsx_runtime55.jsx("title", {
+                  /* @__PURE__ */ jsx_runtime59.jsx("title", {
                     children: "a dashed line"
                   }),
-                  /* @__PURE__ */ jsx_runtime55.jsx("line", {
+                  /* @__PURE__ */ jsx_runtime59.jsx("line", {
                     x1: "0",
                     y1: "3",
                     x2: "22",
@@ -80289,10 +80387,10 @@ function MapView({
               "a frontmatter reference"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime55.jsxs("label", {
+          /* @__PURE__ */ jsx_runtime59.jsxs("label", {
             className: "flex cursor-pointer items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime55.jsx("input", {
+              /* @__PURE__ */ jsx_runtime59.jsx("input", {
                 type: "checkbox",
                 checked: showAll,
                 onChange: (e) => setAlwaysEdges(e.target.checked),
@@ -80302,7 +80400,7 @@ function MapView({
               dense && !showAll ? " (hover a document to see its own)" : ""
             ]
           }),
-          /* @__PURE__ */ jsx_runtime55.jsx("span", {
+          /* @__PURE__ */ jsx_runtime59.jsx("span", {
             className: "ml-auto",
             children: "click a document to open it"
           })
@@ -80322,13 +80420,13 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react55.useRef(null);
+  const svg = import_react56.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at = (e) => {
     const box = svg.current?.getBoundingClientRect();
     return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
   };
-  return /* @__PURE__ */ jsx_runtime55.jsxs("svg", {
+  return /* @__PURE__ */ jsx_runtime59.jsxs("svg", {
     ref: svg,
     "data-slot": "map-force",
     width: size.width,
@@ -80340,7 +80438,7 @@ function ForceCanvas({
     onPointerLeave: onDragEnd,
     className: dragging ? "cursor-grabbing" : undefined,
     children: [
-      /* @__PURE__ */ jsx_runtime55.jsxs("title", {
+      /* @__PURE__ */ jsx_runtime59.jsxs("title", {
         children: [
           nodes.length,
           " documents, arranged by their links"
@@ -80354,7 +80452,7 @@ function ForceCanvas({
         const touching = hover === e.from || hover === e.to;
         if (!touching && !showAll)
           return null;
-        return /* @__PURE__ */ jsx_runtime55.jsx("line", {
+        return /* @__PURE__ */ jsx_runtime59.jsx("line", {
           x1: a.x,
           y1: a.y,
           x2: b.x,
@@ -80370,7 +80468,7 @@ function ForceCanvas({
         if (!p)
           return null;
         const r = bodyRadius(n.linksIn);
-        return /* @__PURE__ */ jsx_runtime55.jsxs("g", {
+        return /* @__PURE__ */ jsx_runtime59.jsxs("g", {
           "data-path": n.path,
           transform: `translate(${p.x}, ${p.y})`,
           role: "button",
@@ -80394,7 +80492,7 @@ function ForceCanvas({
           },
           className: "cursor-grab outline-none transition-opacity",
           children: [
-            /* @__PURE__ */ jsx_runtime55.jsxs("title", {
+            /* @__PURE__ */ jsx_runtime59.jsxs("title", {
               children: [
                 n.rel,
                 n.status ? ` · ${n.status}` : "",
@@ -80406,12 +80504,12 @@ function ForceCanvas({
                 " out"
               ]
             }),
-            /* @__PURE__ */ jsx_runtime55.jsx("circle", {
+            /* @__PURE__ */ jsx_runtime59.jsx("circle", {
               r,
               className: cn("stroke-edge", dotTone(n, hover === n.path ? "fill-rubric" : "fill-ink-faint")),
               strokeWidth: hover === n.path ? 2 : 1
             }),
-            /* @__PURE__ */ jsx_runtime55.jsx("text", {
+            /* @__PURE__ */ jsx_runtime59.jsx("text", {
               x: r + 5,
               y: 4,
               className: cn("text-[11px]", hover === n.path ? "fill-ink" : "fill-ink-dim"),
@@ -80465,17 +80563,17 @@ function mapGraph(graph, docMeta) {
 }
 
 // src/scriptorium/surface/useMapView.tsx
-var jsx_runtime56 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime60 = __toESM(require_jsx_runtime(), 1);
 var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
 var messageOf = (e) => e instanceof Error ? e.message : String(e);
 function useMapView(daemon) {
-  const [showing, setShowing] = import_react56.useState(null);
-  const [active, setActive] = import_react56.useState(false);
-  const [mode, setMode] = import_react56.useState("columns");
+  const [showing, setShowing] = import_react57.useState(null);
+  const [active, setActive] = import_react57.useState(false);
+  const [mode, setMode] = import_react57.useState("columns");
   const { request, send, state } = daemon;
-  const asked = import_react56.useRef(0);
-  const fetch2 = import_react56.useCallback((entry) => {
+  const asked = import_react57.useRef(0);
+  const fetch2 = import_react57.useCallback((entry) => {
     const seq = ++asked.current;
     setShowing({ entryId: entry.id, graph: null });
     const keep = (next) => {
@@ -80489,24 +80587,24 @@ function useMapView(daemon) {
   }, [request]);
   const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
   const gone = showing !== null && state !== null && entry === undefined;
-  import_react56.useEffect(() => {
+  import_react57.useEffect(() => {
     if (!gone)
       return;
     asked.current++;
     setShowing(null);
     setActive(false);
   }, [gone]);
-  const show = import_react56.useCallback((e) => {
+  const show = import_react57.useCallback((e) => {
     fetch2(e);
     setActive(true);
   }, [fetch2]);
-  const appView = import_react56.useMemo(() => {
+  const appView = import_react57.useMemo(() => {
     if (!showing || !entry)
       return;
     return {
       id: MAP_VIEW,
       label: `Map of ${entry.label}`,
-      icon: /* @__PURE__ */ jsx_runtime56.jsx(Network, {
+      icon: /* @__PURE__ */ jsx_runtime60.jsx(Network, {
         "aria-hidden": true,
         className: "size-3.5"
       }),
@@ -80516,7 +80614,7 @@ function useMapView(daemon) {
           fetch2(entry);
         setActive(next);
       },
-      render: () => /* @__PURE__ */ jsx_runtime56.jsx(MapView, {
+      render: () => /* @__PURE__ */ jsx_runtime60.jsx(MapView, {
         graph: showing.graph,
         ...showing.error !== undefined ? { error: showing.error } : {},
         label: entry.label,
@@ -80530,11 +80628,11 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react56.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
+  const menuActions = import_react57.useCallback(({ kind, entry }) => kind === "entry" && entry && !singleDoc(entry) ? [
     {
       id: MAP_VIEW,
       label: MAP_LABEL,
-      icon: /* @__PURE__ */ jsx_runtime56.jsx(Network, {}),
+      icon: /* @__PURE__ */ jsx_runtime60.jsx(Network, {}),
       onSelect: () => show(entry),
       header: true
     }
@@ -80543,7 +80641,7 @@ function useMapView(daemon) {
 }
 
 // src/scriptorium/surface/Frame.tsx
-var jsx_runtime57 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime61 = __toESM(require_jsx_runtime(), 1);
 var NO_ENTRIES = [];
 var NO_PREFS = {};
 var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
@@ -80554,9 +80652,9 @@ function scriptoriumChips(now = Date.now) {
     {
       tone: "attention",
       title: STALE_TITLE,
-      label: /* @__PURE__ */ jsx_runtime57.jsxs(jsx_runtime57.Fragment, {
+      label: /* @__PURE__ */ jsx_runtime61.jsxs(jsx_runtime61.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime57.jsx(Clock, {
+          /* @__PURE__ */ jsx_runtime61.jsx(Clock, {
             "aria-hidden": true,
             className: "size-3"
           }),
@@ -80575,7 +80673,7 @@ function scriptoriumRowMarker(docMeta) {
     const mark = statusMark(docMeta[path]);
     if (!mark)
       return null;
-    return /* @__PURE__ */ jsx_runtime57.jsx("span", {
+    return /* @__PURE__ */ jsx_runtime61.jsx("span", {
       title: mark.title,
       "data-tone": mark.tone,
       className: cn("size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
@@ -80592,7 +80690,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.make-set",
         label: "Turn into a set",
-        icon: /* @__PURE__ */ jsx_runtime57.jsx(FolderTree, {}),
+        icon: /* @__PURE__ */ jsx_runtime61.jsx(FolderTree, {}),
         onSelect: () => send({ op: "set.make", path: entryPath(entry) })
       });
     const n = hidden[entry.id]?.length ?? 0;
@@ -80600,7 +80698,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.unhide",
         label: `Show ${n} hidden ${n === 1 ? "item" : "items"}`,
-        icon: /* @__PURE__ */ jsx_runtime57.jsx(Eye, {}),
+        icon: /* @__PURE__ */ jsx_runtime61.jsx(Eye, {}),
         onSelect: () => send({ op: "scriptorium.unhide", entry: entry.id })
       });
     const beside = (kind === "doc" || kind === "image" || kind === "bundle") && bundlePlace(path) !== "own";
@@ -80609,12 +80707,12 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.new-doc-beside",
         label: "New document beside it",
-        icon: /* @__PURE__ */ jsx_runtime57.jsx(FilePlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime61.jsx(FilePlus, {}),
         onSelect: () => send({ op: "doc.create", dir })
       }, {
         id: "scriptorium.new-folder-beside",
         label: "New folder beside it",
-        icon: /* @__PURE__ */ jsx_runtime57.jsx(FolderPlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime61.jsx(FolderPlus, {}),
         onSelect: () => send({ op: "folder.create", dir })
       });
     }
@@ -80622,7 +80720,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.hide",
         label: "Hide from Scriptorium",
-        icon: /* @__PURE__ */ jsx_runtime57.jsx(EyeOff, {}),
+        icon: /* @__PURE__ */ jsx_runtime61.jsx(EyeOff, {}),
         onSelect: () => send({ op: "scriptorium.hide", path })
       });
     return actions;
@@ -80640,18 +80738,18 @@ function scriptoriumEndWarning(state) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const prefs = import_react57.useRef(state?.prefs ?? NO_PREFS);
+  const prefs = import_react58.useRef(state?.prefs ?? NO_PREFS);
   prefs.current = state?.prefs ?? NO_PREFS;
-  const connection = import_react57.useRef(daemon.connection);
+  const connection = import_react58.useRef(daemon.connection);
   connection.current = daemon.connection;
-  const sendRef = import_react57.useRef(send);
+  const sendRef = import_react58.useRef(send);
   sendRef.current = send;
-  const storage = import_react57.useMemo(() => prefsStorage({
+  const storage = import_react58.useMemo(() => prefsStorage({
     read: () => prefs.current,
     write: (key, value) => sendRef.current({ op: "prefs.set", key, value }),
     ended: () => connection.current === "ended"
   }), []);
-  import_react57.useEffect(() => {
+  import_react58.useEffect(() => {
     const flush = () => storage.flush();
     window.addEventListener("pagehide", flush);
     return () => {
@@ -80659,15 +80757,15 @@ function Frame({ daemon }) {
       flush();
     };
   }, [storage]);
-  const hints = import_react57.useRef(new Map);
-  import_react57.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react58.useRef(new Map);
+  import_react58.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react57.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react58.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
   const noBlock = noFrontmatterOf(state);
-  const textOffer = import_react57.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
+  const textOffer = import_react58.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -80678,14 +80776,14 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react57.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react58.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map = useMapView(daemon);
   const hidden = state ? hiddenOf(state) : null;
-  const menuActions = import_react57.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
-  const [showDiff, setShowDiff] = import_react57.useState(null);
-  const requestDiff = import_react57.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
+  const menuActions = import_react58.useCallback((t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)], [send, hidden, map.menuActions]);
+  const [showDiff, setShowDiff] = import_react58.useState(null);
+  const requestDiff = import_react58.useCallback((doc, against) => setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })), []);
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
-  return /* @__PURE__ */ jsx_runtime57.jsx(WorkspaceShell, {
+  return /* @__PURE__ */ jsx_runtime61.jsx(WorkspaceShell, {
     daemon,
     storage,
     rowMarker,
@@ -80699,9 +80797,9 @@ function Frame({ daemon }) {
     onShowOutsideDiff: (doc) => requestDiff(doc.slug, "original"),
     endWarning: scriptoriumEndWarning,
     askAboutNotes: true,
-    centre: /* @__PURE__ */ jsx_runtime57.jsxs(jsx_runtime57.Fragment, {
+    centre: /* @__PURE__ */ jsx_runtime61.jsxs(jsx_runtime61.Fragment, {
       children: [
-        /* @__PURE__ */ jsx_runtime57.jsx(DocumentPane, {
+        /* @__PURE__ */ jsx_runtime61.jsx(DocumentPane, {
           showDiff,
           viewModeKey: VIEW_MODE_KEY,
           lineNumbers: true,
@@ -80719,12 +80817,12 @@ function Frame({ daemon }) {
 }
 
 // src/scriptorium/surface/main.tsx
-var jsx_runtime58 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime62 = __toESM(require_jsx_runtime(), 1);
 function FramePage() {
-  return /* @__PURE__ */ jsx_runtime58.jsx(Frame, {
+  return /* @__PURE__ */ jsx_runtime62.jsx(Frame, {
     daemon: useDaemon()
   });
 }
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime58.jsx(FramePage, {}));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime62.jsx(FramePage, {}));
