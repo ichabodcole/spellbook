@@ -64,9 +64,8 @@ import {
   mkdirSync,
   readFileSync,
   statSync,
-  unlinkSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -88,13 +87,14 @@ import type {
   TaskStatus,
 } from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { SIZE_MINUTES, VALID_STATUS } from "../../../plugins/spellbook/skills/bounty/shared/types";
-import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { EXIT_IDLE_TIMEOUT } from "../../kit/wire/errors.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, shouldIdleClose, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
+import { cleanupDiscovery, discoveryFiles, publishDiscovery } from "./discovery.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import { acquireLock, lockPath, releaseLock, unknownHolderRefusal, updateLock } from "./lock.ts";
 
@@ -2514,13 +2514,8 @@ async function main(argv: string[]): Promise<number> {
   emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, mode, by: "system" });
   logDaemon("ready", { port: boundPort });
 
-  // Discovery: write session info to predictable temp files so joining
-  // agents can find this board without copy-paste. Two files:
-  //   - bounty-<session_id>.json  (specific lookup by --id)
-  //   - bounty-latest.json        (always overwritten by most recent
-  //                                   host; default target for joiners)
-  const sessionFile = join(tmpdir(), `bounty-${sessionId}.json`);
-  const latestFile = join(tmpdir(), `bounty-latest.json`);
+  // Discovery: where this board says it is (discovery.ts).
+  const discovery = discoveryFiles(sessionId);
   const sessionInfo = JSON.stringify({
     url,
     port: boundPort,
@@ -2545,50 +2540,7 @@ async function main(argv: string[]): Promise<number> {
     // A boot copy that could not be made, beside the list it is missing from.
     snapshotBackupFailed,
   });
-  // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
-  // rather than absence. A bare writeFileSync is not atomic: a CLI reading while
-  // the daemon writes can observe a half-written pointer, and under the old
-  // best-effort read that surfaced as "no running session". Write beside the
-  // target and rename — rename within one directory is atomic, so a reader sees
-  // either the previous pointer or the new one, never a partial file.
-  //
-  // ⛔ IT IS `src/kit/wire/discovery.ts`'s `writeFileAtomic` NOW. bounty's local
-  // `writeAtomic` was one of the four hand-rolled copies the recon found on
-  // 2026-09-08 (fixed in glamour, then found standing in three siblings), and
-  // the kit's is the same tmp+rename with the same cleanup-on-throw. This is a
-  // de-duplication and NOT a behaviour change: census defect L3 was already
-  // CORRECT in the four session spells, bounty among them.
-  try {
-    writeFileAtomic(sessionFile, sessionInfo);
-    writeFileAtomic(latestFile, sessionInfo);
-  } catch (e) {
-    // Discovery files are nice-to-have, not load-bearing. Log to stderr
-    // and continue — the session id printed to stdout still lets the
-    // user paste a URL into a joining agent manually.
-    process.stderr.write(
-      `bounty: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,
-    );
-  }
-  // Best-effort cleanup on exit. Won't fire on SIGKILL, but stale files
-  // produce a clean "session not running" error when a joiner connects.
-  //
-  // ⛔ THE `latest` POINTER IS ONLY REMOVED IF IT STILL NAMES US — otherwise a
-  // newer host has taken over the slot and we would delete a LIVE board's
-  // pointer on our way out. `unlinkIfMatches`'s `identify` hook is what lets one
-  // shared predicate serve both discovery conventions; bounty's identity is
-  // `session_id`, which is what the hand-rolled version compared.
-  const cleanupDiscovery = () => {
-    try {
-      unlinkSync(sessionFile);
-    } catch {}
-    unlinkIfMatches(latestFile, sessionId, (raw) => {
-      try {
-        return (JSON.parse(raw) as { session_id?: string }).session_id ?? null;
-      } catch {
-        return null;
-      }
-    });
-  };
+  publishDiscovery(discovery, sessionInfo);
 
   if (!v["no-open"]) openBrowser(url);
 
@@ -2701,7 +2653,7 @@ async function main(argv: string[]): Promise<number> {
   // thing that made the old `c.close()` not leak a timer, and keeping it beside
   // a funnel that already does the job is how two registries drift apart.
   await drainAndStop({ server, clients: sseClients, sockets });
-  cleanupDiscovery();
+  cleanupDiscovery(discovery, sessionId);
   // AFTER the discovery cleanup: a successor writes its discovery file only
   // once it holds the lock, so this daemon's cleanup can never unlink it.
   if (lockFile) releaseLock(lockFile);

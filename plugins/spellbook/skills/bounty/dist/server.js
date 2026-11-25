@@ -11,11 +11,10 @@ import {
   lstatSync as lstatSync2,
   mkdirSync as mkdirSync2,
   readFileSync as readFileSync4,
-  statSync as statSync2,
-  unlinkSync as unlinkSync3
+  statSync as statSync2
 } from "fs";
-import { homedir, tmpdir } from "os";
-import { dirname as dirname2, join as join3, resolve } from "path";
+import { homedir } from "os";
+import { dirname as dirname2, join as join4, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
 
@@ -351,6 +350,39 @@ function sseResponse(opts) {
   });
 }
 
+// src/bounty/backend/discovery.ts
+import { unlinkSync as unlinkSync2 } from "fs";
+import { tmpdir } from "os";
+import { join as join2 } from "path";
+function discoveryFiles(sessionId) {
+  return {
+    sessionFile: join2(tmpdir(), `bounty-${sessionId}.json`),
+    latestFile: join2(tmpdir(), "bounty-latest.json")
+  };
+}
+function publishDiscovery(files, sessionInfo) {
+  try {
+    writeFileAtomic(files.sessionFile, sessionInfo);
+    writeFileAtomic(files.latestFile, sessionInfo);
+  } catch (e) {
+    process.stderr.write(`bounty: could not write discovery file: ${e instanceof Error ? e.message : String(e)}
+`);
+  }
+}
+function sessionIdOf(raw) {
+  try {
+    return JSON.parse(raw).session_id ?? null;
+  } catch {
+    return null;
+  }
+}
+function cleanupDiscovery(files, sessionId) {
+  try {
+    unlinkSync2(files.sessionFile);
+  } catch {}
+  unlinkIfMatches(files.latestFile, sessionId, sessionIdOf);
+}
+
 // src/kit/wire/heartbeat.ts
 var MAX_IDLE_TIMEOUT_SEC = 255;
 var DEFAULT_HEARTBEAT_MS = 15000;
@@ -377,10 +409,10 @@ var SSE_HEARTBEAT_MS = heartbeatMs(process.env.BOUNTY_HEARTBEAT_MS, IDLE_TIMEOUT
 var TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS);
 
 // src/bounty/backend/lock.ts
-import { linkSync, mkdirSync, readFileSync as readFileSync3, renameSync as renameSync2, unlinkSync as unlinkSync2, writeFileSync as writeFileSync2 } from "fs";
-import { dirname, join as join2 } from "path";
+import { linkSync, mkdirSync, readFileSync as readFileSync3, renameSync as renameSync2, unlinkSync as unlinkSync3, writeFileSync as writeFileSync2 } from "fs";
+import { dirname, join as join3 } from "path";
 function lockPath(home, id) {
-  return join2(home, "locks", `${id}.lock`);
+  return join3(home, "locks", `${id}.lock`);
 }
 function readLock(path) {
   try {
@@ -431,7 +463,7 @@ function holderLiveness(holder, id) {
 }
 function unlinkQuiet(path) {
   try {
-    unlinkSync2(path);
+    unlinkSync3(path);
   } catch {}
 }
 function unknownHolderRefusal(path, id, pid, why) {
@@ -503,18 +535,18 @@ function releaseLock(path) {
 
 // src/bounty/backend/server.ts
 var SCRIPT_DIR = dirname2(fileURLToPath(import.meta.url));
-var SKILL_ROOT = join3(SCRIPT_DIR, "..");
-var DIST_DIR = join3(SKILL_ROOT, "dist");
+var SKILL_ROOT = join4(SCRIPT_DIR, "..");
+var DIST_DIR = join4(SKILL_ROOT, "dist");
 function resolveMode2() {
   return resolveMode(DIST_DIR);
 }
 function serveDist(path) {
   return serveFromDist(DIST_DIR, path === "/" ? "index.html" : path.slice(1));
 }
-var BOUNTY_HOME = process.env.BOUNTY_HOME ?? join3(homedir(), ".bounty");
-var SNAPSHOTS_DIR = join3(BOUNTY_HOME, "snapshots");
+var BOUNTY_HOME = process.env.BOUNTY_HOME ?? join4(homedir(), ".bounty");
+var SNAPSHOTS_DIR = join4(BOUNTY_HOME, "snapshots");
 var SHUTDOWN_WATCHDOG_MS = Number(process.env.BOUNTY_SHUTDOWN_WATCHDOG_MS ?? 5000);
-var DAEMON_LOG = join3(BOUNTY_HOME, "daemon.log");
+var DAEMON_LOG = join4(BOUNTY_HOME, "daemon.log");
 var MAX_STATUS_HISTORY = 20;
 function computeDuePokes(tasks, pokeState, now) {
   const next = new Map;
@@ -945,7 +977,7 @@ async function main(argv) {
     }
   }
   const routes = devIndex ? { "/": devIndex } : {};
-  const assetsDir = join3(SCRIPT_DIR, "..", "assets");
+  const assetsDir = join4(SCRIPT_DIR, "..", "assets");
   const state = { title: v.title, tasks: [] };
   let restoreFailed = null;
   let restoreDropped = [];
@@ -953,7 +985,7 @@ async function main(argv) {
   let restoredFromElsewhere = false;
   if (v.restore) {
     const restoreArg = v.restore;
-    const restorePath = existsSync3(restoreArg) ? restoreArg : join3(SNAPSHOTS_DIR, `${restoreArg}.json`);
+    const restorePath = existsSync3(restoreArg) ? restoreArg : join4(SNAPSHOTS_DIR, `${restoreArg}.json`);
     try {
       const snap = JSON.parse(readFileSync4(restorePath, "utf8"));
       const problem = snapshotProblem(snap);
@@ -1016,7 +1048,7 @@ async function main(argv) {
   let keptSinceWrite = false;
   let unreadableKept = false;
   const keepUnreadable = (path, why, announce) => {
-    const backup = join3(SNAPSHOTS_DIR, `${sessionId}.unreadable-${Date.now()}.bak.json`);
+    const backup = join4(SNAPSHOTS_DIR, `${sessionId}.unreadable-${Date.now()}.bak.json`);
     copyFileSync(path, backup);
     unreadableKept = true;
     ownsSnapshot = true;
@@ -1030,7 +1062,7 @@ async function main(argv) {
 `);
   };
   const keepUnowned = (path, taskCount) => {
-    const backup = join3(SNAPSHOTS_DIR, `${sessionId}.unread-${Date.now()}.bak.json`);
+    const backup = join4(SNAPSHOTS_DIR, `${sessionId}.unread-${Date.now()}.bak.json`);
     try {
       copyFileSync(path, backup);
     } catch (e) {
@@ -1051,8 +1083,8 @@ async function main(argv) {
     const name = `${sessionId}.unsaved-${Date.now()}.json`;
     const candidates = [
       ...unsavedRecord ? [unsavedRecord.path] : [],
-      join3(SNAPSHOTS_DIR, name),
-      join3(BOUNTY_HOME, name)
+      join4(SNAPSHOTS_DIR, name),
+      join4(BOUNTY_HOME, name)
     ];
     for (const p of candidates) {
       try {
@@ -1094,7 +1126,7 @@ async function main(argv) {
     }
   };
   const saveSnapshot = () => {
-    const path = join3(SNAPSHOTS_DIR, `${sessionId}.json`);
+    const path = join4(SNAPSHOTS_DIR, `${sessionId}.json`);
     try {
       mkdirSync2(SNAPSHOTS_DIR, { recursive: true });
       if (!unreadableKept && existsSync3(path)) {
@@ -1105,7 +1137,7 @@ async function main(argv) {
       const prior = snapshotTaskCount(path);
       const owned = ownsSnapshot;
       if (!keptSinceWrite && prior !== null && shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
-        const backup = join3(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
+        const backup = join4(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
         try {
           copyFileSync(path, backup);
         } catch (e) {
@@ -1176,7 +1208,7 @@ async function main(argv) {
   };
   const nowhereToWrite = () => `the board is in no file (its snapshot ${snapshotSaveFailed?.path} and every fallback in ${SNAPSHOTS_DIR} and ${BOUNTY_HOME} could not be written), so ending the daemon would lose its ${state.tasks.length} task(s)`;
   if (sessionId) {
-    const own = join3(SNAPSHOTS_DIR, `${sessionId}.json`);
+    const own = join4(SNAPSHOTS_DIR, `${sessionId}.json`);
     const readOwn = Boolean(v.restore) && !restoreFailed && !restoredFromElsewhere;
     let present = true;
     try {
@@ -1205,7 +1237,7 @@ async function main(argv) {
       if (restoredFromElsewhere && !restoreFailed && Array.isArray(ownTasks)) {
         const restored = new Map(state.tasks.map((t) => [t.id, JSON.stringify(t)]));
         const lost = ownTasks.filter((t) => restored.get(t?.id ?? "") !== JSON.stringify(t)).length;
-        const backup = join3(SNAPSHOTS_DIR, `${sessionId}.pre-restore-${Date.now()}.bak.json`);
+        const backup = join4(SNAPSHOTS_DIR, `${sessionId}.pre-restore-${Date.now()}.bak.json`);
         try {
           copyFileSync(own, backup);
           ownsSnapshot = true;
@@ -1224,7 +1256,7 @@ async function main(argv) {
         } catch {}
       }
       if (readOwn && readable && !ownsSnapshot) {
-        const backup = join3(SNAPSHOTS_DIR, `${sessionId}.partial-restore-${Date.now()}.bak.json`);
+        const backup = join4(SNAPSHOTS_DIR, `${sessionId}.partial-restore-${Date.now()}.bak.json`);
         try {
           copyFileSync(own, backup);
           ownsSnapshot = true;
@@ -1582,7 +1614,7 @@ async function main(argv) {
               headers: { "Content-Type": "application/json" }
             });
           }
-          const f = Bun.file(join3(assetsDir, assetName));
+          const f = Bun.file(join4(assetsDir, assetName));
           return f.exists().then((exists) => exists ? new Response(f, { headers: { "Content-Type": guessMime(assetName) } }) : new Response('{"error":"not found"}', {
             status: 404,
             headers: { "Content-Type": "application/json" }
@@ -1730,8 +1762,7 @@ async function main(argv) {
     updateLock(lockFile, { pid: process.pid, port: boundPort });
   emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, mode, by: "system" });
   logDaemon("ready", { port: boundPort });
-  const sessionFile = join3(tmpdir(), `bounty-${sessionId}.json`);
-  const latestFile = join3(tmpdir(), `bounty-latest.json`);
+  const discovery = discoveryFiles(sessionId);
   const sessionInfo = JSON.stringify({
     url,
     port: boundPort,
@@ -1743,25 +1774,7 @@ async function main(argv) {
     snapshotBackups: backupsThisSession,
     snapshotBackupFailed
   });
-  try {
-    writeFileAtomic(sessionFile, sessionInfo);
-    writeFileAtomic(latestFile, sessionInfo);
-  } catch (e) {
-    process.stderr.write(`bounty: could not write discovery file: ${e instanceof Error ? e.message : String(e)}
-`);
-  }
-  const cleanupDiscovery = () => {
-    try {
-      unlinkSync3(sessionFile);
-    } catch {}
-    unlinkIfMatches(latestFile, sessionId, (raw) => {
-      try {
-        return JSON.parse(raw).session_id ?? null;
-      } catch {
-        return null;
-      }
-    });
-  };
+  publishDiscovery(discovery, sessionInfo);
   if (!v["no-open"])
     openBrowser(url);
   const stopHousekeeping = startHousekeeping({
@@ -1824,7 +1837,7 @@ async function main(argv) {
   emitEvent({ type: "closed", reason, by: "system" });
   broadcast({ type: "message", text: `session ended: ${reason}` });
   await drainAndStop({ server, clients: sseClients, sockets });
-  cleanupDiscovery();
+  cleanupDiscovery(discovery, sessionId);
   if (lockFile)
     releaseLock(lockFile);
   if (shutdownWatchdog)
