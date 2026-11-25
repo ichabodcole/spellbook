@@ -31,9 +31,10 @@
 
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
+import { startDaemon } from "../../kit/wire/detach";
 import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
@@ -514,8 +515,12 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   // pinned cwd (daemonCwd()), so it can't read the real cwd itself.
   daemonArgs.push("--project", process.cwd());
 
-  // node:child_process (not Bun.spawn) is deliberate: the daemon must SURVIVE
-  // this CLI process exiting, which needs `detached: true` + `unref()`.
+  // `kit/wire/detach.ts` starts the daemon: detached + unref'd so it SURVIVES
+  // this CLI exiting, and with its stderr in `$GLAMOUR_HOME/daemon.log`, never
+  // inherited. An inherited stderr stays open inside the daemon, so a caller
+  // that reads `open`'s stderr to EOF (`spawnSync` with pipes, Python's
+  // `capture_output`) waited for the whole session. The helper also drops the
+  // stdout pipe once the handshake is read, so this CLI exits on its own.
   // Contract 5 — see daemonCwd(). And check the cwd EXISTS before spawning:
   // node reports a missing cwd as `ENOENT … posix_spawn 'bun'`, which names the
   // one thing that is fine. Measured by cassandra at a deps-free destination
@@ -534,90 +539,34 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       },
     );
   }
-  const child = spawn("bun", daemonArgs, {
-    cwd,
-    detached: true,
-    stdio: ["ignore", "pipe", "inherit"],
-    env: process.env,
-  });
-  child.unref();
+  const logFile = join(process.env.GLAMOUR_HOME ?? join(homedir(), ".glamour"), "daemon.log");
 
-  // Read the daemon's first stdout line — it prints {url, port, session_id}.
+  // The daemon's first stdout line is {url, port, session_id, mode}.
   // Generous default: the first bundle build of the React surface can take tens
-  // of seconds cold, and a too-short handshake makes `open` report failure while
-  // the daemon actually comes up fine. Override with --start-timeout <seconds>.
+  // of seconds cold. Override with --start-timeout <seconds>. A daemon that
+  // never says ready is killed, so a failed `open` leaves nothing running.
   const startTimeoutMs =
     typeof flags["start-timeout"] === "string"
       ? Math.max(5000, Number.parseInt(String(flags["start-timeout"]), 10) * 1000)
       : 45000;
-  const info = await new Promise<string>((resolve, reject) => {
-    let buf = "";
-    const timeout = setTimeout(
-      () =>
-        reject(
-          new Error(
-            `daemon start timeout (${startTimeoutMs / 1000}s) — first bundle build can be slow; retry or pass --start-timeout <seconds>`,
-          ),
-        ),
-      startTimeoutMs,
-    );
-    // biome-ignore lint/style/noNonNullAssertion: stdio "pipe" guarantees stdout
-    child.stdout!.on("data", (chunk: Buffer) => {
-      buf += chunk.toString();
-      const nl = buf.indexOf("\n");
-      if (nl >= 0) {
-        clearTimeout(timeout);
-        resolve(buf.slice(0, nl).trim());
-      }
-    });
-    child.on("error", (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-    child.on("exit", (code) => {
-      if (code !== null && code !== 0) {
-        clearTimeout(timeout);
-        reject(new Error(`daemon exited with code ${code}`));
-      }
-    });
-  }).catch((err: unknown) => {
-    const msg = err instanceof Error ? err.message : String(err);
-    die(`glamour server failed to start: ${msg}`, "internal");
-  });
-
-  // ⚠ RELEASE THE DAEMON'S STDOUT PIPE, or this CLI never exits.
-  //
-  // `child.unref()` above releases the CHILD PROCESS handle. The piped stdout is
-  // a SEPARATE reffed handle, and the daemon runs forever — so once `open` stops
-  // force-exiting, the parent's event loop waits on a stream that will never
-  // close. Measured: `open --no-open` still running at 91s; with this line, 1s.
-  //
-  // This became live when P0 replaced `process.exit(code)` with `process.exitCode`
-  // + a natural return: `process.exit` had been doing DOUBLE DUTY, draining stdout
-  // (broken — it truncated at 65,536) AND terminating despite a live child pipe
-  // (load-bearing, and unnoticed). Removing it fixed the first and exposed the
-  // second. `join.ts` has the same shape and is deliberately NOT converted.
-  //
-  // `unref()` rather than `destroy()`: both measured clean, and unref is the
-  // conservative one — it leaves the stream usable and only stops it holding the
-  // loop. The handshake is the sole read, so nothing downstream needs it.
-  // ⚠ NOT `instanceof Socket`. MEASURED under Bun: this pipe is a plain
-  // `Readable` (constructor `Readable`, `instanceof net.Socket` false) that
-  // nonetheless carries `unref` — node's typings declare it only on `Socket`,
-  // hence TS2339. A Socket guard would silently skip the unref and bring back
-  // the 91 s hang above, so the check is for the METHOD, and its absence is a
-  // named throw — the same crash the old `!` would have produced, now saying why.
-  const out = child.stdout;
-  if (!out || !("unref" in out) || typeof out.unref !== "function") {
-    throw new Error("glamour: the daemon's stdout pipe has no unref(); `open` would never exit");
-  }
-  out.unref();
-
   let parsed: { url: string; port: number; session_id: string };
   try {
-    parsed = JSON.parse(info) as typeof parsed;
-  } catch {
-    die(`unexpected output from daemon: ${info}`, "internal");
+    ({ ready: parsed } = await startDaemon<typeof parsed>({
+      command: "bun",
+      args: daemonArgs,
+      cwd,
+      env: process.env,
+      logFile,
+      startTimeoutMs,
+    }));
+  } catch (err) {
+    die(
+      `glamour server failed to start: ${err instanceof Error ? err.message : String(err)}`,
+      "internal",
+      {
+        hint: `daemon log: ${logFile}. The first bundle build can be slow; retry or pass --start-timeout <seconds>`,
+      },
+    );
   }
 
   printJson(parsed);

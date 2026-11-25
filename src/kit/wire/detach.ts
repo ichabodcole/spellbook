@@ -15,8 +15,9 @@
  *
  * ⛔ THE KIT IS A LEAF. Nothing here may import out of `src/kit/`.
  *
- * ⚠ NO SPELL IS ON IT YET. Each spell that detaches still spawns its own daemon
- * in its own code; moving one here is its own change, with that spell's tests.
+ * Callers: the kit workspace (`kit/workspace/verbs.ts`) and glamour's `open`.
+ * The other spells that detach still spawn their own daemons; moving one here
+ * is its own change, with that spell's tests.
  */
 
 import { spawn } from "node:child_process";

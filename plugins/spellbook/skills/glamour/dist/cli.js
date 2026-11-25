@@ -2,10 +2,10 @@
 // @bun
 
 // src/glamour/backend/cli.ts
-import { spawn } from "child_process";
-import { existsSync, readFileSync } from "fs";
-import { tmpdir } from "os";
-import { dirname, join } from "path";
+import { spawn as spawn2 } from "child_process";
+import { existsSync, readFileSync as readFileSync2 } from "fs";
+import { homedir, tmpdir } from "os";
+import { dirname as dirname2, join } from "path";
 
 // src/kit/cli/registry.ts
 import { parseArgs } from "util";
@@ -599,6 +599,111 @@ ${spec.helpFooter}` : ""}`;
   return cli;
 }
 
+// src/kit/wire/detach.ts
+import { spawn } from "child_process";
+import { closeSync, mkdirSync, openSync, readFileSync } from "fs";
+import { dirname } from "path";
+function tailOf(path, lines = 12) {
+  try {
+    return readFileSync(path, "utf8").split(`
+`).slice(-lines).join(`
+`).trim();
+  } catch {
+    return "";
+  }
+}
+function signal(pid, sig) {
+  try {
+    process.kill(-pid, sig);
+    return true;
+  } catch {
+    try {
+      process.kill(pid, sig);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+async function killGroup(pid, graceMs) {
+  if (!signal(pid, "SIGTERM"))
+    return;
+  const end = Date.now() + graceMs;
+  while (Date.now() < end) {
+    if (!signal(pid, 0))
+      return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  signal(pid, "SIGKILL");
+}
+async function startDaemon(opts, deps = {}) {
+  mkdirSync(dirname(opts.logFile), { recursive: true });
+  const logFd = openSync(opts.logFile, "a");
+  let child;
+  try {
+    child = (deps.spawn ?? spawn)(opts.command, [...opts.args], {
+      cwd: opts.cwd,
+      env: opts.env ?? process.env,
+      detached: true,
+      stdio: ["ignore", "pipe", logFd]
+    });
+  } finally {
+    closeSync(logFd);
+  }
+  child.unref();
+  const timeoutMs = opts.startTimeoutMs ?? 45000;
+  const graceMs = opts.killGraceMs ?? 2000;
+  return await new Promise((resolve, reject) => {
+    let buf = "";
+    let settled = false;
+    const settle = (fn) => {
+      if (settled)
+        return;
+      settled = true;
+      clearTimeout(timer);
+      child.stdout?.removeAllListeners("data");
+      child.stdout?.destroy();
+      fn();
+    };
+    const fail = (message, kill) => settle(() => {
+      const pid = child.pid;
+      const killed = kill && pid !== undefined ? killGroup(pid, graceMs) : Promise.resolve();
+      killed.then(() => {
+        const log = tailOf(opts.logFile);
+        reject(new Error(log ? `${message}
+${log}` : message));
+      });
+    });
+    const timer = setTimeout(() => fail(`daemon start timeout (${timeoutMs / 1000}s)`, true), timeoutMs);
+    child.on("error", (e) => fail(`cannot start the daemon: ${e.message}`, false));
+    child.on("exit", (code) => fail(`the daemon exited before it was ready (code ${code})`, false));
+    child.stdout?.on("data", (chunk) => {
+      buf += chunk.toString();
+      const nl = buf.indexOf(`
+`);
+      if (nl < 0)
+        return;
+      const line = buf.slice(0, nl);
+      let ready;
+      try {
+        const parsed = JSON.parse(line);
+        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+          throw new Error("not an object");
+        }
+        ready = parsed;
+      } catch {
+        fail(`the daemon's first line was not a JSON object: ${line.slice(0, 200)}`, true);
+        return;
+      }
+      const pid = child.pid;
+      if (pid === undefined)
+        fail("the daemon said ready but has no pid", false);
+      else
+        settle(() => resolve({ pid, ready }));
+    });
+  });
+}
+
 // src/kit/wire/tailEvents.ts
 var DEFAULT_IDLE_MS = 45000;
 var DEFAULT_RETRY = { initialMs: 250, maxMs: 5000 };
@@ -1114,7 +1219,7 @@ async function optimizeImageDataUrl(dataUrl) {
 }
 
 // src/glamour/backend/cli.ts
-var SCRIPT_DIR = dirname(Bun.fileURLToPath(import.meta.url));
+var SCRIPT_DIR = dirname2(Bun.fileURLToPath(import.meta.url));
 var SERVER_SCRIPT = join(SCRIPT_DIR, "..", "scripts", "server.ts");
 var SKILL_ROOT = join(SCRIPT_DIR, "..");
 var DIST_DIR = join(SKILL_ROOT, "dist");
@@ -1151,7 +1256,7 @@ function readSession(session) {
   const path = sessionFilePath(session);
   let raw;
   try {
-    raw = readFileSync(path, "utf8");
+    raw = readFileSync2(path, "utf8");
   } catch (e) {
     const code = e.code;
     if (code === "ENOENT")
@@ -1374,55 +1479,27 @@ async function cmdOpen(flags) {
       hint: "dev mode was resolved (no dist/index.html at the skill root and no SPELLBOOK_SURFACE_MODE=release), " + "so the daemon must run from src/glamour/, which a source-free install does not have. " + "Either the shipped dist/ is missing (reinstall the spell) or you are in a checkout without src/glamour/."
     });
   }
-  const child = spawn("bun", daemonArgs, {
-    cwd,
-    detached: true,
-    stdio: ["ignore", "pipe", "inherit"],
-    env: process.env
-  });
-  child.unref();
+  const logFile = join(process.env.GLAMOUR_HOME ?? join(homedir(), ".glamour"), "daemon.log");
   const startTimeoutMs = typeof flags["start-timeout"] === "string" ? Math.max(5000, Number.parseInt(String(flags["start-timeout"]), 10) * 1000) : 45000;
-  const info = await new Promise((resolve, reject) => {
-    let buf = "";
-    const timeout = setTimeout(() => reject(new Error(`daemon start timeout (${startTimeoutMs / 1000}s) \u2014 first bundle build can be slow; retry or pass --start-timeout <seconds>`)), startTimeoutMs);
-    child.stdout.on("data", (chunk) => {
-      buf += chunk.toString();
-      const nl = buf.indexOf(`
-`);
-      if (nl >= 0) {
-        clearTimeout(timeout);
-        resolve(buf.slice(0, nl).trim());
-      }
-    });
-    child.on("error", (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-    child.on("exit", (code) => {
-      if (code !== null && code !== 0) {
-        clearTimeout(timeout);
-        reject(new Error(`daemon exited with code ${code}`));
-      }
-    });
-  }).catch((err) => {
-    const msg = err instanceof Error ? err.message : String(err);
-    die(`glamour server failed to start: ${msg}`, "internal");
-  });
-  const out = child.stdout;
-  if (!out || !("unref" in out) || typeof out.unref !== "function") {
-    throw new Error("glamour: the daemon's stdout pipe has no unref(); `open` would never exit");
-  }
-  out.unref();
   let parsed;
   try {
-    parsed = JSON.parse(info);
-  } catch {
-    die(`unexpected output from daemon: ${info}`, "internal");
+    ({ ready: parsed } = await startDaemon({
+      command: "bun",
+      args: daemonArgs,
+      cwd,
+      env: process.env,
+      logFile,
+      startTimeoutMs
+    }));
+  } catch (err) {
+    die(`glamour server failed to start: ${err instanceof Error ? err.message : String(err)}`, "internal", {
+      hint: `daemon log: ${logFile}. The first bundle build can be slow; retry or pass --start-timeout <seconds>`
+    });
   }
   printJson2(parsed);
   if (!flags["no-open"]) {
     const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-    spawn(opener, [parsed.url], { detached: true, stdio: "ignore" }).unref();
+    spawn2(opener, [parsed.url], { detached: true, stdio: "ignore" }).unref();
   }
 }
 async function cmdState(session, full = false) {
@@ -1489,7 +1566,7 @@ function cmdInfo(session) {
 }
 function versionInfo() {
   try {
-    const raw = readFileSync(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const raw = readFileSync2(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
     const pkg = JSON.parse(raw);
     if (typeof pkg.version === "string")
       return { name: "glamour", version: pkg.version };

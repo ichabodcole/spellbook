@@ -330,14 +330,16 @@ as end-of-session, then read the snapshot.
   times out, retry with `--start-timeout <seconds>` (default 45 s) — distinct
   from `--timeout S` which controls the session idle timeout.
 - **`$GLAMOUR_HOME`** (default `~/.glamour`) — controls where session snapshots
-  are written. Override by setting the env var before calling `open`.
+  are written, and holds `daemon.log`, where every daemon's own stderr goes (a
+  failed `open` quotes its tail). Override by setting the env var before calling
+  `open`.
 - **`media-forge` CLI** on PATH — required for image generation. Without it the
   conversation + style-guide flow works fully, but the agent cannot post
   generated images. Tell the user if it is missing.
 - Session discovery files live in the system temp dir (`os.tmpdir()`) — on macOS
-  that is `/var/folders/.../T/`, not `/tmp`. If a session appears lost after a
-  failed `open` handshake, use `info` or `--session <id>` to re-target (the
-  daemon itself is usually still running).
+  that is `/var/folders/.../T/`, not `/tmp`. A daemon that misses the `open`
+  handshake is stopped, so a failed `open` leaves no session behind; if a
+  session appears lost otherwise, use `info` or `--session <id>` to re-target.
 
 ## Feedback touchpoint
 

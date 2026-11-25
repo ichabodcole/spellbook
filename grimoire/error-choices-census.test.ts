@@ -193,7 +193,10 @@ const EXPECTED: Record<
   // `daemon_stuck` (`daemonStuck`, in backend/daemonDiscovery.ts: its raise, and
   // its one call from `livePortOrRefuse`) instead of being taken for gone. No
   // closed set there, so no `choices`; the hint names `kill -CONT <pid>`.
-  glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
+  // glamour 20 -> 19 (2026-11-24, item glamour-daemon-holds-cli-stderr): `open`
+  // starts its daemon through `kit/wire/detach.ts`, whose one rejection covers
+  // what was two raises (start failure, a handshake that is not JSON).
+  glamour: { sites: 19, choices: 3, verbRoster: true, flagMap: true },
   grapevine: { sites: 56, choices: 1, verbRoster: true, flagMap: true },
   // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
