@@ -7,7 +7,7 @@ description:
   paths.ts, facts.ts, types.ts and manifest.ts, and session.ts re-exports every
   name it exports today.
 status: draft
-lifecycle: backlog
+lifecycle: ready
 id: 01a20f86-8c31-70b9-bba9-cacf4bcd0674
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }

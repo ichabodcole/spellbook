@@ -100,7 +100,9 @@ layout.
 
 - [ ] `bunx biome lint src` reports no `noExcessiveLinesPerFile` finding, and
       every override you touched is at the file's new count (a lowered number,
-      never a raised one).
+      never a raised one). Biome does not count comments or blank lines after a
+      file's last token, so a file can grow there without failing: read the
+      diff, not only the lint.
 - [ ] `bun test tests/architecture/session-tiers.test.ts` passes, and every part
       you added is in its table and on the architecture page.
 - [ ] `bun test src/kit/workspace/noteGuard.lazy.test.ts` passes: the CLI's and
