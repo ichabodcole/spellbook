@@ -75,7 +75,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 
 **5. Glamour, with its partner:**
 
-20. **[item/glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr.md)**
+20. **[item/glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr/item.md)**
     with
     **[item/glamour-open-reports-a-dead-daemon](../items/glamour-open-reports-a-dead-daemon.md)**
 

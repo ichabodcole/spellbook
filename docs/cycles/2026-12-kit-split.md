@@ -61,7 +61,7 @@ no test's expectations changed.
   the grapevine spell, all `ready`.
 - [bounty-latest-pointer-and-list-title](../items/bounty-latest-pointer-and-list-title.md)
   and
-  [glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr.md),
+  [glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr/item.md),
   both `ready`.
 
 Out of scope, deliberately: kit bugs and features, including the nine items
@@ -82,4 +82,4 @@ _Written at close._
 - chore/kit-split-g1 (landed 2026-11-24)
 - fix/grapevine-paused-daemon-reads-as-gone (landed 2026-11-24)
 - fix/grapevine-small-hint-miscounts (landed 2026-11-24)
-- fix/glamour-daemon-holds-cli-stderr (open)
+- fix/glamour-daemon-holds-cli-stderr (landed 2026-11-24)
