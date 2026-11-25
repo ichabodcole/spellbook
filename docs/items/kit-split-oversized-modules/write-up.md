@@ -658,7 +658,7 @@ Cole, 2026-11-24: all eight decisions as recommended.
    [the kit-split feature](../../features/kit-split/feature.md), each
    `blocked_by` the one before in its chain: [G0](../kit-split-g0/item.md),
    [G1](../kit-split-g1/item.md); the session [S2](../kit-split-s2/item.md),
-   [S3](../kit-split-s3/item.md), [S4](../kit-split-s4.md),
+   [S3](../kit-split-s3/item.md), [S4](../kit-split-s4/item.md),
    [S5](../kit-split-s5.md), [S6](../kit-split-s6.md), [S7](../kit-split-s7.md),
    [S8](../kit-split-s8.md), [S9](../kit-split-s9.md),
    [S10](../kit-split-s10.md), [S11](../kit-split-s11.md); the daemon
