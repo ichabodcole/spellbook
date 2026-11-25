@@ -91,4 +91,4 @@ _Written at close._
 - chore/kit-split-w3 (landed 2026-11-25)
 - chore/kit-split-s4 (landed 2026-11-25)
 - chore/kit-split-w4 (landed 2026-11-25)
-- chore/kit-split-s5 (open)
+- chore/kit-split-s5 (landed 2026-11-25)

@@ -37,7 +37,7 @@ The kit part, shared with Story Studio:
 - the folder's name taken from the app, not hard-coded.
 
 Blocked by the kit split, which moves the two readers out of `session.ts` in its
-read-side step, [S5](./kit-split-s5.md) (see
+read-side step, [S5](./kit-split-s5/item.md) (see
 [the split's write-up](./kit-split-oversized-modules/write-up.md)).
 
 ## Definition of done
