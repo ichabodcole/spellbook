@@ -4,8 +4,8 @@ title: Move WorkspaceShell's right column out
 description:
   The right column and its tabs move to useRightColumn.ts, rightTabs.ts and
   useRightTab.ts, leaving WorkspaceShell under 1,200 lines.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-9b81-7503-b97e-cc9b8355b1e3
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
