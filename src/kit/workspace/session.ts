@@ -168,8 +168,6 @@ import {
   checkSessionId,
   contentHash,
   copyName,
-  entryAt,
-  FREE_NAME_TRIES,
   fitName,
   newSessionId,
   nowIso,
@@ -192,6 +190,7 @@ import {
   treeHash,
 } from "./session/paths.ts";
 import { Places } from "./session/places.ts";
+import { Placing } from "./session/placing.ts";
 import { Profiles } from "./session/profiles.ts";
 import { ReadIndex } from "./session/readIndex.ts";
 import { Relations } from "./session/relations.ts";
@@ -313,6 +312,8 @@ export class WorkspaceSession {
   private readonly media: Media;
   /** Tier 2: an image's description, its sidecar. */
   private readonly sidecars: Sidecars;
+  /** Tier 2: placing a new thing on disk (free names, adopting what landed). */
+  private readonly placing: Placing;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
@@ -352,6 +353,14 @@ export class WorkspaceSession {
     this.chats = new Chats(this.core, { persist: () => this.persist() });
     this.media = new Media(this.core, this.places);
     this.sidecars = new Sidecars(this.core, this.places, { activeText: (d) => this.activeText(d) });
+    this.placing = new Placing(this.core, this.places, {
+      listedBundleHolding: (abs) => this.listedBundleHolding(abs),
+      rescan: (entryId) => this.rescan(entryId),
+      refreshListed: (abs) => this.refreshListed(abs),
+      scanSkip: (entryId, root) => this.scanSkip(entryId, root),
+      scanGuard: () => this.scanGuard(),
+      relink: () => this.relink(),
+    });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.readIndex = new ReadIndex(this.core, this.places, {
       activeText: (d) => this.activeText(d),
@@ -2471,7 +2480,7 @@ export class WorkspaceSession {
       delete this.core.m.importedAs[abs];
       if (Object.keys(this.core.m.importedAs).length === 0) delete this.core.m.importedAs;
     }
-    if (!this.places.itemAt(path)) this.adoptNew(path);
+    if (!this.places.itemAt(path)) this.placing.adoptNew(path);
     this.persist();
     return { path, image: abs, hash: contentHash(text) };
   }
@@ -2584,15 +2593,15 @@ export class WorkspaceSession {
           ["replace", "keep-both"],
           "replace it (the old file goes to the Trash), or keep both under a new name",
         );
-      file = this.freeImageName(dir, file);
+      file = this.placing.freeImageName(dir, file);
     } else if (existsSync(sidecarOf(join(dir, file)))) {
       // Only a description is there, its image gone: the new image takes a
       // name of its own rather than that description.
-      file = this.freeImageName(dir, file);
+      file = this.placing.freeImageName(dir, file);
     }
     const abs = join(dir, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
@@ -2660,7 +2669,7 @@ export class WorkspaceSession {
     }
     // A free name counts a description left without its image, so a new
     // image never takes over an orphaned sidecar.
-    const file = this.freeImageName(assets, given);
+    const file = this.placing.freeImageName(assets, given);
     const abs = join(assets, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     return { path: abs, card: `./assets/${file}` };
@@ -2686,7 +2695,7 @@ export class WorkspaceSession {
     const { assets } = this.bundleAssetsOrDie(rawBundle);
     if (f.abs.startsWith(assets + sep))
       throw new SessionError(`${basename(f.abs)} is already this board's own`, 400);
-    const file = this.freeImageName(assets, basename(f.abs));
+    const file = this.placing.freeImageName(assets, basename(f.abs));
     const abs = join(assets, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const from = sidecarOf(f.abs);
@@ -2737,12 +2746,12 @@ export class WorkspaceSession {
       file = `${file.slice(0, file.length - extname(file).length)}${EXTENSION_OF[type]}`;
     }
     const dir = this.imagesDirBeside(doc);
-    file = this.freeImageName(dir, file);
+    file = this.placing.freeImageName(dir, file);
     const abs = join(dir, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const set = this.places.coveringEntry(abs);
     if (set) this.rescan(set.id);
-    else this.adoptNew(abs);
+    else this.placing.adoptNew(abs);
     this.persist();
     return { path: abs, doc, href: relativeHref(doc, abs) };
   }
@@ -2871,12 +2880,12 @@ export class WorkspaceSession {
 
   /** Put a staged replacement in place of `target`, whose old file is now in the Trash. */
   placeStaged(staged: string, target: string): { path: string } {
-    this.refuseExisting(target);
+    this.placing.refuseExisting(target);
     this.places.world.rename(staged, target);
     // A loose image's entry is still there (only the file went to the Trash); one
     // the context no longer showed is given an entry again, as a new drop would be.
     if (this.places.itemAt(target)) this.rescanAround(target);
-    else this.adoptNew(target);
+    else this.placing.adoptNew(target);
     this.persist();
     return { path: target };
   }
@@ -3388,34 +3397,6 @@ export class WorkspaceSession {
     this.relink();
   }
 
-  /** After a file or folder landed at `abs`: re-read the set it is in, or give it an entry. */
-  private adoptNew(abs: string): void {
-    const set = this.places.coveringEntry(abs);
-    const listed = set ? null : this.listedBundleHolding(abs);
-    // Every set whose root holds it, not only the first: a linked folder added
-    // as a set of its own sits under the set holding its link, which shows it
-    // only as a link's row, and the thing made is shown by the other one.
-    if (set) {
-      for (const e of this.core.m.context) {
-        const holds = abs === e.root || abs.startsWith(e.root + sep);
-        if (e.membership === "mirrored" && holds) this.rescan(e.id);
-      }
-    }
-    // Made in a member folder of a bundle listed on its own: its row is read
-    // again. An entry of its own would be the bundle a second time.
-    else if (listed) this.refreshListed(listed);
-    else {
-      // Every write that lands here passed the backstop; a new entry still
-      // takes the one set guard.
-      this.places.mayBeASetOrDie(abs);
-      const id = `c-${randHex(3)}`;
-      this.core.m.context.push(
-        entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard()),
-      );
-    }
-    this.relink();
-  }
-
   /** The folder of a bundle listed on its own (no set shows it) that `abs` is inside, else null. */
   private listedBundleHolding(abs: string): string | null {
     const b = bundleOf(abs);
@@ -3436,44 +3417,6 @@ export class WorkspaceSession {
   }
 
   /**
-   * A name in `dir` that is free: `name`, else `stem N.ext` with N the first
-   * free number from 2 (`Untitled 2.md`, filling a gap). A plain folder's
-   * name has no extension; a bundle's keeps its own. Bounded: past
-   * FREE_NAME_TRIES it is refused rather than counted further.
-   */
-  private freeName(
-    dir: string,
-    name: string,
-    isDir: boolean,
-    taken: (abs: string) => boolean = (abs) => !!entryAt(abs),
-  ): string {
-    if (!taken(join(dir, name))) return name;
-    const ext = isDir ? "" : (bundleTypeOf(name)?.extension ?? extname(name));
-    const stem = ext ? name.slice(0, -ext.length) : name;
-    for (let i = 2; i < 2 + FREE_NAME_TRIES; i++) {
-      const n = fitName(stem, ` ${i}${ext}`);
-      if (!taken(join(dir, n))) return n;
-    }
-    throw new SessionError(
-      `no free name like "${fitName(stem, ` 2${ext}`)}" is left in ${tilde(dir)}`,
-      409,
-    );
-  }
-
-  /**
-   * A free name for an incoming image: one with neither the image nor its
-   * description sidecar (`<name>.md`) there, so a description left behind by
-   * an image that went is never taken up by a new one under its old name.
-   */
-  private freeImageName(dir: string, name: string): string {
-    return this.freeName(dir, name, false, (abs) => !!entryAt(abs) || !!entryAt(sidecarOf(abs)));
-  }
-
-  private refuseExisting(abs: string): void {
-    if (entryAt(abs)) throw new SessionError(`${abs} already exists: nothing was overwritten`, 409);
-  }
-
-  /**
    * A new document in `rawDir` (a set, a folder in one, or the workspace; never
    * inside a bundle). `opts.text` is what it starts with; `opts.free` takes the
    * next free name when `name` is taken, rather than refusing.
@@ -3486,9 +3429,9 @@ export class WorkspaceSession {
     const dir = this.places.destinationOrDie(rawDir);
     const wanted = name === undefined ? "Untitled.md" : this.places.docNameOrDie(name);
     const file =
-      name === undefined || opts.free === true ? this.freeName(dir, wanted, false) : wanted;
+      name === undefined || opts.free === true ? this.placing.freeName(dir, wanted, false) : wanted;
     const abs = join(dir, file);
-    this.refuseExisting(abs);
+    this.placing.refuseExisting(abs);
     if (opts.text !== undefined && Buffer.byteLength(opts.text) > WorkspaceSession.IMPORT_MAX_BYTES)
       throw new SessionError(
         `a new document's text is larger than ${WorkspaceSession.IMPORT_MAX_BYTES / 1024 / 1024} MB: not created`,
@@ -3498,7 +3441,7 @@ export class WorkspaceSession {
     // Save is not refused for being empty.
     const text = opts.text ?? (docFormat(file) === "json" ? "{}\n" : "");
     this.places.world.writeFile(abs, text, { flag: "wx" });
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
@@ -3510,13 +3453,13 @@ export class WorkspaceSession {
     const makesSet = !this.places.coveringEntry(dir) && this.isWorkspace(dir);
     const folder =
       name === undefined
-        ? this.freeName(dir, makesSet ? "New set" : "New folder", true)
+        ? this.placing.freeName(dir, makesSet ? "New set" : "New folder", true)
         : this.places.nameOrDie(name);
     this.refuseBundleName(folder, "a new folder");
     const abs = join(dir, folder);
-    this.refuseExisting(abs);
+    this.placing.refuseExisting(abs);
     this.places.world.mkdir(abs);
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
@@ -3554,19 +3497,19 @@ export class WorkspaceSession {
     const given = name === undefined ? null : this.places.nameOrDie(name);
     const folder =
       given === null
-        ? this.freeName(dir, `Untitled${type.extension}`, false)
+        ? this.placing.freeName(dir, `Untitled${type.extension}`, false)
         : bundleTypeOf(given) === type
           ? given
           : fitName(given, type.extension);
     const abs = join(dir, folder);
-    this.refuseExisting(abs);
+    this.placing.refuseExisting(abs);
     this.writes.wroteBundle(abs);
     this.places.world.mkdir(abs);
     this.places.world.writeFile(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
       flag: "wx",
     });
     this.places.world.writeFile(join(abs, type.main), type.mainTemplate, { flag: "wx" });
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     return { path: abs, hash: treeHash(abs) };
   }
@@ -3649,7 +3592,7 @@ export class WorkspaceSession {
           writeBundleInfo(info, item.bundle, { title: `${uncopied(title)}${suffix}` }),
         );
     } else {
-      this.refuseExisting(to);
+      this.placing.refuseExisting(to);
       try {
         this.places.world.copyFile(item.abs, to, constants.COPYFILE_EXCL);
       } catch (e) {
@@ -3657,7 +3600,7 @@ export class WorkspaceSession {
         throw refused(e);
       }
     }
-    this.adoptNew(to);
+    this.placing.adoptNew(to);
     this.persist();
     return { path: to, from: item.abs, hash: treeHash(to), dir: item.bundle !== undefined };
   }
@@ -3704,11 +3647,11 @@ export class WorkspaceSession {
     if (dirname(item.abs) === into)
       throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
     const to = join(into, basename(item.abs));
-    this.refuseExisting(to);
+    this.placing.refuseExisting(to);
     // An image's description goes with it, or nothing moves.
     const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
-    if (sidecarTo) this.refuseExisting(sidecarTo);
+    if (sidecarTo) this.placing.refuseExisting(sidecarTo);
     const sidecarShown = sidecar !== null && this.places.itemAt(sidecar);
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
     // The app's edges it breaks are said as the plan says them, never rewritten.
@@ -3720,8 +3663,9 @@ export class WorkspaceSession {
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
     this.followMove(item.abs, to);
     if (sidecar && sidecarTo) this.followMove(sidecar, sidecarTo);
-    if (!this.places.itemAt(to)) this.adoptNew(to);
-    if (sidecarTo && sidecarShown && !this.places.itemAt(sidecarTo)) this.adoptNew(sidecarTo);
+    if (!this.places.itemAt(to)) this.placing.adoptNew(to);
+    if (sidecarTo && sidecarShown && !this.places.itemAt(sidecarTo))
+      this.placing.adoptNew(sidecarTo);
     this.persist();
     const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
     const links = pins ? this.planRelink(pins, pairs) : null;
@@ -3752,10 +3696,10 @@ export class WorkspaceSession {
     if (dirname(item.abs) === into)
       throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
     const to = join(into, basename(item.abs));
-    this.refuseExisting(to);
+    this.placing.refuseExisting(to);
     const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
-    if (sidecarTo) this.refuseExisting(sidecarTo);
+    if (sidecarTo) this.placing.refuseExisting(sidecarTo);
     const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
     const moved = sidecar ? [item.abs, sidecar] : [item.abs];
     const pins = this.pinLinks(moved);
@@ -4010,12 +3954,12 @@ export class WorkspaceSession {
     if (to === item.abs) return { path: to, from: item.abs };
     // A case-only rename on a case-insensitive disk finds "itself" existing.
     const caseOnly = to.toLowerCase() === item.abs.toLowerCase();
-    if (!caseOnly) this.refuseExisting(to);
+    if (!caseOnly) this.placing.refuseExisting(to);
     // An image's description is renamed with it (`fox.png.md` to `wolf.png.md`),
     // or nothing is renamed.
     const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
-    if (sidecarTo && !caseOnly) this.refuseExisting(sidecarTo);
+    if (sidecarTo && !caseOnly) this.placing.refuseExisting(sidecarTo);
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
@@ -4066,7 +4010,7 @@ export class WorkspaceSession {
           : (opts.title ?? (exact ? bundleStem(given) : given));
     const to = join(dirname(from), folder);
     const caseOnly = to !== from && to.toLowerCase() === from.toLowerCase();
-    if (to !== from && !caseOnly) this.refuseExisting(to);
+    if (to !== from && !caseOnly) this.placing.refuseExisting(to);
     const pins = opts.links && to !== from ? this.pinLinks([from]) : null;
     if (to !== from) {
       this.renameOrDie(from, to);
@@ -4626,7 +4570,7 @@ export class WorkspaceSession {
       );
     const parent = dirname(item.abs);
     const stem = basename(item.abs, extname(item.abs)) || "Untitled";
-    const name = this.freeName(parent, stem, true);
+    const name = this.placing.freeName(parent, stem, true);
     this.refuseBundleName(name, "the set's folder");
     const folder = join(parent, name);
     const to = join(folder, basename(item.abs));
@@ -4704,7 +4648,7 @@ export class WorkspaceSession {
       );
     const to = join(dirname(folder), basename(abs));
     this.places.mayBeASetOrDie(to, true);
-    this.refuseExisting(to);
+    this.placing.refuseExisting(to);
     this.renameOrDie(abs, to);
     try {
       this.places.world.rmdir(folder);
@@ -4781,7 +4725,7 @@ export class WorkspaceSession {
           400,
         );
     }
-    this.refuseExisting(abs);
+    this.placing.refuseExisting(abs);
     try {
       this.places.world.mkdir(abs);
     } catch (err) {
@@ -4791,7 +4735,7 @@ export class WorkspaceSession {
         409,
       );
     }
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     // The entry that shows it: a set (its own, when it made one), or a bundle
     // listed on its own whose member folder it was made in.
@@ -4827,9 +4771,9 @@ export class WorkspaceSession {
         400,
       );
     const dir = into ? this.places.destinationOrDie(into) : this.places.workspaceOrDie();
-    const abs = join(dir, this.freeName(dir, file, false));
+    const abs = join(dir, this.placing.freeName(dir, file, false));
     this.places.world.writeFile(abs, text, { flag: "wx" });
-    this.adoptNew(abs);
+    this.placing.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
