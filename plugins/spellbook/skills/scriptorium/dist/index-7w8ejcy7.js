@@ -67212,7 +67212,7 @@ function useFocusMode({
     };
     pane.addEventListener("focus", onFocus);
     return () => pane.removeEventListener("focus", onFocus);
-  }, []);
+  }, [rootRef]);
   return { editorHandle, setEditor };
 }
 
