@@ -166,6 +166,7 @@ import { lineAt } from "./projection.ts";
 import { isReader, readerAct, readerStaysLoud } from "./reader.ts";
 import type { InlineWidget } from "./rendered.ts";
 import { applyChanges, minimalChange, type TextChange } from "./text.ts";
+import { useFocusMode } from "./useFocusMode.ts";
 import { VersionMenu, versionSummary } from "./VersionMenu.tsx";
 import { ViewBoundary } from "./ViewBoundary.tsx";
 
@@ -693,25 +694,7 @@ export function DocumentPane({
   }, [showDiff, slug, onMode]);
 
   // ── focus ───────────────────────────────────────────────────────────────
-  const editorHandle = useRef<EditorHandle | null>(null);
-  const setEditor = (h: EditorHandle | null) => {
-    editorHandle.current = h;
-    if (typeof editor === "function") editor(h);
-    else if (editor) (editor as { current: EditorHandle | null }).current = h;
-  };
-  // Only focus that lands on the pane ITSELF is forwarded. A press on the rendered
-  // view must never arrive here, or in split the editor would take focus and
-  // collapse the passage being selected: the rendered scroller is focusable by
-  // script for exactly that reason (see `MarkdownView`).
-  useEffect(() => {
-    const pane = rootRef.current?.closest<HTMLElement>('[data-pane="centre"]');
-    if (!pane) return;
-    const onFocus = (e: FocusEvent) => {
-      if (e.target === pane) editorHandle.current?.focus();
-    };
-    pane.addEventListener("focus", onFocus);
-    return () => pane.removeEventListener("focus", onFocus);
-  }, []);
+  const { editorHandle, setEditor } = useFocusMode({ rootRef, editor });
 
   // ── what the pane does for the human ─────────────────────────────────────
   const onEdit = (read: () => string) => {
