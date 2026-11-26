@@ -229,21 +229,6 @@
       }
     },
     {
-      "includes": ["src/kit/workspace/protocol.ts"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noExcessiveLinesPerFile": {
-              "level": "error",
-              "options": {
-                "maxLines": 1565
-              }
-            }
-          }
-        }
-      }
-    },
-    {
       "includes": ["src/grapevine/backend/daemon.ts"],
       "linter": {
         "rules": {
