@@ -51,7 +51,6 @@ import {
   bundleStem,
   bundleTypeOf,
   bundleTypes,
-  isBundleMain,
   isBundleMember,
   newBundleInfo,
   referencingBundle,
@@ -149,7 +148,7 @@ import type {
 import { Chats } from "./session/chats.ts";
 import { Compare } from "./session/compare.ts";
 import { Documents } from "./session/documents.ts";
-import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
+import { GoneError, SessionError } from "./session/errors.ts";
 import { IMAGES_DIR, IMPORT_NAMES_MAX, IMPORTED_DIR, MANIFEST_FORMAT } from "./session/facts.ts";
 import { Follow } from "./session/follow.ts";
 import { LinkChecker } from "./session/linkCheck.ts";
@@ -186,6 +185,7 @@ import { Placing } from "./session/placing.ts";
 import { Profiles } from "./session/profiles.ts";
 import { ReadIndex } from "./session/readIndex.ts";
 import { Relations } from "./session/relations.ts";
+import { Saving } from "./session/saving.ts";
 import { Search } from "./session/search.ts";
 import { Sidecars } from "./session/sidecars.ts";
 import { State } from "./session/state.ts";
@@ -317,6 +317,8 @@ export class WorkspaceSession {
   private readonly taskList: Tasks;
   /** Tier 4: comparing and merging (`comparePart`, since `compare()` is a public verb). */
   private readonly comparePart: Compare;
+  /** Tier 4: saving, the one write to an original. */
+  private readonly saving: Saving;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
   private readonly readIndex: ReadIndex;
   private readonly linkResolve: LinkResolve;
@@ -365,6 +367,12 @@ export class WorkspaceSession {
     });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.comparePart = new Compare(this.core, this.documents);
+    this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
+      persist: () => this.persist(),
+      onFileEvent: (abs) => this.onFileEvent(abs),
+      rescanAround: (abs) => this.rescanAround(abs),
+      relink: () => this.relink(),
+    });
     this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
       filteredOut: () => this.filteredOut(),
     });
@@ -1570,98 +1578,7 @@ export class WorkspaceSession {
     slug: string,
     opts: { recreate?: "file" | "folder" } = {},
   ): { original: string; version: number; recreated?: "file" | "folder"; unchanged?: true } {
-    const d = this.documents.docOrDie(slug);
-    // Save writes only an original admitted by `openPath` (a document-type file
-    // inside a context entry). Checked again here so no other path into the
-    // manifest (a hand-edited one, a future verb) can turn Save into "write
-    // any file".
-    if (!d.admitted || !(isDocName(d.original) || isBundleMain(d.original)))
-      throw new SessionError(
-        `refusing to save ${d.original}: it was not opened from the context`,
-        409,
-      );
-    // Asked of the disk, not of the flag: the watcher may not have said yet.
-    const folderThere = existsSync(dirname(d.original));
-    const fileThere = folderThere && existsSync(d.original);
-    if (!fileThere) {
-      if (!d.missing) {
-        d.missing = true;
-        this.persist();
-      }
-      if (!folderThere && opts.recreate !== "folder")
-        throw new SessionError(
-          `${d.name} and its folder are gone from disk, so Save waits: choose "Save, making the folder again" in the document's banner to bring both back`,
-          409,
-        );
-      if (!opts.recreate)
-        throw new SessionError(
-          `${d.name} is gone from disk, so Save waits: choose "Save to recreate it" in the document's banner to bring it back`,
-          409,
-        );
-    }
-    const text = readFileSync(this.core.versionPath(d, d.active), "utf8");
-    // A JSON document is a contract other things read: one that does not parse
-    // never reaches the file. The text stays in the version, to be fixed there.
-    this.documents.refuseInvalidJson(d, d.active, text, "saved");
-    // The file's text is asked of the disk too, not of the watcher: a change it
-    // never reported would be overwritten unseen. Once the flag is up the human
-    // has been asked, and Save is their "Keep mine", a deliberate overwrite of
-    // the text they were asked about (`outsideHash`) and of nothing newer: a
-    // second change the watcher also missed is asked about again.
-    const disk = fileThere ? readFileSync(d.original, "utf8") : null;
-    if (disk !== null && d.outsideChanged) {
-      const h = contentHash(disk);
-      if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
-        // "Again" only when a text was asked about: a manifest from before
-        // `outsideHash` has the flag up with no text recorded as shown.
-        const again = d.outsideHash !== undefined;
-        d.outsideHash = h;
-        this.persist();
-        throw new UnseenChangeError(
-          again
-            ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner`
-            : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`,
-          { kind: "original.conflict", doc: d.slug, original: d.original },
-          `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`,
-        );
-      }
-    }
-    if (disk !== null && !d.outsideChanged) {
-      if (contentHash(disk) !== d.originalHash && disk !== text) {
-        const event = this.onFileEvent(d.original);
-        if (event?.kind === "original.reloaded")
-          throw new UnseenChangeError(
-            `${d.name} changed on disk and you had no unsaved edits, so its text was loaded and Save wrote nothing`,
-            event,
-            "the file's new text is in the active version now: edit it and Save again to change the file",
-          );
-        throw new UnseenChangeError(
-          `${d.name} changed on disk since it was last read, so Save waits and wrote nothing: choose in the document's banner`,
-          event,
-          `"See the difference" compares the file with yours; "Keep mine" saves yours over it; "Take the file's" loads it`,
-        );
-      }
-    }
-    // The bytes on disk are already the text: a save that changes nothing, which
-    // the daemon never wakes the agent for. Still written, as the human asked.
-    const unchanged = fileThere && readFileSync(d.original).equals(Buffer.from(text, "utf8"));
-    this.writes.writeOwned(d.original, text, this.places.world);
-    d.originalHash = contentHash(text);
-    d.outsideChanged = false;
-    delete d.outsideHash;
-    const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
-    if (!fileThere) {
-      delete d.missing;
-      this.rescanAround(d.original);
-      this.relink();
-    }
-    this.persist();
-    return {
-      original: d.original,
-      version: d.active,
-      ...(recreated ? { recreated } : {}),
-      ...(unchanged ? { unchanged: true as const } : {}),
-    };
+    return this.saving.save(slug, opts);
   }
 
   /**
@@ -1670,10 +1587,7 @@ export class WorkspaceSession {
    * finds them.
    */
   closeDoc(slug: string): { slug: string } {
-    const d = this.documents.docOrDie(slug);
-    this.viewer.closeDoc(d.slug);
-    this.persist();
-    return { slug: d.slug };
+    return this.saving.closeDoc(slug);
   }
 
   /**

@@ -72,8 +72,10 @@ export const TIERS: Record<string, number> = {
   profiles: 4,
   relations: 4,
   search: 4,
-  // What saves and compares across documents (S7 built `compare`).
+  // What saves and compares across documents (S7 built `compare` and
+  // `saving`).
   compare: 4,
+  saving: 4,
   // Tier 5: across the tree and the whole view (S5 built the link check and
   // the link reports).
   linkCheck: 5,
