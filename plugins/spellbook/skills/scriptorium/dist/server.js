@@ -16259,8 +16259,8 @@ var init_projection = __esm(() => {
 });
 
 // src/scriptorium/backend/kit/server.ts
-import { existsSync as existsSync11 } from "fs";
-import { join as join23 } from "path";
+import { existsSync as existsSync13 } from "fs";
+import { join as join25 } from "path";
 
 // src/kit/wire/tailHandoff.ts
 var MONITOR_CAP_MS = 1800000;
@@ -16276,13 +16276,13 @@ function commandLine(argv) {
 // src/kit/workspace/server.ts
 import {
   closeSync as closeSync7,
-  existsSync as existsSync7,
-  readFileSync as readFileSync12,
-  statSync as statSync14,
+  existsSync as existsSync9,
+  readFileSync as readFileSync15,
+  statSync as statSync15,
   unlinkSync as unlinkSync4,
   watch
 } from "fs";
-import { basename as basename15, dirname as dirname17, extname as extname4, isAbsolute as isAbsolute13, join as join18, relative as relative14, sep as sep17 } from "path";
+import { basename as basename17, dirname as dirname19, extname as extname5, isAbsolute as isAbsolute14, join as join20, relative as relative16, sep as sep18 } from "path";
 import { parseArgs as nodeParseArgs } from "util";
 
 // src/kit/lib/bundles.ts
@@ -21749,14 +21749,14 @@ import {
   accessSync,
   closeSync as closeSync6,
   constants as constants3,
-  existsSync as existsSync5,
+  existsSync as existsSync7,
   fstatSync as fstatSync2,
   lstatSync as lstatSync8,
   readdirSync as readdirSync8,
-  readFileSync as readFileSync11,
-  statSync as statSync13
+  readFileSync as readFileSync14,
+  statSync as statSync14
 } from "fs";
-import { basename as basename14, dirname as dirname16, extname as extname3, isAbsolute as isAbsolute11, join as join17, relative as relative13, resolve as resolve9, sep as sep16 } from "path";
+import { basename as basename16, dirname as dirname18, extname as extname4, isAbsolute as isAbsolute12, join as join19, relative as relative15, resolve as resolve10, sep as sep17 } from "path";
 
 // src/kit/workspace/manifestMigrate.ts
 import { join as join9 } from "path";
@@ -22462,6 +22462,517 @@ class Chats {
   }
 }
 
+// src/kit/workspace/session/compare.ts
+import { readFileSync as readFileSync5 } from "fs";
+class Compare {
+  core;
+  documents;
+  constructor(core, documents) {
+    this.core = core;
+    this.documents = documents;
+  }
+  sideText(d, side) {
+    if (side === "original")
+      return readFileSync5(d.original, "utf8");
+    this.documents.versionOrDie(d, side);
+    return readFileSync5(this.core.versionPath(d, side), "utf8");
+  }
+  compare(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const left = readFileSync5(this.core.versionPath(d, d.active), "utf8");
+    if (opts.pick) {
+      const sides = [
+        "original",
+        ...d.versions.map((v) => v.n).filter((n) => n !== d.active).sort((a, b) => b - a)
+      ];
+      for (const side of sides) {
+        let right;
+        try {
+          right = this.sideText(d, side);
+        } catch {
+          continue;
+        }
+        if (right !== left)
+          return {
+            doc: d.slug,
+            active: d.active,
+            against: side,
+            diff: diffText(left, right),
+            picked: true
+          };
+      }
+    }
+    if (opts.against === d.active)
+      throw new SessionError(`v${d.active} is the active version of ${d.slug}: comparing it with itself says nothing`, 400);
+    return {
+      doc: d.slug,
+      active: d.active,
+      against: opts.against,
+      diff: diffText(left, this.sideText(d, opts.against)),
+      ...opts.pick ? { picked: true, everyMatches: true } : {}
+    };
+  }
+  merge(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const payload = this.compare({ doc: d.slug, against: opts.against });
+    const known = new Set(payload.diff.hunks.map((h) => h.id));
+    const missing = opts.hunks.filter((id) => !known.has(id));
+    if (missing.length)
+      throw new SessionError(`${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against, d.name)}: ` + `it has ${known.size === 0 ? "none" : `1..${Math.max(...known)}`}. Run diff again: ` + `the text changed under the numbers.`, 409);
+    const before = readFileSync5(this.core.versionPath(d, d.active), "utf8");
+    const text = applyHunks(before, payload.diff.hunks, opts.hunks);
+    if (opts.json === "refuse" && docFormat(d.original) === "json") {
+      const p = jsonProblem(text);
+      if (p) {
+        const from = sideName(opts.against, d.name);
+        throw new SessionError(`taking change${opts.hunks.length === 1 ? "" : "s"} ${opts.hunks.join(", ")} from ${from} into v${d.active} of ${d.name} would leave invalid JSON (${describeJsonProblem(p)}, in the merged text): fix ${from}, or take fewer changes. Nothing was merged.`, 409);
+      }
+    }
+    const { preserved } = this.documents.edit(d.slug, d.active, text);
+    return {
+      slug: d.slug,
+      version: d.active,
+      text,
+      applied: opts.hunks.filter((id) => known.has(id)).length,
+      preserved
+    };
+  }
+}
+
+// src/kit/workspace/session/documents.ts
+import { readFileSync as readFileSync7, statSync as statSync8 } from "fs";
+import { basename as basename6, extname as extname2, isAbsolute as isAbsolute5, join as join13, relative as relative5, resolve as resolve6 } from "path";
+
+// src/kit/workspace/session/paths.ts
+import { lstatSync as lstatSync6, readdirSync as readdirSync6, readFileSync as readFileSync6, realpathSync as realpathSync4, statSync as statSync7 } from "fs";
+import { join as join12, sep as sep7 } from "path";
+function isFolder(p) {
+  try {
+    return statSync7(p).isDirectory();
+  } catch {
+    return false;
+  }
+}
+function rootReal(e) {
+  return e.realRoot ?? realOr3(e.root);
+}
+function realOr3(p) {
+  try {
+    return realpathSync4(p);
+  } catch {
+    return p;
+  }
+}
+function overlapOf(workspace, context) {
+  const ws = realOr3(workspace);
+  for (const e of context) {
+    if (e.membership !== "mirrored")
+      continue;
+    const root = rootReal(e);
+    if (ws === root || ws.startsWith(root + sep7))
+      return { label: e.label, root: e.root, same: ws === root };
+  }
+  return null;
+}
+function shownOverlap(o, workspace) {
+  return { ...o, root: tilde(o.root), workspace: tilde(workspace) };
+}
+var movedPairs = (from, to, sidecar, sidecarTo) => sidecar && sidecarTo ? [
+  [from, to],
+  [sidecar, sidecarTo]
+] : [[from, to]];
+function treeHash(abs) {
+  if (!lstatSync6(abs).isDirectory())
+    return contentHash(readFileSync6(abs, "utf8"));
+  const parts = [];
+  const walk = (dir, rel) => {
+    for (const name of readdirSync6(dir).sort()) {
+      const p = join12(dir, name);
+      const r = rel === "" ? name : `${rel}/${name}`;
+      const st = lstatSync6(p);
+      if (st.isDirectory()) {
+        parts.push(`${r}/`);
+        walk(p, r);
+      } else if (st.isSymbolicLink())
+        parts.push(`${r}@`);
+      else
+        parts.push(`${r}:${Bun.hash(readFileSync6(p)).toString(16)}`);
+    }
+  };
+  walk(abs, "");
+  return Bun.hash(parts.join(`
+`)).toString(16);
+}
+function bundleHolding(dir) {
+  return bundleOf(dir) ?? bundleOf(realOr3(dir));
+}
+function refuseWorkspaceInBundle(dir) {
+  const inBundle = bundleHolding(dir);
+  if (inBundle)
+    throw new SessionError(`the workspace folder is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)} (${tilde(dir)}): nothing is written into a ${inBundle.type.label} from here. Set the workspace to a folder outside it (\`workspace <dir>\`)`, 409);
+}
+function refuseInBundle(dir, what) {
+  if (isMemberDir(dir) && isMemberDir(realOr3(dir)))
+    return;
+  const inBundle = bundleHolding(dir);
+  if (inBundle)
+    throw new SessionError(`${what} (${tilde(dir)}) is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`, 409);
+}
+function outsideMembers(type) {
+  const members = type.expand?.members ?? [];
+  return members.length === 0 ? `nothing is written into a ${type.label} from here` : `only its ${members.map((m) => `${m}/`).join(" and ")} folder${members.length === 1 ? "" : "s"} can be written into from here`;
+}
+
+// src/kit/workspace/session/documents.ts
+class Documents {
+  core;
+  places;
+  writes;
+  viewer;
+  hooks;
+  constructor(core, places, writes, viewer, hooks) {
+    this.core = core;
+    this.places = places;
+    this.writes = writes;
+    this.viewer = viewer;
+    this.hooks = hooks;
+  }
+  activeHash = new Map;
+  lastActiveText = new Map;
+  adoptActive(d, text) {
+    const p = this.core.versionPath(d, d.active);
+    this.writes.own(p, text);
+    this.activeHash.set(d.slug, contentHash(text));
+    this.lastActiveText.set(d.slug, text);
+  }
+  writeActive(d, text) {
+    this.writes.writeVersion(this.core.versionPath(d, d.active), text);
+    this.activeHash.set(d.slug, contentHash(text));
+    this.lastActiveText.set(d.slug, text);
+  }
+  preserveOutside(d, text) {
+    const n = this.takeVersion(d);
+    const rec = {
+      n,
+      by: "agent",
+      fromVersion: d.active,
+      createdAt: nowIso(),
+      label: `outside write to v${d.active}`,
+      outside: true
+    };
+    d.versions.push(rec);
+    this.writes.writeVersion(this.core.versionPath(d, n), text);
+    this.hooks.persist();
+    return { ...rec, path: this.core.versionPath(d, n) };
+  }
+  docOrDie(slug, opts = {}) {
+    const want = slug ?? this.core.m.openDoc ?? undefined;
+    const opened = this.core.m.docs.flatMap((d) => {
+      const alias = this.docAlias(d);
+      return alias === undefined ? [d.slug] : [d.slug, alias];
+    });
+    const choices = opened.length > 0 ? opened : this.core.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
+    const hint = opened.length > 0 ? undefined : "nothing is open yet: pass a PATH from the context (a filename only resolves once a document is open)";
+    if (want === undefined)
+      throw new SessionError("no document is open: name one with --doc", 409, choices, hint);
+    const d = this.findDoc(want);
+    if (!d) {
+      const unopened = isAbsolute5(want) ? [] : this.unopenedNamed(want);
+      if (unopened.length > 0)
+        throw new SessionError(`no document "${want}" in this session`, 404, opts.takesPath ? [...unopened, ...choices.filter((c) => !unopened.includes(c))] : choices, `${want} is in the context but not open, at ${unopened.join(" or ")}: ${opts.takesPath ? "pass that absolute path to --doc" : "open it first (version-new --doc <that path> opens it), then name it here"}`);
+      throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
+    }
+    return d;
+  }
+  unopenedNamed(name) {
+    const held = new Set(this.core.m.docs.map((d) => d.original));
+    const out = [];
+    for (const e of this.core.m.context)
+      for (const p of docPaths(e)) {
+        if (held.has(p) || out.includes(p))
+          continue;
+        if (basename6(p) === name || toPosix(relative5(e.root, p)) === name)
+          out.push(p);
+        if (out.length >= 20)
+          return out;
+      }
+    return out;
+  }
+  heldPaths() {
+    return new Map(this.core.m.docs.map((d) => [d.original, d.slug]));
+  }
+  findDoc(key) {
+    const bySlug = this.core.m.docs.find((d) => d.slug === key);
+    if (bySlug)
+      return bySlug;
+    if (isAbsolute5(key)) {
+      const path = this.mainOf(key.length > 1 ? key.replace(/\/+$/, "") : key);
+      const byPath = this.core.m.docs.find((d) => d.original === path || realOr3(d.original) === realOr3(path));
+      if (byPath)
+        return byPath;
+    }
+    const byAlias = this.core.m.docs.find((d) => this.docAlias(d) === key);
+    if (byAlias)
+      return byAlias;
+    const byName = this.core.m.docs.filter((d) => basename6(d.original) === key || d.rel === key);
+    return byName.length === 1 ? byName[0] : undefined;
+  }
+  docAlias(d) {
+    if (!isBundleMain(d.original))
+      return;
+    const b = bundleOf(d.original);
+    if (!b)
+      return;
+    const alias = slugBase(bundleNameAt(b.root));
+    if (alias === d.slug || this.core.m.docs.some((x) => x.slug === alias))
+      return;
+    const others = this.core.m.docs.filter((x) => x !== d && isBundleMain(x.original) && slugBase(this.docName(x)) === alias);
+    return others.length === 0 ? alias : undefined;
+  }
+  takeVersion(d) {
+    const n = d.nextVersion;
+    d.nextVersion = n + 1;
+    return n;
+  }
+  versionOrDie(d, n) {
+    const v = d.versions.find((x) => x.n === n);
+    if (!v)
+      throw new SessionError(`${d.slug} has no v${n}`, 404, d.versions.map((x) => `v${x.n}`));
+    return v;
+  }
+  mainOf(abs) {
+    const b = bundleOf(abs);
+    return b && b.inner === "" ? join13(abs, b.type.main) : abs;
+  }
+  docName(d) {
+    const b = isBundleMain(d.original) ? bundleOf(d.original) : null;
+    return b ? bundleNameAt(b.root) : d.name;
+  }
+  itemName(abs, title) {
+    const b = bundleOf(abs);
+    if (b && b.inner === "")
+      return title !== undefined ? bundleDisplayName(basename6(abs), title) : bundleNameAt(abs);
+    return basename6(abs);
+  }
+  bundleTitleAt(abs) {
+    const title = readBundleInfo(abs)?.title;
+    return typeof title === "string" ? title : undefined;
+  }
+  slugFor(original) {
+    const bundle = bundleOf(original);
+    const named = bundle && bundle.inner === bundle.type.main ? bundleStem(bundle.root) : null;
+    const stem = slugBase(named ?? basename6(original, extname2(original)));
+    let slug = stem;
+    for (let i = 2;this.core.m.docs.some((d) => d.slug === slug); i++)
+      slug = `${stem}-${i}`;
+    return slug;
+  }
+  openPath(rawPath, opts = {}) {
+    const focus = opts.focus ?? true;
+    const abs = this.places.canonical(this.mainOf(resolve6(rawPath)));
+    const existing = this.core.m.docs.find((d) => d.original === abs);
+    if (existing) {
+      if (focus)
+        this.viewer.showDoc(existing.slug);
+      this.hooks.persist();
+      return { slug: existing.slug, created: false };
+    }
+    if (!isDocName(abs) && !isBundleMain(abs))
+      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
+    const at = locate(this.core.m.context, abs);
+    if (!at)
+      throw new SessionError(`${abs} is not in this session's context: add it (or its folder) first`, 400);
+    let text;
+    try {
+      if (!statSync8(abs).isFile())
+        throw new Error("not a file");
+      text = readFileSync7(abs, "utf8");
+    } catch {
+      throw new SessionError(`cannot open ${abs}: no such file`, 404);
+    }
+    const lower = extname2(abs).toLowerCase();
+    const ext = docExtensions().includes(lower) || isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower) ? lower : ".md";
+    const d = {
+      slug: this.slugFor(abs),
+      name: basename6(abs),
+      original: abs,
+      entryId: at.entryId,
+      rel: at.rel,
+      ext,
+      versions: [{ n: 1, by: "human", createdAt: nowIso() }],
+      active: 1,
+      nextVersion: 2,
+      notes: [],
+      originalHash: contentHash(text),
+      admitted: true,
+      outsideChanged: false
+    };
+    this.core.m.docs.push(d);
+    this.writeActive(d, text);
+    if (focus)
+      this.viewer.showDoc(d.slug);
+    this.hooks.persist();
+    return { slug: d.slug, created: true };
+  }
+  openSlug(slug) {
+    this.viewer.showDoc(this.docOrDie(slug).slug);
+    this.hooks.persist();
+  }
+  readVersion(slug, n) {
+    const d = this.docOrDie(slug);
+    this.versionOrDie(d, n);
+    const path = this.core.versionPath(d, n);
+    return { text: readFileSync7(path, "utf8"), path };
+  }
+  activePath(slug) {
+    const d = slug ? this.findDoc(slug) : this.core.m.openDoc ? this.findDoc(this.core.m.openDoc) : undefined;
+    return d ? this.core.versionPath(d, d.active) : null;
+  }
+  edit(slug, n, text) {
+    const d = this.docOrDie(slug);
+    if (n !== d.active)
+      throw new SessionError(`v${n} is not the active version of ${d.slug} (v${d.active} is): only the active version is editable`, 409);
+    const before = this.isDirty(d);
+    const path = this.core.versionPath(d, n);
+    this.places.ownFileOrDie(path);
+    const staged = this.core.own.stage(path, text, "edit");
+    let preserved = null;
+    let landed = false;
+    try {
+      let onDisk = null;
+      try {
+        onDisk = readFileSync7(path, "utf8");
+      } catch {
+        onDisk = null;
+      }
+      if (onDisk !== null && !this.writes.isOwnWrite(path, onDisk))
+        preserved = this.preserveOutside(d, onDisk);
+      this.writes.own(path, text);
+      this.core.own.rename(staged, path);
+      landed = true;
+    } finally {
+      if (!landed)
+        try {
+          this.core.own.unlink(staged);
+        } catch {}
+    }
+    this.activeHash.set(d.slug, contentHash(text));
+    this.lastActiveText.set(d.slug, text);
+    return { dirtyChanged: before !== this.isDirty(d), preserved };
+  }
+  editLeft(slug, n, text) {
+    const d = this.docOrDie(slug);
+    const was = d.versions.find((v) => v.n === n);
+    if (was) {
+      const path = this.core.versionPath(d, n);
+      let onDisk = null;
+      try {
+        onDisk = readFileSync7(path, "utf8");
+      } catch {
+        onDisk = null;
+      }
+      if (onDisk !== null && (onDisk === text || this.writes.isOwnWrite(path, onDisk))) {
+        this.writes.writeVersion(path, text);
+        return { saved: n, kept: null, path };
+      }
+    }
+    const v = this.takeVersion(d);
+    const rec = {
+      n: v,
+      by: "human",
+      fromVersion: was ? n : d.active,
+      createdAt: nowIso(),
+      label: `edit to v${n} after a switch`
+    };
+    d.versions.push(rec);
+    const path = this.core.versionPath(d, v);
+    this.writes.writeVersion(path, text);
+    this.hooks.persist();
+    return { saved: v, kept: was ? "changed" : "deleted", path };
+  }
+  newVersion(opts) {
+    const d = this.docOrDie(opts.doc, { takesPath: true });
+    const from = opts.from ?? d.active;
+    this.versionOrDie(d, from);
+    const text = opts.body ?? readFileSync7(this.core.versionPath(d, from), "utf8");
+    const n = this.takeVersion(d);
+    const rec = {
+      n,
+      by: opts.by,
+      fromVersion: from,
+      createdAt: nowIso(),
+      ...opts.label ? { label: opts.label } : {}
+    };
+    d.versions.push(rec);
+    this.writes.writeVersion(this.core.versionPath(d, n), text);
+    this.hooks.persist();
+    return { slug: d.slug, version: { ...rec, path: this.core.versionPath(d, n) } };
+  }
+  checkDeletable(opts) {
+    const d = this.docOrDie(opts.doc);
+    this.versionOrDie(d, opts.version);
+    if (opts.version === d.active)
+      throw new SessionError(`v${opts.version} is the active version of ${d.slug}: activate another one first, then delete this`, 409);
+    return d.slug;
+  }
+  deleteVersion(opts) {
+    this.checkDeletable(opts);
+    const d = this.docOrDie(opts.doc);
+    const v = this.versionOrDie(d, opts.version);
+    const path = this.places.ownFileOrDie(this.core.versionPath(d, opts.version));
+    d.versions = d.versions.filter((x) => x.n !== opts.version);
+    try {
+      this.core.own.rm(path);
+    } catch (e) {
+      if (e instanceof SessionError)
+        throw e;
+    }
+    this.writes.disown(path);
+    this.hooks.persist();
+    return {
+      slug: d.slug,
+      version: opts.version,
+      ...v.label ? { label: v.label } : {},
+      remaining: d.versions.length
+    };
+  }
+  activate(opts) {
+    const d = this.docOrDie(opts.doc);
+    this.versionOrDie(d, opts.version);
+    if (opts.json === "refuse")
+      this.refuseInvalidJson(d, opts.version, readFileSync7(this.core.versionPath(d, opts.version), "utf8"), "activated");
+    const previous = d.active;
+    for (const v of d.versions)
+      if (v.n === previous || v.n === opts.version)
+        v.activated = true;
+    d.active = opts.version;
+    this.adoptActive(d, readFileSync7(this.core.versionPath(d, d.active), "utf8"));
+    this.hooks.persist();
+    return { slug: d.slug, previous };
+  }
+  activeText(d) {
+    return readFileSync7(this.core.versionPath(d, d.active), "utf8");
+  }
+  jsonProblemOf(slug, version) {
+    const d = this.docOrDie(slug);
+    if (docFormat(d.original) !== "json")
+      return null;
+    this.versionOrDie(d, version);
+    return jsonProblem(readFileSync7(this.core.versionPath(d, version), "utf8"));
+  }
+  refuseInvalidJson(d, version, text, what) {
+    if (docFormat(d.original) !== "json")
+      return;
+    const p = jsonProblem(text);
+    if (!p)
+      return;
+    throw new SessionError(`v${version} of ${d.name} is not valid JSON, so it was not ${what}: ${describeJsonProblem(p)}`, 409, undefined, `fix the JSON in v${version} first; nothing was written`);
+  }
+  isDirty(d) {
+    return (this.activeHash.get(d.slug) ?? "") !== d.originalHash;
+  }
+}
+
 // src/kit/workspace/session/facts.ts
 init_frontmatter();
 
@@ -22589,13 +23100,133 @@ var IMPORTED_DIR = "imported";
 var IMAGES_DIR = "images";
 var IMPORT_NAMES_MAX = 500;
 
-// src/kit/workspace/session/linkCheck.ts
+// src/kit/workspace/session/follow.ts
 import { existsSync as existsSync3 } from "fs";
-import { basename as basename6, dirname as dirname8, relative as relative5, sep as sep7 } from "path";
+import { basename as basename7, dirname as dirname8, join as join14, relative as relative6, sep as sep8 } from "path";
+class Follow {
+  core;
+  places;
+  viewer;
+  hooks;
+  constructor(core, places, viewer, hooks) {
+    this.core = core;
+    this.places = places;
+    this.viewer = viewer;
+    this.hooks = hooks;
+  }
+  moves = [];
+  followMove(from, to) {
+    this.moves.push([from, to]);
+    if (this.moves.length > MOVES_KEPT)
+      this.moves.splice(0, this.moves.length - MOVES_KEPT);
+    const moved = (p) => p === from ? to : p.startsWith(from + sep8) ? to + p.slice(from.length) : null;
+    for (const d of this.core.m.docs) {
+      const now = moved(d.original);
+      if (now) {
+        d.original = now;
+        d.name = basename7(now);
+      }
+    }
+    this.viewer.followMove(moved);
+    if (this.core.m.importedAs) {
+      const names = {};
+      for (const [p, n] of Object.entries(this.core.m.importedAs)) {
+        const now = moved(p);
+        if (now)
+          names[now] = n;
+        else if (p !== to && !p.startsWith(to + sep8))
+          names[p] = n;
+      }
+      this.core.m.importedAs = names;
+    }
+    const drop = new Set;
+    for (const e of this.core.m.context) {
+      if (e.membership === "listed") {
+        const only = listedFile(e);
+        if (!only)
+          continue;
+        const now = moved(only.abs);
+        if (!now)
+          continue;
+        if (this.places.coveringEntry(now, e.id))
+          drop.add(e.id);
+        else {
+          e.root = dirname8(now);
+          e.realRoot = realOr3(e.root);
+          e.label = basename7(now);
+          const bundle = only.kind === "bundle" ? bundleTypeOf(now) : null;
+          e.nodes = [
+            only.kind === "image" ? { kind: "image", rel: basename7(now) } : bundle ? bundleNode(basename7(now), now, bundle) : docNode(basename7(now), now)
+          ];
+        }
+      } else {
+        const now = moved(e.root);
+        if (!now)
+          continue;
+        if (this.places.coveringEntry(now, e.id))
+          drop.add(e.id);
+        else {
+          e.root = now;
+          e.realRoot = realOr3(now);
+          e.label = basename7(now) || now;
+        }
+      }
+    }
+    this.core.m.context = this.core.m.context.filter((e) => !drop.has(e.id));
+    for (const e of this.core.m.context)
+      if (e.membership === "mirrored")
+        this.hooks.rescan(e.id);
+    this.hooks.refreshListedContents();
+    this.hooks.relink();
+  }
+  movedTo(path) {
+    let p = path;
+    for (const [from, to] of this.moves)
+      if (p === from)
+        p = to;
+      else if (p.startsWith(from + sep8))
+        p = to + p.slice(from.length);
+    return p;
+  }
+  movedFrom(path) {
+    let p = path;
+    for (let i = this.moves.length - 1;i >= 0; i--) {
+      const [from, to] = this.moves[i];
+      if (p === to)
+        p = from;
+      else if (p.startsWith(to + sep8))
+        p = from + p.slice(to.length);
+    }
+    return p;
+  }
+  movedTarget(raw, src, wasAt, tried, entry, index) {
+    if (this.moves.length === 0)
+      return;
+    const looked = [...tried];
+    if (wasAt !== src && !raw.startsWith("/"))
+      for (const t of tried)
+        looked.push(join14(dirname8(wasAt), relative6(dirname8(src), t)));
+    for (const at of looked) {
+      const now = this.movedTo(at);
+      if (!existsSync3(now))
+        continue;
+      const written = retarget(raw, src, now, entry?.root ?? null);
+      const r = this.hooks.resolveFrom(written, src, entry, "document", index, "markdown");
+      const folderLink = splitTarget(raw).path.endsWith("/");
+      if (r.state !== "missing" && (folderLink || r.state !== "folder"))
+        return written;
+    }
+    return;
+  }
+}
+
+// src/kit/workspace/session/linkCheck.ts
+import { existsSync as existsSync4 } from "fs";
+import { basename as basename8, dirname as dirname9, relative as relative7, sep as sep9 } from "path";
 
 // src/kit/workspace/relations.ts
-import { readdirSync as readdirSync6, readFileSync as readFileSync5, statSync as statSync7 } from "fs";
-import { join as join12 } from "path";
+import { readdirSync as readdirSync7, readFileSync as readFileSync8, statSync as statSync9 } from "fs";
+import { join as join15 } from "path";
 var RELATIONS_FILE = "_relations.json";
 var COLOR = /^(?:[1-6]|#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})$/;
 var RELATION_WORD = RELATION;
@@ -22687,7 +23318,7 @@ function readsBack(def) {
 }
 function listOf2(dir) {
   try {
-    return readdirSync6(dir);
+    return readdirSync7(dir);
   } catch {
     return [];
   }
@@ -22696,10 +23327,10 @@ function fileIn(dir) {
   const [meta, profiles] = PROFILES_DIR.split(/[\\/]/);
   if (!listOf2(dir).includes(meta))
     return null;
-  if (!listOf2(join12(dir, meta)).includes(profiles))
+  if (!listOf2(join15(dir, meta)).includes(profiles))
     return null;
-  const at = join12(dir, meta, profiles);
-  return listOf2(at).includes(RELATIONS_FILE) ? join12(at, RELATIONS_FILE) : null;
+  const at = join15(dir, meta, profiles);
+  return listOf2(at).includes(RELATIONS_FILE) ? join15(at, RELATIONS_FILE) : null;
 }
 
 class RelationsReader {
@@ -22714,7 +23345,7 @@ class RelationsReader {
   file(path) {
     let stamp;
     try {
-      const st = statSync7(path);
+      const st = statSync9(path);
       if (!st.isFile())
         return null;
       stamp = `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
@@ -22726,7 +23357,7 @@ class RelationsReader {
       return hit.read;
     let text;
     try {
-      text = readFileSync5(path, "utf8");
+      text = readFileSync8(path, "utf8");
     } catch (e) {
       const why = e && typeof e === "object" && "code" in e ? String(e.code) : String(e);
       return { broken: `cannot be read (${why})` };
@@ -22838,14 +23469,14 @@ class LinkChecker {
   readIndex;
   linkResolve;
   relations;
-  hooks;
-  constructor(core, places, readIndex, linkResolve, relations, hooks) {
+  follow;
+  constructor(core, places, readIndex, linkResolve, relations, follow) {
     this.core = core;
     this.places = places;
     this.readIndex = readIndex;
     this.linkResolve = linkResolve;
     this.relations = relations;
-    this.hooks = hooks;
+    this.follow = follow;
   }
   linkCheck(opts = {}) {
     const index = this.places.contextIndex();
@@ -22855,13 +23486,13 @@ class LinkChecker {
     const setEntry = (path) => {
       let best = entryOf(path);
       for (const e of this.core.m.context)
-        if (e.membership === "mirrored" && path.startsWith(e.root + sep7) && (best === undefined || e.root.length > best.root.length))
+        if (e.membership === "mirrored" && path.startsWith(e.root + sep9) && (best === undefined || e.root.length > best.root.length))
           best = e;
       return best;
     };
     const shown = (path) => {
       const entry = setEntry(path);
-      return entry ? toPosix(relative5(entry.root, path)) : basename6(path);
+      return entry ? toPosix(relative7(entry.root, path)) : basename8(path);
     };
     const used = new Set;
     const landed = new Map;
@@ -22888,18 +23519,18 @@ class LinkChecker {
         return null;
       if (own.membership === "listed")
         return { target: r.path };
-      return r.path.startsWith(own.root + sep7) ? null : { target: r.path };
+      return r.path.startsWith(own.root + sep9) ? null : { target: r.path };
     };
     const leavingView = (from, target) => {
       const near = setEntry(target);
-      const there = near?.membership === "mirrored" && target.startsWith(near.root + sep7) ? near : undefined;
+      const there = near?.membership === "mirrored" && target.startsWith(near.root + sep9) ? near : undefined;
       const own = setEntry(from);
       return {
         source: from,
-        name: basename6(from),
+        name: basename8(from),
         shown: shown(from),
         target,
-        targetShown: there ? toPosix(relative5(there.root, target)) : own ? toPosix(relative5(own.root, target)) : target,
+        targetShown: there ? toPosix(relative7(there.root, target)) : own ? toPosix(relative7(own.root, target)) : target,
         ...there ? { targetSet: there.label } : {},
         ...own ? { set: own.id } : {}
       };
@@ -22914,7 +23545,7 @@ class LinkChecker {
         if (r.state !== "missing")
           continue;
         const v = this.readIndex.referenceView(c.path, ref, entryOf);
-        const called = ref.label ?? basename6(ref.raw);
+        const called = ref.label ?? basename8(ref.raw);
         const set = setOf(c.path);
         references.push({
           ...v,
@@ -22962,7 +23593,7 @@ class LinkChecker {
             return;
           (pathShaped(e.target) ? danglingEdges : unresolvedEdges).push({
             source: s.path,
-            name: basename6(s.path),
+            name: basename8(s.path),
             shown: shown(s.path),
             edge: e.kind,
             raw: e.target,
@@ -23004,7 +23635,7 @@ class LinkChecker {
         if (!d || d.versions.length < 2)
           continue;
         const entry = entryOf(c.path);
-        const wasAt = this.hooks.movedFrom(c.path);
+        const wasAt = this.follow.movedFrom(c.path);
         for (const v of d.versions) {
           if (v.n === d.active || v.by !== "agent" || v.activated || keptOutside(v))
             continue;
@@ -23020,10 +23651,10 @@ class LinkChecker {
             const r = this.linkResolve.resolveFrom(link.raw, c.path, entry, "document", index, link.kind);
             if (r.state !== "missing")
               continue;
-            const suggest = link.kind === "markdown" ? this.hooks.movedTarget(link.raw, c.path, wasAt, r.tried, entry, index) : undefined;
+            const suggest = link.kind === "markdown" ? this.follow.movedTarget(link.raw, c.path, wasAt, r.tried, entry, index) : undefined;
             mine.push({
               source: c.path,
-              name: basename6(c.path),
+              name: basename8(c.path),
               shown: shown(c.path),
               line: link.line,
               raw: link.raw,
@@ -23055,7 +23686,7 @@ class LinkChecker {
     this.readIndex.pruneLinkCache(read);
     const view = (l) => ({
       source: l.source,
-      name: basename6(l.source),
+      name: basename8(l.source),
       shown: shown(l.source),
       line: l.line,
       raw: l.raw,
@@ -23073,7 +23704,7 @@ class LinkChecker {
     const probed = new Map;
     const names = duplicateNames(all.map((c) => c.path), {
       caseInsensitive: (p) => {
-        const dir = dirname8(p);
+        const dir = dirname9(p);
         let known = probed.get(dir);
         if (known === undefined) {
           known = caseInsensitiveAt(p);
@@ -23081,7 +23712,7 @@ class LinkChecker {
         }
         return known;
       },
-      exists: (p) => existsSync3(p)
+      exists: (p) => existsSync4(p)
     }).map((d) => ({
       name: d.name,
       files: d.files.map((f) => ({
@@ -23091,7 +23722,7 @@ class LinkChecker {
         ...setOf(f.path) !== undefined ? { set: setOf(f.path) } : {}
       }))
     }));
-    const unusedImages = [...index.images].filter((p) => basename6(dirname8(p)) === IMAGES_DIR && !used.has(p)).map((path) => ({
+    const unusedImages = [...index.images].filter((p) => basename8(dirname9(p)) === IMAGES_DIR && !used.has(p)).map((path) => ({
       path,
       shown: shown(path),
       ...setOf(path) !== undefined ? { set: setOf(path) } : {}
@@ -23110,7 +23741,7 @@ class LinkChecker {
       }
     const title = (path) => {
       const f = facts.get(path) ?? NO_FACTS;
-      return f.title ?? f.heading ?? withoutDocExtension(basename6(path));
+      return f.title ?? f.heading ?? withoutDocExtension(basename8(path));
     };
     const symmetry = oneWaySymmetric(edges, (from, rel) => vocabulary.at(from).relations.get(rel)?.symmetric === true).map((e) => ({
       ...view(e.link),
@@ -23231,8 +23862,8 @@ class LinkChecker {
 }
 
 // src/kit/workspace/session/linkReports.ts
-import { readFileSync as readFileSync6 } from "fs";
-import { basename as basename7, dirname as dirname9, isAbsolute as isAbsolute5, relative as relative6, sep as sep8 } from "path";
+import { readFileSync as readFileSync9 } from "fs";
+import { basename as basename9, dirname as dirname10, isAbsolute as isAbsolute6, relative as relative8, sep as sep10 } from "path";
 class LinkReports {
   core;
   places;
@@ -23240,15 +23871,15 @@ class LinkReports {
   linkResolve;
   profiles;
   relations;
-  hooks;
-  constructor(core, places, readIndex, linkResolve, profiles, relations, hooks) {
+  documents;
+  constructor(core, places, readIndex, linkResolve, profiles, relations, documents) {
     this.core = core;
     this.places = places;
     this.readIndex = readIndex;
     this.linkResolve = linkResolve;
     this.profiles = profiles;
     this.relations = relations;
-    this.hooks = hooks;
+    this.documents = documents;
   }
   linkGraph(opts = {}) {
     const index = this.places.contextIndex();
@@ -23257,10 +23888,10 @@ class LinkReports {
       throw new SessionError(`graph: hops must be 0 to 3, not ${String(opts.hops)}`, 400);
     if (opts.limit !== undefined && (!Number.isInteger(opts.limit) || opts.limit < 1))
       throw new SessionError(`graph: limit must be at least 1, not ${String(opts.limit)}`, 400);
-    if (opts.within !== undefined && !isAbsolute5(opts.within))
+    if (opts.within !== undefined && !isAbsolute6(opts.within))
       throw new SessionError(`graph: within must be an absolute folder, not ${opts.within}`, 400);
     const within = opts.within === undefined ? undefined : this.places.canonical(opts.within, index);
-    const inside = (p) => within === undefined || p === focus || p === within || p.startsWith(within + sep8);
+    const inside = (p) => within === undefined || p === focus || p === within || p.startsWith(within + sep10);
     const all = this.readIndex.markdownCandidates().filter((c) => inside(c.path));
     const read = new Set;
     const facts = new Map;
@@ -23314,12 +23945,12 @@ class LinkReports {
     }, referenceEdges);
     const nodes = g.nodes.map((n) => {
       if (n.bundle) {
-        const root = dirname9(n.path);
+        const root = dirname10(n.path);
         const entry = entryOf(n.path);
         return {
           path: n.path,
-          name: basename7(root),
-          shown: entry ? toPosix(relative6(entry.root, root)) : basename7(root),
+          name: basename9(root),
+          shown: entry ? toPosix(relative8(entry.root, root)) : basename9(root),
           title: bundleNameAt(root),
           kind: n.kind,
           label: n.label ?? n.kind,
@@ -23332,11 +23963,11 @@ class LinkReports {
       }
       const f = facts.get(n.path) ?? NO_FACTS;
       const entry = entryOf(n.path);
-      const name = basename7(n.path);
+      const name = basename9(n.path);
       return {
         path: n.path,
         name,
-        shown: entry ? toPosix(relative6(entry.root, n.path)) : name,
+        shown: entry ? toPosix(relative8(entry.root, n.path)) : name,
         title: f.title ?? f.heading ?? withoutDocExtension(name),
         kind: n.kind,
         label: n.kind === null ? null : n.label ?? n.kind,
@@ -23401,8 +24032,8 @@ class LinkReports {
         const entry = entryOf(e.source);
         edges.push({
           source: e.source,
-          name: basename7(e.source),
-          shown: entry ? toPosix(relative6(entry.root, e.source)) : basename7(e.source),
+          name: basename9(e.source),
+          shown: entry ? toPosix(relative8(entry.root, e.source)) : basename9(e.source),
           edge: e.kind,
           raw: e.target,
           ...e.key !== undefined ? { key: e.key } : {},
@@ -23413,7 +24044,7 @@ class LinkReports {
       }
       edges.sort((a, b) => a.shown.localeCompare(b.shown) || (a.line ?? 0) - (b.line ?? 0));
     }
-    const landing = (p) => basename7(p.endsWith("/") ? p.slice(0, -1) : p).normalize("NFC").toLowerCase();
+    const landing = (p) => basename9(p.endsWith("/") ? p.slice(0, -1) : p).normalize("NFC").toLowerCase();
     const tb = bundleOf(target.path);
     const wantName = landing(tb && tb.inner === tb.type.main ? tb.root : target.path);
     const bundles = [];
@@ -23443,8 +24074,8 @@ class LinkReports {
       const entry = entryOf(b.source);
       return {
         source: b.source,
-        name: basename7(b.source),
-        shown: entry ? toPosix(relative6(entry.root, b.source)) : basename7(b.source),
+        name: basename9(b.source),
+        shown: entry ? toPosix(relative8(entry.root, b.source)) : basename9(b.source),
         line: b.line,
         raw: b.raw,
         rel: b.rel,
@@ -23497,7 +24128,7 @@ class LinkReports {
     const byPath = new Map(this.readIndex.markdownCandidates().map((c) => [c.path, c]));
     const want = new Set;
     for (const p of paths)
-      if (isAbsolute5(p))
+      if (isAbsolute6(p))
         want.add(this.places.canonical(p, index));
     const read = new Set;
     const out = [];
@@ -23532,7 +24163,7 @@ class LinkReports {
     const out = [];
     const seen = new Set;
     for (const p of paths) {
-      if (!isAbsolute5(p))
+      if (!isAbsolute6(p))
         continue;
       const own = this.places.canonical(p, index);
       const c = byPath.get(own);
@@ -23542,11 +24173,11 @@ class LinkReports {
       const facts = this.readIndex.readOf(c, read)?.facts ?? NO_FACTS;
       const k = this.profiles.kindView(own, facts, profiles);
       const entry = entryOf(own);
-      const name = basename7(own);
+      const name = basename9(own);
       out.push({
         path: own,
         name,
-        shown: entry ? toPosix(relative6(entry.root, own)) : name,
+        shown: entry ? toPosix(relative8(entry.root, own)) : name,
         title: facts.title ?? facts.heading ?? withoutDocExtension(name),
         kind: k.kind,
         label: k.kind === null ? null : k.label ?? k.kind,
@@ -23559,11 +24190,11 @@ class LinkReports {
   }
   subjectText(subject, version) {
     if (version !== undefined) {
-      const d = subject.doc === null ? undefined : this.hooks.findDoc(subject.doc);
+      const d = subject.doc === null ? undefined : this.documents.findDoc(subject.doc);
       if (!d)
         throw new SessionError(`${this.places.display(subject.path)} is not open in the session, so it has no v${version}`, 404);
-      this.hooks.versionOrDie(d, version);
-      return { text: readFileSync6(this.core.versionPath(d, version), "utf8"), version };
+      this.documents.versionOrDie(d, version);
+      return { text: readFileSync9(this.core.versionPath(d, version), "utf8"), version };
     }
     const c = this.readIndex.candidates().find((x) => x.path === subject.path);
     if (!c)
@@ -23577,7 +24208,7 @@ class LinkReports {
     const entry = this.readIndex.entryFinder(index)(subject.path);
     return {
       path: subject.path,
-      shown: entry ? toPosix(relative6(entry.root, subject.path)) : basename7(subject.path),
+      shown: entry ? toPosix(relative8(entry.root, subject.path)) : basename9(subject.path),
       version: got.version,
       text: got.text
     };
@@ -23618,7 +24249,7 @@ class LinkReports {
     const kept = views.slice(0, BACKLINK_CAP);
     return {
       path: subject.path,
-      shown: entry ? toPosix(relative6(entry.root, subject.path)) : basename7(subject.path),
+      shown: entry ? toPosix(relative8(entry.root, subject.path)) : basename9(subject.path),
       version: read,
       count: views.length,
       links: kept,
@@ -23628,8 +24259,8 @@ class LinkReports {
 }
 
 // src/kit/workspace/session/linkResolve.ts
-import { closeSync as closeSync4, readFileSync as readFileSync7, statSync as statSync8 } from "fs";
-import { basename as basename8, dirname as dirname10, isAbsolute as isAbsolute6, relative as relative7, resolve as resolve6, sep as sep9 } from "path";
+import { closeSync as closeSync4, readFileSync as readFileSync10, statSync as statSync10 } from "fs";
+import { basename as basename10, dirname as dirname11, isAbsolute as isAbsolute7, relative as relative9, resolve as resolve7, sep as sep11 } from "path";
 
 // src/kit/lib/markdown.ts
 var EMBED_REMOTE = "Remote image, not loaded: only images in this session are shown.";
@@ -23643,17 +24274,19 @@ class LinkResolve {
   readIndex;
   media;
   sidecars;
+  documents;
   hooks;
-  constructor(core, places, readIndex, media, sidecars, hooks) {
+  constructor(core, places, readIndex, media, sidecars, documents, hooks) {
     this.core = core;
     this.places = places;
     this.readIndex = readIndex;
     this.media = media;
     this.sidecars = sidecars;
+    this.documents = documents;
     this.hooks = hooks;
   }
   linkHeadings(slug, path) {
-    this.hooks.docOrDie(slug);
+    this.documents.docOrDie(slug);
     const index = this.places.contextIndex();
     const own = this.places.canonical(path, index);
     const listed = index.entryOf.has(own) || this.core.m.docs.some((d) => d.original === own);
@@ -23669,11 +24302,11 @@ class LinkResolve {
     return { path: own, headings };
   }
   linkTargets(slug) {
-    const from = this.hooks.docOrDie(slug).original;
+    const from = this.documents.docOrDie(slug).original;
     const all = this.readIndex.markdownCandidates();
     const shownOf = (path) => {
-      const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep9));
-      return entry ? toPosix(relative7(entry.root, path)) : basename8(path);
+      const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep11));
+      return entry ? toPosix(relative9(entry.root, path)) : basename10(path);
     };
     const index = this.places.contextIndex();
     const targets = all.filter((c) => c.path !== from && this.sidecars.imageOfDoc(c.path, index) === null).map((c) => ({
@@ -23692,7 +24325,7 @@ class LinkResolve {
         const description = d ? [d.title, d.summary].filter(Boolean).join(": ") : "";
         targets.push({
           path,
-          name: basename8(path),
+          name: basename10(path),
           href: relativeHref(from, path),
           shown: shownOf(path),
           image: true,
@@ -23719,9 +24352,9 @@ class LinkResolve {
     };
   }
   resolveLink(target, from, origin = "document") {
-    const d = from === null ? undefined : this.hooks.docOrDie(from);
+    const d = from === null ? undefined : this.documents.docOrDie(from);
     const src = d?.original ?? null;
-    const entry = (d?.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? (src ? this.core.m.context.find((e) => src.startsWith(e.root + sep9)) : this.core.m.context[0]);
+    const entry = (d?.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? (src ? this.core.m.context.find((e) => src.startsWith(e.root + sep11)) : this.core.m.context[0]);
     return this.resolveFrom(target, src, entry, origin, this.places.contextIndex());
   }
   droppedDocTitle(path) {
@@ -23729,17 +24362,17 @@ class LinkResolve {
       return;
     const c = this.readIndex.markdownCandidates().find((x) => x.path === path);
     try {
-      const f = docFacts(c ? this.readIndex.candidateText(c) : readFileSync7(path, "utf8"));
+      const f = docFacts(c ? this.readIndex.candidateText(c) : readFileSync10(path, "utf8"));
       return f.title ?? f.heading ?? undefined;
     } catch {
       return;
     }
   }
   droppedLinks(slug, paths) {
-    const d = this.hooks.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     const from = d.original;
     const index = this.places.contextIndex();
-    const home = (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? this.core.m.context.find((e) => from.startsWith(e.root + sep9));
+    const home = (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? this.core.m.context.find((e) => from.startsWith(e.root + sep11));
     const out = [];
     for (const raw of new Set(paths)) {
       const path = this.places.canonical(raw, index);
@@ -23747,10 +24380,10 @@ class LinkResolve {
       const isDoc = !isImage && index.entryOf.has(path) && !index.sidecars.has(path);
       if (path === from || !isImage && !isDoc)
         continue;
-      if (!home || !path.startsWith(home.root + sep9)) {
+      if (!home || !path.startsWith(home.root + sep11)) {
         out.push({
           path,
-          refused: `${basename8(path)} is in another part of the context, outside ${home ? home.label : "this document's folder"}, so no link from this document would travel with it. Copy it into this set first.`
+          refused: `${basename10(path)} is in another part of the context, outside ${home ? home.label : "this document's folder"}, so no link from this document would travel with it. Copy it into this set first.`
         });
         continue;
       }
@@ -23759,15 +24392,15 @@ class LinkResolve {
         path,
         image: isImage,
         href: relativeHref(from, path),
-        text: oneLine(title ?? "") || basename8(path).replace(/\.[^.]+$/, "")
+        text: oneLine(title ?? "") || basename10(path).replace(/\.[^.]+$/, "")
       });
     }
     return out;
   }
   embeds(slug, targets) {
-    const d = this.hooks.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     const src = d.original;
-    const entry = (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? this.core.m.context.find((e) => src.startsWith(e.root + sep9));
+    const entry = (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ?? this.core.m.context.find((e) => src.startsWith(e.root + sep11));
     const index = this.places.contextIndex();
     const notShown = (target, reason) => ({
       target,
@@ -23809,7 +24442,7 @@ class LinkResolve {
           }
         }
         case "not-a-doc":
-          return notShown(target, isImageName(r.path) ? `${basename8(r.path)} is an image no set in this session shows: add its folder, ${this.places.display(dirname10(r.path))}, to show it.` : `${this.places.display(r.path)} is not an image the workspace shows (${IMAGE_EXTENSIONS.join(" ")}).`);
+          return notShown(target, isImageName(r.path) ? `${basename10(r.path)} is an image no set in this session shows: add its folder, ${this.places.display(dirname11(r.path))}, to show it.` : `${this.places.display(r.path)} is not an image the workspace shows (${IMAGE_EXTENSIONS.join(" ")}).`);
         case "outside":
           return notShown(target, `${this.places.display(r.path)} is a document, not an image.`);
         case "folder":
@@ -23820,13 +24453,13 @@ class LinkResolve {
     });
   }
   resolveFrom(target, src, entry, origin, index, kind = "markdown", world) {
-    const root = entry?.root ?? (src ? dirname10(src) : this.core.workspace);
+    const root = entry?.root ?? (src ? dirname11(src) : this.core.workspace);
     const is = (p, what) => {
       const at = world ? world.back(p) : p;
       if (at === null)
         return false;
       try {
-        const st = statSync8(at);
+        const st = statSync10(at);
         return what === "file" ? st.isFile() : st.isDirectory();
       } catch {
         return false;
@@ -23883,9 +24516,9 @@ class LinkResolve {
   contextDocEach(paths) {
     const index = this.places.contextIndex();
     return paths.map((p) => {
-      if (typeof p !== "string" || !isAbsolute6(p))
+      if (typeof p !== "string" || !isAbsolute7(p))
         return;
-      const own = this.places.canonical(resolve6(p), index);
+      const own = this.places.canonical(resolve7(p), index);
       if (index.entryOf.has(own))
         return own;
       if (index.images.has(own) && this.imageInside(own))
@@ -23896,7 +24529,7 @@ class LinkResolve {
 }
 
 // src/kit/workspace/session/manifest.ts
-import { isAbsolute as isAbsolute7 } from "path";
+import { isAbsolute as isAbsolute8 } from "path";
 
 // src/kit/workspace/safeNames.ts
 function safeSlug(slug) {
@@ -23948,7 +24581,7 @@ function refuseMalformedManifest(raw, sessionId) {
       membership: "string",
       nodes: "list"
     });
-    if (!isAbsolute7(e.root))
+    if (!isAbsolute8(e.root))
       refuse(`\`context[${i}].root\` is not a full path`);
   });
   list("docs").forEach((d, i) => {
@@ -24028,8 +24661,8 @@ function migrateSlot(app, stored, sessionId, report) {
 }
 
 // src/kit/workspace/session/media.ts
-import { closeSync as closeSync5, fstatSync, statSync as statSync9 } from "fs";
-import { basename as basename9, isAbsolute as isAbsolute8, relative as relative8, resolve as resolve7, sep as sep10 } from "path";
+import { closeSync as closeSync5, fstatSync, statSync as statSync11 } from "fs";
+import { basename as basename11, isAbsolute as isAbsolute9, relative as relative10, resolve as resolve8, sep as sep12 } from "path";
 class Media {
   core;
   places;
@@ -24045,9 +24678,9 @@ class Media {
           return { entry: e, rel: only.rel };
         continue;
       }
-      if (!abs.startsWith(e.root + sep10))
+      if (!abs.startsWith(e.root + sep12))
         continue;
-      const rel = toPosix(relative8(e.root, abs));
+      const rel = toPosix(relative10(e.root, abs));
       if (findNode(e.nodes, rel)?.kind === "image")
         return { entry: e, rel };
     }
@@ -24058,21 +24691,21 @@ class Media {
     if (!b?.inner || b.inner === b.type.main)
       return null;
     for (const e of this.core.m.context) {
-      if (e.membership === "listed" || !b.root.startsWith(e.root + sep10))
+      if (e.membership === "listed" || !b.root.startsWith(e.root + sep12))
         continue;
-      if (findNode(e.nodes, toPosix(relative8(e.root, b.root)))?.kind === "bundle")
-        return { entry: e, rel: toPosix(relative8(e.root, abs)) };
+      if (findNode(e.nodes, toPosix(relative10(e.root, b.root)))?.kind === "bundle")
+        return { entry: e, rel: toPosix(relative10(e.root, abs)) };
     }
     return null;
   }
   imageFile(rawPath) {
-    if (!rawPath || !isAbsolute8(rawPath))
+    if (!rawPath || !isAbsolute9(rawPath))
       throw new SessionError(`"${rawPath}" is not a full path: start it with /`, 400);
     if (rawPath.includes("\x00") || rawPath.split(/[\\/]/).includes(".."))
       throw new SessionError("a path with a .. in it is not served: name the file itself", 400);
     if (!isImageName(rawPath))
       throw new SessionError(`not an image the workspace shows (${IMAGE_EXTENSIONS.join(" ")}): ${rawPath}`, 400, [...IMAGE_EXTENSIONS]);
-    const abs = this.places.contextForm(resolve7(rawPath));
+    const abs = this.places.contextForm(resolve8(rawPath));
     const at = this.imageNodeAt(abs) ?? this.bundleImageAt(abs);
     if (!at)
       throw new SessionError(`${abs} is not an image shown in this session`, 404);
@@ -24087,7 +24720,7 @@ class Media {
       const now = this.places.realInsideOrDie(abs, at.entry, "not served");
       let named;
       try {
-        named = statSync9(now);
+        named = statSync11(now);
       } catch {
         throw new SessionError(`${abs} is not on disk`, 404);
       }
@@ -24095,7 +24728,7 @@ class Media {
         throw new SessionError(`${abs} changed while it was being read: try again`, 409);
       const type = sniffImage(readHeadFd(fd));
       if (!type)
-        throw new SessionError(`${basename9(abs)} is not a PNG, JPEG, WebP, GIF or AVIF image inside, whatever its name says: not served`, 400);
+        throw new SessionError(`${basename11(abs)} is not a PNG, JPEG, WebP, GIF or AVIF image inside, whatever its name says: not served`, 400);
       return {
         abs,
         real: now,
@@ -24116,101 +24749,167 @@ class Media {
     for (const e of this.core.m.context) {
       for (const p of imagePaths(e)) {
         try {
-          out.add(stampOf(statSync9(p)));
+          out.add(stampOf(statSync11(p)));
         } catch {}
       }
     }
     return out;
   }
 }
+// src/kit/workspace/session/notes.ts
+var noteGuard = null;
+async function loadNoteGuard() {
+  noteGuard ??= (await Promise.resolve().then(() => (init_projection(), exports_projection))).showsSelection;
+}
+function guardLoaded() {
+  if (!noteGuard)
+    throw new Error("addNote: a note with `seen` needs the note guard: await loadNoteGuard() first");
+  return noteGuard;
+}
 
-// src/kit/workspace/session/paths.ts
-import { lstatSync as lstatSync6, readdirSync as readdirSync7, readFileSync as readFileSync8, realpathSync as realpathSync4, statSync as statSync10 } from "fs";
-import { join as join13, sep as sep11 } from "path";
-function isFolder(p) {
-  try {
-    return statSync10(p).isDirectory();
-  } catch {
-    return false;
+class Notes {
+  core;
+  chats;
+  documents;
+  hooks;
+  constructor(core, chats, documents, hooks) {
+    this.core = core;
+    this.chats = chats;
+    this.documents = documents;
+    this.hooks = hooks;
   }
-}
-function rootReal(e) {
-  return e.realRoot ?? realOr3(e.root);
-}
-function realOr3(p) {
-  try {
-    return realpathSync4(p);
-  } catch {
-    return p;
+  placedNotes(d) {
+    if (d.notes.length === 0)
+      return [];
+    const text = this.documents.activeText(d);
+    return d.notes.map((n) => placeNote(text, n));
   }
-}
-function overlapOf(workspace, context) {
-  const ws = realOr3(workspace);
-  for (const e of context) {
-    if (e.membership !== "mirrored")
-      continue;
-    const root = rootReal(e);
-    if (ws === root || ws.startsWith(root + sep11))
-      return { label: e.label, root: e.root, same: ws === root };
-  }
-  return null;
-}
-function shownOverlap(o, workspace) {
-  return { ...o, root: tilde(o.root), workspace: tilde(workspace) };
-}
-var movedPairs = (from, to, sidecar, sidecarTo) => sidecar && sidecarTo ? [
-  [from, to],
-  [sidecar, sidecarTo]
-] : [[from, to]];
-function treeHash(abs) {
-  if (!lstatSync6(abs).isDirectory())
-    return contentHash(readFileSync8(abs, "utf8"));
-  const parts = [];
-  const walk = (dir, rel) => {
-    for (const name of readdirSync7(dir).sort()) {
-      const p = join13(dir, name);
-      const r = rel === "" ? name : `${rel}/${name}`;
-      const st = lstatSync6(p);
-      if (st.isDirectory()) {
-        parts.push(`${r}/`);
-        walk(p, r);
-      } else if (st.isSymbolicLink())
-        parts.push(`${r}@`);
-      else
-        parts.push(`${r}:${Bun.hash(readFileSync8(p)).toString(16)}`);
+  addNote(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const body = opts.body.trim();
+    if (!body)
+      throw new SessionError("a note needs something written in it", 400);
+    const text = this.documents.activeText(d);
+    let anchor;
+    if (opts.range) {
+      const { from, to } = opts.range;
+      if (from < 0 || to > text.length || from >= to)
+        throw new SessionError(`${from}..${to} is not a range in v${d.active} of ${d.slug} (${text.length} characters)`, 400);
+      if (opts.seen !== undefined && !guardLoaded()(text, from, to, opts.seen))
+        throw new SessionError(`The note on ${JSON.stringify(quoteLabel(opts.seen, 40))} was not added. ${NOT_PLACED}`, 409);
+      anchor = anchorOf(text, from, to);
+    } else {
+      const quote = opts.quote ?? "";
+      if (!quote)
+        throw new SessionError("a note needs a selection or a quote", 400);
+      const at = text.indexOf(quote);
+      if (at === -1)
+        throw new SessionError(`v${d.active} of ${d.slug} does not contain that text: quote it exactly as it appears`, 404);
+      anchor = anchorOf(text, at, at + quote.length);
     }
-  };
-  walk(abs, "");
-  return Bun.hash(parts.join(`
-`)).toString(16);
+    const note = {
+      id: `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      version: d.active,
+      ...anchor,
+      body,
+      by: opts.by,
+      createdAt: nowIso(),
+      resolved: false
+    };
+    d.notes = [...d.notes, note];
+    this.hooks.persist();
+    return { slug: d.slug, note, how: opts.range ? "selection" : "quote" };
+  }
+  noteLines(doc, note) {
+    const d = this.documents.docOrDie(doc);
+    const text = this.documents.activeText(d);
+    const at = findAnchor(text, note);
+    return at.from === null ? null : linesOf(text, at.from, at.to);
+  }
+  noteDoc(id) {
+    return this.core.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
+  }
+  notesOf(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const placed = this.placedNotes(d);
+    return { slug: d.slug, notes: opts.all ? placed : placed.filter((n) => !n.resolved) };
+  }
+  noteOrDie(d, id) {
+    const note = d.notes.find((n) => n.id === id);
+    if (!note)
+      throw new SessionError(`${d.slug} has no note ${id}`, 404, d.notes.map((n) => n.id));
+    return note;
+  }
+  noteFacts() {
+    return this.core.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
+  }
+  editNote(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    if (opts.by === "agent" && (note.by === "human" || note.editedBy === "human"))
+      throw new SessionError(`note ${note.id} on ${d.slug} holds the human's words, and the agent does not rewrite them: reply to it instead`, 409, ["note-reply", "note-resolve"], `run: note-reply ${note.id} --doc ${d.slug} <your answer> (the note keeps its words), or note-resolve ${note.id} --doc ${d.slug} when it is dealt with`);
+    const body = opts.body.trim();
+    if (!body)
+      throw new SessionError("a note needs something written in it", 400);
+    if (body === note.body)
+      return { slug: d.slug, note, changed: false };
+    if (opts.by === "agent" && body !== (note.replacedBody ?? note.body))
+      note.replacedBody ??= note.body;
+    else
+      delete note.replacedBody;
+    note.body = body;
+    note.editedAt = nowIso();
+    note.editedBy = opts.by;
+    this.hooks.persist();
+    return { slug: d.slug, note, changed: true };
+  }
+  replyToNote(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    const text = opts.text.trim();
+    if (!text)
+      throw new SessionError("a reply needs something written in it", 400);
+    const message = this.chats.addMessage({ from: "agent", text, about: { noteId: note.id } });
+    return { slug: d.slug, note, message };
+  }
+  resolveNote(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    if (note.resolved && !opts.resolved) {
+      note.reopenedAt = nowIso();
+      note.reopenedBy = opts.by;
+    }
+    note.resolved = opts.resolved;
+    if (opts.resolved)
+      note.resolvedAt = nowIso();
+    else
+      delete note.resolvedAt;
+    this.hooks.persist();
+    return { slug: d.slug, note };
+  }
+  removeNote(opts) {
+    const d = this.documents.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    d.notes = d.notes.filter((n) => n.id !== opts.id);
+    this.hooks.persist();
+    return { slug: d.slug, note };
+  }
 }
-function bundleHolding(dir) {
-  return bundleOf(dir) ?? bundleOf(realOr3(dir));
-}
-function refuseWorkspaceInBundle(dir) {
-  const inBundle = bundleHolding(dir);
-  if (inBundle)
-    throw new SessionError(`the workspace folder is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)} (${tilde(dir)}): nothing is written into a ${inBundle.type.label} from here. Set the workspace to a folder outside it (\`workspace <dir>\`)`, 409);
-}
-function refuseInBundle(dir, what) {
-  if (isMemberDir(dir) && isMemberDir(realOr3(dir)))
-    return;
-  const inBundle = bundleHolding(dir);
-  if (inBundle)
-    throw new SessionError(`${what} (${tilde(dir)}) is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`, 409);
-}
-function outsideMembers(type) {
-  const members = type.expand?.members ?? [];
-  return members.length === 0 ? `nothing is written into a ${type.label} from here` : `only its ${members.map((m) => `${m}/`).join(" and ")} folder${members.length === 1 ? "" : "s"} can be written into from here`;
+function placeNote(text, note) {
+  const at = findAnchor(text, note);
+  if (at.from === null)
+    return { ...note, ...at, fromLine: null, toLine: null };
+  const lines = linesOf(text, at.from, at.to);
+  return { ...note, ...at, fromLine: lines.from, toLine: lines.to };
 }
 
 // src/kit/workspace/session/places.ts
-import { existsSync as existsSync4, lstatSync as lstatSync7, realpathSync as realpathSync6, statSync as statSync11 } from "fs";
-import { basename as basename10, dirname as dirname11, isAbsolute as isAbsolute9, join as join15, relative as relative9, resolve as resolve8, sep as sep12 } from "path";
+import { existsSync as existsSync5, lstatSync as lstatSync7, realpathSync as realpathSync6, statSync as statSync12 } from "fs";
+import { basename as basename12, dirname as dirname12, isAbsolute as isAbsolute10, join as join17, relative as relative11, resolve as resolve9, sep as sep13 } from "path";
 
 // src/kit/workspace/session/state.ts
 import { realpathSync as realpathSync5 } from "fs";
-import { join as join14 } from "path";
+import { join as join16 } from "path";
 var refuseWrite = (message) => new SessionError(message, 409);
 
 class State {
@@ -24223,7 +24922,7 @@ class State {
     this.sessionsRoot = sessionsRoot;
     this.app = app;
     this.m = manifest;
-    this.dir = join14(sessionsRoot, manifest.sessionId);
+    this.dir = join16(sessionsRoot, manifest.sessionId);
   }
   addToRecord(add) {
     this.additions.push(add);
@@ -24232,13 +24931,13 @@ class State {
     return this.m.sessionId;
   }
   get docsDir() {
-    return join14(this.dir, "docs");
+    return join16(this.dir, "docs");
   }
   get hasHome() {
     return hasHomeWorkspace(this.app);
   }
   get workspace() {
-    return this.m.workspace ?? join14(this.dir, IMPORTED_DIR);
+    return this.m.workspace ?? join16(this.dir, IMPORTED_DIR);
   }
   markEnded(by) {
     this.m.ended = { by, at: nowIso() };
@@ -24248,7 +24947,7 @@ class State {
     this.dirStillOrDie();
     for (const add of this.additions)
       add();
-    this.own.writeAtomic(join14(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}
+    this.own.writeAtomic(join16(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}
 `);
   }
   realDir;
@@ -24268,7 +24967,7 @@ class State {
   versionPath(d, n) {
     if (safeSlug(d.slug) !== null || safeExt(d.ext) !== null)
       throw new SessionError(`${JSON.stringify(d.slug)} (${JSON.stringify(d.ext)}) does not name a version file inside this session`, 409);
-    return join14(this.docsDir, d.slug, `v${n}${d.ext}`);
+    return join16(this.docsDir, d.slug, `v${n}${d.ext}`);
   }
 }
 
@@ -24286,9 +24985,9 @@ class Places {
     const dir = this.core.workspace;
     refuseWorkspaceInBundle(dir);
     this.notOwnPlaceOrDie(dir);
-    if (existsSync4(dir))
+    if (existsSync5(dir))
       return dir;
-    if (dir === join15(this.core.dir, IMPORTED_DIR)) {
+    if (dir === join17(this.core.dir, IMPORTED_DIR)) {
       this.core.own.mkdir(dir, { recursive: true });
       return dir;
     }
@@ -24304,8 +25003,8 @@ class Places {
       sessionsRoot: this.core.sessionsRoot,
       ...this.core.appHome !== undefined ? { appHome: this.core.appHome } : {},
       ...this.core.hasHome ? {
-        except: join15(this.core.dir, IMPORTED_DIR),
-        ...this.core.realDir !== undefined ? { exceptReal: join15(this.core.realDir, IMPORTED_DIR) } : {}
+        except: join17(this.core.dir, IMPORTED_DIR),
+        ...this.core.realDir !== undefined ? { exceptReal: join17(this.core.realDir, IMPORTED_DIR) } : {}
       } : {}
     };
   }
@@ -24333,8 +25032,8 @@ class Places {
   ownFileOrDie(path) {
     this.core.dirStillOrDie();
     const docs = this.core.docsDir;
-    const real = this.core.realDir !== undefined ? join15(this.core.realDir, "docs") : onDisk(docs);
-    if (!within(resolve8(path), docs) || resolve8(path) === docs || !within(onDisk(path), real))
+    const real = this.core.realDir !== undefined ? join17(this.core.realDir, "docs") : onDisk(docs);
+    if (!within(resolve9(path), docs) || resolve9(path) === docs || !within(onDisk(path), real))
       throw new SessionError(`${path} is not inside this session's docs folder (${docs}): nothing was written`, 409);
     return path;
   }
@@ -24364,9 +25063,9 @@ class Places {
       return abs;
     const real = realOr3(abs);
     for (const { root, real: realRoot } of index.realRoots) {
-      if (!real.startsWith(realRoot + sep12))
+      if (!real.startsWith(realRoot + sep13))
         continue;
-      const named = join15(root, relative9(realRoot, real));
+      const named = join17(root, relative11(realRoot, real));
       if (known(named))
         return named;
     }
@@ -24387,13 +25086,13 @@ class Places {
       } catch {}
       if (link)
         throw new SessionError(`${this.display(abs)} is a link: ${what}`, 404);
-      if (dirname11(abs) !== entry.root || dirname11(real) !== root)
+      if (dirname12(abs) !== entry.root || dirname12(real) !== root)
         throw new SessionError(`${this.display(abs)} is not in the folder it was added from (a link there leads elsewhere now): ${what}`, 404);
-      if (basename10(real) !== basename10(abs))
+      if (basename12(real) !== basename12(abs))
         throw new SessionError(`${this.display(abs)} is a link: ${what}`, 404);
       return real;
     }
-    if (!real.startsWith(root + sep12))
+    if (!real.startsWith(root + sep13))
       throw new SessionError(`${this.display(abs)} leads outside ${entry.label} through a link: ${what}`, 404);
     return real;
   }
@@ -24402,47 +25101,47 @@ class Places {
     for (const e of this.core.m.context) {
       if (e.membership !== "mirrored")
         continue;
-      if (abs !== e.root && !abs.startsWith(e.root + sep12))
+      if (abs !== e.root && !abs.startsWith(e.root + sep13))
         continue;
       if (!set || e.root.length > set.root.length)
         set = e;
     }
     if (set)
-      return abs === set.root ? set.label : `${set.label}/${toPosix(relative9(set.root, abs))}`;
+      return abs === set.root ? set.label : `${set.label}/${toPosix(relative11(set.root, abs))}`;
     for (const e of this.core.m.context)
-      if (e.membership !== "mirrored" && e.nodes.some((n) => join15(e.root, n.rel) === abs))
+      if (e.membership !== "mirrored" && e.nodes.some((n) => join17(e.root, n.rel) === abs))
         return e.label;
-    if (abs.startsWith(this.core.dir + sep12))
-      return toPosix(relative9(this.core.dir, abs));
-    if (this.core.hasHome && abs.startsWith(this.core.workspace + sep12))
-      return `workspace/${toPosix(relative9(this.core.workspace, abs))}`;
+    if (abs.startsWith(this.core.dir + sep13))
+      return toPosix(relative11(this.core.dir, abs));
+    if (this.core.hasHome && abs.startsWith(this.core.workspace + sep13))
+      return `workspace/${toPosix(relative11(this.core.workspace, abs))}`;
     const home = homeDir();
-    return abs === home ? "~" : abs.startsWith(home + sep12) ? `~${abs.slice(home.length)}` : abs;
+    return abs === home ? "~" : abs.startsWith(home + sep13) ? `~${abs.slice(home.length)}` : abs;
   }
   shownFolderOrDie(dir) {
     return this.destinationOrDie(dir);
   }
   namedAsContext(path) {
-    return this.contextForm(resolve8(path));
+    return this.contextForm(resolve9(path));
   }
   contextForm(abs) {
-    if (this.core.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep12)))
+    if (this.core.m.context.some((e) => abs === e.root || abs.startsWith(e.root + sep13)))
       return abs;
     const real = realOr3(abs);
     for (const e of this.core.m.context) {
       const realRoot = realOr3(e.root);
       if (real === realRoot)
         return e.root;
-      if (real.startsWith(realRoot + sep12))
-        return join15(e.root, relative9(realRoot, real));
+      if (real.startsWith(realRoot + sep13))
+        return join17(e.root, relative11(realRoot, real));
     }
     return abs;
   }
   coveringEntry(abs, except) {
-    return this.core.m.context.find((e) => e.id !== except && e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep12)));
+    return this.core.m.context.find((e) => e.id !== except && e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep13)));
   }
   destinationOrDie(rawDir) {
-    const abs = this.contextForm(resolve8(rawDir));
+    const abs = this.contextForm(resolve9(rawDir));
     const shown = () => {
       refuseInBundle(abs, "that folder");
       return this.notOwnPlaceOrDie(abs);
@@ -24452,8 +25151,8 @@ class Places {
     for (const e of this.core.m.context) {
       if (e.membership !== "mirrored" && listedFile(e)?.kind !== "bundle")
         continue;
-      if (abs.startsWith(e.root + sep12)) {
-        const node = findNode(e.nodes, toPosix(relative9(e.root, abs)));
+      if (abs.startsWith(e.root + sep13)) {
+        const node = findNode(e.nodes, toPosix(relative11(e.root, abs)));
         if (node?.kind === "group")
           return this.notThroughLinkOrDie(shown(), e);
       }
@@ -24475,16 +25174,16 @@ class Places {
     }
     const real = realOr3(abs);
     const root = rootReal(e);
-    const outside = real !== root && !real.startsWith(root + sep12);
+    const outside = real !== root && !real.startsWith(root + sep13);
     if (!link && !outside)
       return abs;
     throw new SessionError(`${this.display(abs)} ${link ? "is a link" : "is reached through a link"}${outside ? ` that leads outside ${e.label}` : ""} (to ${tilde(real)}): nothing is made in, moved into or dropped on a linked folder, or it would land there and vanish from the set`, 400, undefined, `to work in that folder, add it as a set of its own: add ${abs}`);
   }
   folderOrDie(rawDir) {
-    const abs = this.notOwnPlaceOrDie(this.contextForm(resolve8(rawDir)));
+    const abs = this.notOwnPlaceOrDie(this.contextForm(resolve9(rawDir)));
     let isDir = false;
     try {
-      isDir = statSync11(abs).isDirectory();
+      isDir = statSync12(abs).isDirectory();
     } catch {
       isDir = false;
     }
@@ -24493,7 +25192,7 @@ class Places {
     return abs;
   }
   itemOrDie(rawPath) {
-    const abs = this.contextForm(resolve8(rawPath));
+    const abs = this.contextForm(resolve9(rawPath));
     const place = bundlePlace(abs);
     if (place !== null && place !== "member") {
       const b = bundleOf(abs);
@@ -24504,8 +25203,8 @@ class Places {
     for (const e of this.core.m.context) {
       if (e.membership === "listed") {
         const only = listedFile(e);
-        if (place === "member" && only?.kind === "bundle" && abs.startsWith(only.abs + sep12)) {
-          const node = findNode(e.nodes, toPosix(relative9(e.root, abs)));
+        if (place === "member" && only?.kind === "bundle" && abs.startsWith(only.abs + sep13)) {
+          const node = findNode(e.nodes, toPosix(relative11(e.root, abs)));
           if (node && node.kind !== "file")
             return { abs, entry: e, whole: false, dir: node.kind === "group" };
         }
@@ -24516,8 +25215,8 @@ class Places {
       }
       if (abs === e.root)
         return { abs, entry: e, whole: true, dir: true };
-      if (abs.startsWith(e.root + sep12)) {
-        const node = findNode(e.nodes, toPosix(relative9(e.root, abs)));
+      if (abs.startsWith(e.root + sep13)) {
+        const node = findNode(e.nodes, toPosix(relative11(e.root, abs)));
         const bundle = asBundle(node);
         if (bundle)
           return { abs, entry: e, whole: false, dir: true, bundle };
@@ -24536,11 +25235,11 @@ class Places {
     }
   }
   revealTarget(rawPath) {
-    if (!isAbsolute9(rawPath))
+    if (!isAbsolute10(rawPath))
       throw new SessionError(`${rawPath} is not a full path: start it with /`, 400);
-    const abs = resolve8(rawPath);
+    const abs = resolve9(rawPath);
     const real = realOr3(abs);
-    const within = (p, root) => p === root || p.startsWith(root + sep12);
+    const within = (p, root) => p === root || p.startsWith(root + sep13);
     const known = (() => {
       const roots = [{ root: this.core.dir }];
       for (const e of this.core.m.context) {
@@ -24549,14 +25248,14 @@ class Places {
         else
           for (const n of e.nodes)
             if (n.kind !== "group")
-              roots.push({ root: join15(e.root, n.rel), only: join15(e.root, n.rel) });
+              roots.push({ root: join17(e.root, n.rel), only: join17(e.root, n.rel) });
       }
       return roots.some(({ root }) => {
         const lexical = within(abs, root) || within(abs, realOr3(root));
         return lexical && within(real, realOr3(root));
       });
     })();
-    if (!known || !existsSync4(abs))
+    if (!known || !existsSync5(abs))
       throw new SessionError(`${abs} is not a path this session knows`, 404);
     return real;
   }
@@ -24573,7 +25272,7 @@ class Places {
 }
 
 // src/kit/workspace/session/placing.ts
-import { extname as extname2, join as join16, sep as sep13 } from "path";
+import { extname as extname3, join as join18, sep as sep14 } from "path";
 class Placing {
   core;
   places;
@@ -24588,7 +25287,7 @@ class Placing {
     const listed = set ? null : this.hooks.listedBundleHolding(abs);
     if (set) {
       for (const e of this.core.m.context) {
-        const holds = abs === e.root || abs.startsWith(e.root + sep13);
+        const holds = abs === e.root || abs.startsWith(e.root + sep14);
         if (e.membership === "mirrored" && holds)
           this.hooks.rescan(e.id);
       }
@@ -24602,13 +25301,13 @@ class Placing {
     this.hooks.relink();
   }
   freeName(dir, name, isDir, taken = (abs) => !!entryAt(abs)) {
-    if (!taken(join16(dir, name)))
+    if (!taken(join18(dir, name)))
       return name;
-    const ext = isDir ? "" : bundleTypeOf(name)?.extension ?? extname2(name);
+    const ext = isDir ? "" : bundleTypeOf(name)?.extension ?? extname3(name);
     const stem = ext ? name.slice(0, -ext.length) : name;
     for (let i = 2;i < 2 + FREE_NAME_TRIES; i++) {
       const n = fitName(stem, ` ${i}${ext}`);
-      if (!taken(join16(dir, n)))
+      if (!taken(join18(dir, n)))
         return n;
     }
     throw new SessionError(`no free name like "${fitName(stem, ` 2${ext}`)}" is left in ${tilde(dir)}`, 409);
@@ -24623,7 +25322,7 @@ class Placing {
 }
 
 // src/kit/workspace/session/profiles.ts
-import { basename as basename11, dirname as dirname12, relative as relative10, sep as sep14 } from "path";
+import { basename as basename13, dirname as dirname13, relative as relative12, sep as sep15 } from "path";
 class Profiles {
   core;
   places;
@@ -24643,7 +25342,7 @@ class Profiles {
       kind: m.profile.kind,
       label: m.profile.label,
       canon: m.profile.canon,
-      labelDepth: m.path.split(sep14).length
+      labelDepth: m.path.split(sep15).length
     } : { kind: facts.type, canon: true };
   }
   profilePass(index) {
@@ -24655,7 +25354,7 @@ class Profiles {
         const entry = entryOf(path);
         if (!entry)
           return NO_MATCH;
-        return lookup.match(dirname12(path), entry.root, facts.type);
+        return lookup.match(dirname13(path), entry.root, facts.type);
       }
     };
   }
@@ -24667,7 +25366,7 @@ class Profiles {
     const entryOf = this.readIndex.entryFinder(index);
     const shown = (path) => {
       const entry = entryOf(path);
-      return entry ? toPosix(relative10(entry.root, path)) : basename11(path);
+      return entry ? toPosix(relative12(entry.root, path)) : basename13(path);
     };
     const rows = all.map((c) => {
       const facts = this.readIndex.readOf(c, read)?.facts ?? NO_FACTS;
@@ -24680,11 +25379,11 @@ class Profiles {
     const lookup = pass.lookup;
     const base = (path) => {
       const root = lookup.rootOf(path);
-      return root === undefined ? shown(path) : toPosix(relative10(root, path));
+      return root === undefined ? shown(path) : toPosix(relative12(root, path));
     };
     const led = (path) => {
       const root = lookup.rootOf(path);
-      return root === undefined ? path : `${basename11(root)}/${base(path)}`;
+      return root === undefined ? path : `${basename13(root)}/${base(path)}`;
     };
     const clash = (f) => {
       const by = new Map;
@@ -24794,7 +25493,7 @@ class Profiles {
       return {
         doc: subject.doc,
         path: subject.path,
-        shown: entry ? toPosix(relative10(entry.root, subject.path)) : basename11(subject.path),
+        shown: entry ? toPosix(relative12(entry.root, subject.path)) : basename13(subject.path),
         type: null,
         kind: null,
         canon: true,
@@ -24805,7 +25504,7 @@ class Profiles {
     }
     const c = this.readIndex.markdownCandidates().find((x) => x.path === subject.path) ?? {
       path: subject.path,
-      name: basename11(subject.path),
+      name: basename13(subject.path),
       slug: subject.doc,
       version: null
     };
@@ -24813,7 +25512,7 @@ class Profiles {
     const pass = this.profilePass(index);
     const match = pass.match(c.path, facts);
     const entry = this.readIndex.entryFinder(index)(c.path);
-    const shown = (p) => entry ? toPosix(relative10(entry.root, p)) : basename11(p);
+    const shown = (p) => entry ? toPosix(relative12(entry.root, p)) : basename13(p);
     const held = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
     const base = {
       doc: subject.doc,
@@ -24882,7 +25581,7 @@ class Profiles {
         list.push({
           ...w,
           source: r.path,
-          name: basename11(r.path),
+          name: basename13(r.path),
           shown: r.shown,
           kind: r.match.profile.kind,
           profile: profileShown(r.match.path),
@@ -24919,15 +25618,17 @@ class Profiles {
 }
 
 // src/kit/workspace/session/readIndex.ts
-import { readFileSync as readFileSync9, statSync as statSync12 } from "fs";
-import { basename as basename12, dirname as dirname13, isAbsolute as isAbsolute10, relative as relative11, sep as sep15 } from "path";
+import { readFileSync as readFileSync11, statSync as statSync13 } from "fs";
+import { basename as basename14, dirname as dirname14, isAbsolute as isAbsolute11, relative as relative13, sep as sep16 } from "path";
 class ReadIndex {
   core;
   places;
+  documents;
   hooks;
-  constructor(core, places, hooks) {
+  constructor(core, places, documents, hooks) {
     this.core = core;
     this.places = places;
+    this.documents = documents;
     this.hooks = hooks;
   }
   linkCache = new Map;
@@ -24955,7 +25656,7 @@ class ReadIndex {
       const bundle = isBundleMain(path) ? bundleOf(path) : null;
       candidates.push({
         path,
-        name: bundle ? bundleNameAt(bundle.root) : d?.name ?? basename12(path),
+        name: bundle ? bundleNameAt(bundle.root) : d?.name ?? basename14(path),
         slug: d?.slug ?? null,
         version: d?.active ?? null
       });
@@ -24974,7 +25675,7 @@ class ReadIndex {
   }
   candidateText(c) {
     const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
-    return d ? this.hooks.activeText(d) : readFileSync9(c.path, "utf8");
+    return d ? this.documents.activeText(d) : readFileSync11(c.path, "utf8");
   }
   headingsAt(path) {
     if (docFormat(path) === "json")
@@ -24983,7 +25684,7 @@ class ReadIndex {
     const file = d ? this.core.versionPath(d, d.active) : path;
     let stamp;
     try {
-      const st = statSync12(file);
+      const st = statSync13(file);
       stamp = `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
     } catch {
       return null;
@@ -24993,7 +25694,7 @@ class ReadIndex {
       return hit.headings;
     let headings;
     try {
-      headings = headingsOf(readFileSync9(file, "utf8"));
+      headings = headingsOf(readFileSync11(file, "utf8"));
     } catch {
       return null;
     }
@@ -25025,10 +25726,10 @@ class ReadIndex {
     return {
       main,
       bundle,
-      entryRoot: entry?.root ?? dirname13(bundle),
+      entryRoot: entry?.root ?? dirname14(bundle),
       isDir: (p) => {
         try {
-          return statSync12(p).isDirectory();
+          return statSync13(p).isDirectory();
         } catch {
           return false;
         }
@@ -25043,11 +25744,11 @@ class ReadIndex {
     for (const c of tried) {
       let dir;
       try {
-        dir = statSync12(c).isDirectory();
+        dir = statSync13(c).isDirectory();
       } catch {
         continue;
       }
-      const target = dir ? this.hooks.mainOf(c) : c;
+      const target = dir ? this.documents.mainOf(c) : c;
       const own = this.inContextAt(target, index);
       if (own !== null)
         return { state: "in-context", path: own };
@@ -25064,7 +25765,7 @@ class ReadIndex {
       source: main,
       bundle: rb.root,
       name: bundleNameAt(rb.root),
-      shown: entry ? toPosix(relative11(entry.root, rb.root)) : basename12(rb.root),
+      shown: entry ? toPosix(relative13(entry.root, rb.root)) : basename14(rb.root),
       noun: rb.references.noun,
       part: rb.references.part,
       id: ref.id,
@@ -25085,7 +25786,7 @@ class ReadIndex {
     read.add(file);
     let stamp;
     try {
-      const st = statSync12(file);
+      const st = statSync13(file);
       stamp = `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
     } catch {
       return null;
@@ -25099,7 +25800,7 @@ class ReadIndex {
     let entry;
     if (bundle) {
       try {
-        const refs = bundle.references.read(readFileSync9(file, "utf8"));
+        const refs = bundle.references.read(readFileSync11(file, "utf8"));
         entry = { stamp, links: [], fragments: [], facts: NO_FACTS, refs, edges: [] };
       } catch {
         return null;
@@ -25108,7 +25809,7 @@ class ReadIndex {
       return entry;
     }
     try {
-      const text = readFileSync9(file, "utf8");
+      const text = readFileSync11(file, "utf8");
       const all = extractLinks(text, { schemes: true, fragments: true });
       const facts = docFacts(text);
       const edges = readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields });
@@ -25131,7 +25832,7 @@ class ReadIndex {
     const byId = new Map(this.core.m.context.map((e) => [e.id, e]));
     return (path) => {
       const id = index.entryOf.get(path);
-      return (id !== undefined ? byId.get(id) : undefined) ?? this.core.m.context.find((e) => path.startsWith(e.root + sep15));
+      return (id !== undefined ? byId.get(id) : undefined) ?? this.core.m.context.find((e) => path.startsWith(e.root + sep16));
     };
   }
   pruneLinkCache(read) {
@@ -25140,20 +25841,20 @@ class ReadIndex {
         this.linkCache.delete(file);
   }
   linkSubject(key, index, opts = {}) {
-    if (key !== undefined && isAbsolute10(key) && !this.hooks.findDoc(key)) {
+    if (key !== undefined && isAbsolute11(key) && !this.documents.findDoc(key)) {
       const own = this.places.canonical(key, index);
       if (index.entryOf.has(own))
         return { doc: null, path: own };
       if (opts.images && index.images.has(own))
         return { doc: null, path: own };
     }
-    const d = this.hooks.docOrDie(key, { takesPath: true });
+    const d = this.documents.docOrDie(key, { takesPath: true });
     return { doc: d.slug, path: this.places.canonical(d.original, index) };
   }
 }
 
 // src/kit/workspace/session/relations.ts
-import { basename as basename13, dirname as dirname14, relative as relative12 } from "path";
+import { basename as basename15, dirname as dirname15, relative as relative14 } from "path";
 class Relations {
   places;
   readIndex;
@@ -25175,7 +25876,7 @@ class Relations {
     const pass = this.relationPass(index);
     const vocabulary = pass.at(own);
     const entry = this.readIndex.entryFinder(index)(own);
-    const near = entry ? pass.lookup.nearest(dirname14(own), entry.root) : null;
+    const near = entry ? pass.lookup.nearest(dirname15(own), entry.root) : null;
     return {
       vocabulary: vocabulary.any,
       relations: relationOffers(uses, vocabulary),
@@ -25217,7 +25918,7 @@ class Relations {
       lookup,
       at: (path) => {
         const entry = entryOf(path);
-        return entry ? lookup.at(dirname14(path), entry.root) : NO_VOCABULARY;
+        return entry ? lookup.at(dirname15(path), entry.root) : NO_VOCABULARY;
       }
     };
   }
@@ -25231,7 +25932,7 @@ class Relations {
     const entryOf = this.readIndex.entryFinder(index);
     const shown = (path) => {
       const entry = entryOf(path);
-      return entry ? toPosix(relative12(entry.root, path)) : basename13(path);
+      return entry ? toPosix(relative14(entry.root, path)) : basename15(path);
     };
     const used = new Map;
     const undeclared = new Map;
@@ -25288,7 +25989,7 @@ class Relations {
     const entryOf = this.readIndex.entryFinder(index);
     const shown = (path) => {
       const entry = entryOf(path);
-      return entry ? toPosix(relative12(entry.root, path)) : basename13(path);
+      return entry ? toPosix(relative14(entry.root, path)) : basename15(path);
     };
     const folded = [];
     for (const f of files)
@@ -25300,6 +26001,87 @@ class Relations {
       warnings: files.reduce((n, f) => n + ("broken" in f.read ? 0 : f.read.warnings?.length ?? 0), 0),
       folded
     };
+  }
+}
+
+// src/kit/workspace/session/saving.ts
+import { existsSync as existsSync6, readFileSync as readFileSync12 } from "fs";
+import { dirname as dirname16 } from "path";
+class Saving {
+  core;
+  places;
+  writes;
+  viewer;
+  documents;
+  hooks;
+  constructor(core, places, writes, viewer, documents, hooks) {
+    this.core = core;
+    this.places = places;
+    this.writes = writes;
+    this.viewer = viewer;
+    this.documents = documents;
+    this.hooks = hooks;
+  }
+  save(slug, opts = {}) {
+    const d = this.documents.docOrDie(slug);
+    if (!d.admitted || !(isDocName(d.original) || isBundleMain(d.original)))
+      throw new SessionError(`refusing to save ${d.original}: it was not opened from the context`, 409);
+    const folderThere = existsSync6(dirname16(d.original));
+    const fileThere = folderThere && existsSync6(d.original);
+    if (!fileThere) {
+      if (!d.missing) {
+        d.missing = true;
+        this.hooks.persist();
+      }
+      if (!folderThere && opts.recreate !== "folder")
+        throw new SessionError(`${d.name} and its folder are gone from disk, so Save waits: choose "Save, making the folder again" in the document's banner to bring both back`, 409);
+      if (!opts.recreate)
+        throw new SessionError(`${d.name} is gone from disk, so Save waits: choose "Save to recreate it" in the document's banner to bring it back`, 409);
+    }
+    const text = readFileSync12(this.core.versionPath(d, d.active), "utf8");
+    this.documents.refuseInvalidJson(d, d.active, text, "saved");
+    const disk = fileThere ? readFileSync12(d.original, "utf8") : null;
+    if (disk !== null && d.outsideChanged) {
+      const h = contentHash(disk);
+      if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
+        const again = d.outsideHash !== undefined;
+        d.outsideHash = h;
+        this.hooks.persist();
+        throw new UnseenChangeError(again ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner` : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`, { kind: "original.conflict", doc: d.slug, original: d.original }, `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`);
+      }
+    }
+    if (disk !== null && !d.outsideChanged) {
+      if (contentHash(disk) !== d.originalHash && disk !== text) {
+        const event = this.hooks.onFileEvent(d.original);
+        if (event?.kind === "original.reloaded")
+          throw new UnseenChangeError(`${d.name} changed on disk and you had no unsaved edits, so its text was loaded and Save wrote nothing`, event, "the file's new text is in the active version now: edit it and Save again to change the file");
+        throw new UnseenChangeError(`${d.name} changed on disk since it was last read, so Save waits and wrote nothing: choose in the document's banner`, event, `"See the difference" compares the file with yours; "Keep mine" saves yours over it; "Take the file's" loads it`);
+      }
+    }
+    const unchanged = fileThere && readFileSync12(d.original).equals(Buffer.from(text, "utf8"));
+    this.writes.writeOwned(d.original, text, this.places.world);
+    d.originalHash = contentHash(text);
+    d.outsideChanged = false;
+    delete d.outsideHash;
+    const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
+    if (!fileThere) {
+      delete d.missing;
+      this.hooks.rescanAround(d.original);
+      this.hooks.relink();
+    }
+    this.hooks.persist();
+    return {
+      original: d.original,
+      version: d.active,
+      ...recreated ? { recreated } : {},
+      ...unchanged ? { unchanged: true } : {}
+    };
+  }
+  closeDoc(slug) {
+    const d = this.documents.docOrDie(slug);
+    this.viewer.closeDoc(d.slug);
+    this.hooks.persist();
+    return { slug: d.slug };
   }
 }
 
@@ -25482,7 +26264,7 @@ class Search {
 
 // src/kit/workspace/session/sidecars.ts
 init_frontmatter();
-import { readFileSync as readFileSync10 } from "fs";
+import { readFileSync as readFileSync13 } from "fs";
 class Sidecars {
   core;
   places;
@@ -25503,7 +26285,7 @@ class Sidecars {
   sidecarText(path) {
     const d = this.core.m.docs.find((x) => x.original === path);
     try {
-      return d ? this.hooks.activeText(d) : readFileSync10(path, "utf8");
+      return d ? this.hooks.activeText(d) : readFileSync13(path, "utf8");
     } catch {
       return null;
     }
@@ -25687,7 +26469,7 @@ class Viewer {
 }
 
 // src/kit/workspace/session/writes.ts
-import { dirname as dirname15 } from "path";
+import { dirname as dirname17 } from "path";
 class Writes {
   core;
   places;
@@ -25704,7 +26486,7 @@ class Writes {
     const why = disk.refusal(path);
     if (why !== null)
       throw refuseWrite(why);
-    disk.mkdir(dirname15(path), { recursive: true });
+    disk.mkdir(dirname17(path), { recursive: true });
     this.owned.set(path, contentHash(text));
     disk.writeFile(path, text);
   }
@@ -25730,16 +26512,6 @@ class Writes {
 }
 
 // src/kit/workspace/session.ts
-var noteGuard = null;
-async function loadNoteGuard() {
-  noteGuard ??= (await Promise.resolve().then(() => (init_projection(), exports_projection))).showsSelection;
-}
-function guardLoaded() {
-  if (!noteGuard)
-    throw new Error("addNote: a note with `seen` needs the note guard: await loadNoteGuard() first");
-  return noteGuard;
-}
-
 class WorkspaceSession {
   sessionsRoot;
   app;
@@ -25752,7 +26524,12 @@ class WorkspaceSession {
   media;
   sidecars;
   placing;
+  documents;
+  follow;
   taskList;
+  comparePart;
+  saving;
+  notes;
   readIndex;
   linkResolve;
   profilesPart;
@@ -25760,9 +26537,6 @@ class WorkspaceSession {
   searchPart;
   linkCheckPart;
   linkReports;
-  activeHash = new Map;
-  lastActiveText = new Map;
-  moves = [];
   restoreReport = { outside: [], tasks: [] };
   constructor(sessionsRoot, app, manifest) {
     this.sessionsRoot = sessionsRoot;
@@ -25774,7 +26548,9 @@ class WorkspaceSession {
     this.chats = new Chats(this.core, { persist: () => this.persist() });
     this.viewer = new Viewer(this.core);
     this.media = new Media(this.core, this.places);
-    this.sidecars = new Sidecars(this.core, this.places, { activeText: (d) => this.activeText(d) });
+    this.sidecars = new Sidecars(this.core, this.places, {
+      activeText: (d) => this.documents.activeText(d)
+    });
     this.placing = new Placing(this.core, this.places, {
       listedBundleHolding: (abs) => this.listedBundleHolding(abs),
       rescan: (entryId) => this.rescan(entryId),
@@ -25783,16 +26559,30 @@ class WorkspaceSession {
       scanGuard: () => this.scanGuard(),
       relink: () => this.relink()
     });
-    this.taskList = new Tasks(this.core, { persist: () => this.persist() });
-    this.readIndex = new ReadIndex(this.core, this.places, {
-      activeText: (d) => this.activeText(d),
-      filteredOut: () => this.filteredOut(),
-      mainOf: (abs) => this.mainOf(abs),
-      findDoc: (key) => this.findDoc(key),
-      docOrDie: (slug, opts) => this.docOrDie(slug, opts)
+    this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
+      persist: () => this.persist()
     });
-    this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, this.media, this.sidecars, {
-      docOrDie: (slug, opts) => this.docOrDie(slug, opts),
+    this.follow = new Follow(this.core, this.places, this.viewer, {
+      rescan: (entryId) => this.rescan(entryId),
+      refreshListedContents: () => this.refreshListedContents(),
+      relink: () => this.relink(),
+      resolveFrom: (target, src, entry, origin, index, kind) => this.linkResolve.resolveFrom(target, src, entry, origin, index, kind)
+    });
+    this.taskList = new Tasks(this.core, { persist: () => this.persist() });
+    this.comparePart = new Compare(this.core, this.documents);
+    this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
+      persist: () => this.persist(),
+      onFileEvent: (abs) => this.onFileEvent(abs),
+      rescanAround: (abs) => this.rescanAround(abs),
+      relink: () => this.relink()
+    });
+    this.notes = new Notes(this.core, this.chats, this.documents, {
+      persist: () => this.persist()
+    });
+    this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
+      filteredOut: () => this.filteredOut()
+    });
+    this.linkResolve = new LinkResolve(this.core, this.places, this.readIndex, this.media, this.sidecars, this.documents, {
       docsAfter: (index, world) => this.docsAfter(index, world),
       typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
       relationPass: (index) => this.relationsPart.relationPass(index)
@@ -25800,11 +26590,8 @@ class WorkspaceSession {
     this.profilesPart = new Profiles(this.core, this.places, this.readIndex);
     this.relationsPart = new Relations(this.places, this.readIndex, this.linkResolve, this.profilesPart);
     this.searchPart = new Search(this.places, this.readIndex, this.sidecars);
-    this.linkCheckPart = new LinkChecker(this.core, this.places, this.readIndex, this.linkResolve, this.relationsPart, {
-      movedFrom: (path) => this.movedFrom(path),
-      movedTarget: (raw, src, wasAt, tried, entry, index) => this.movedTarget(raw, src, wasAt, tried, entry, index)
-    });
-    this.linkReports = new LinkReports(this.core, this.places, this.readIndex, this.linkResolve, this.profilesPart, this.relationsPart, { findDoc: (key) => this.findDoc(key), versionOrDie: (d, n) => this.versionOrDie(d, n) });
+    this.linkCheckPart = new LinkChecker(this.core, this.places, this.readIndex, this.linkResolve, this.relationsPart, this.follow);
+    this.linkReports = new LinkReports(this.core, this.places, this.readIndex, this.linkResolve, this.profilesPart, this.relationsPart, this.documents);
   }
   setLinkSlot(slot) {
     this.readIndex.setLinkSlot(slot);
@@ -25815,7 +26602,7 @@ class WorkspaceSession {
   static create(sessionsRoot, app, sessionId = newSessionId(), workspace) {
     checkApp(app);
     checkSessionId(sessionId);
-    if (existsSync5(join17(sessionsRoot, sessionId, "manifest.json")))
+    if (existsSync7(join19(sessionsRoot, sessionId, "manifest.json")))
       throw new SessionError(`session ${sessionId} already exists: restore it instead`, 409);
     const s = new WorkspaceSession(sessionsRoot, app, {
       format: MANIFEST_FORMAT,
@@ -25823,7 +26610,7 @@ class WorkspaceSession {
       appName: app.name,
       createdAt: nowIso(),
       ...hasHomeWorkspace(app) ? {
-        workspace: workspace ? resolve9(workspace) : join17(sessionsRoot, sessionId, IMPORTED_DIR)
+        workspace: workspace ? resolve10(workspace) : join19(sessionsRoot, sessionId, IMPORTED_DIR)
       } : {},
       context: [],
       docs: [],
@@ -25832,7 +26619,7 @@ class WorkspaceSession {
       tasks: [],
       app: { ...app.slot.migrate({}, 0), version: app.slot.version }
     });
-    s.own.mkdir(join17(s.dir, "docs"), { recursive: true });
+    s.own.mkdir(join19(s.dir, "docs"), { recursive: true });
     s.core.pinDir();
     s.persist();
     return s;
@@ -25840,11 +26627,11 @@ class WorkspaceSession {
   static restore(sessionsRoot, app, sessionId, opts = {}) {
     checkApp(app);
     checkSessionId(sessionId);
-    const path = join17(sessionsRoot, sessionId, "manifest.json");
-    if (!existsSync5(path))
+    const path = join19(sessionsRoot, sessionId, "manifest.json");
+    if (!existsSync7(path))
       throw new SessionError(`no saved session ${sessionId}`, 404);
     let raw;
-    const stored = readFileSync11(path, "utf8");
+    const stored = readFileSync14(path, "utf8");
     try {
       raw = JSON.parse(stored);
     } catch {
@@ -25852,7 +26639,7 @@ class WorkspaceSession {
     }
     if (raw === null || typeof raw !== "object" || Array.isArray(raw))
       throw new SessionError(`session ${sessionId} has a manifest that is not a JSON object`, 409);
-    const migrateAt = { sessionId, dir: join17(sessionsRoot, sessionId), sessionsRoot };
+    const migrateAt = { sessionId, dir: join19(sessionsRoot, sessionId), sessionsRoot };
     const migrated = runManifestMigrate(app.migrateManifest, raw, migrateAt, (reason) => {
       throw new SessionError(migrateRefusal(app.name, sessionId, reason), 409);
     });
@@ -25877,7 +26664,7 @@ class WorkspaceSession {
     if (migrated.migration)
       report.manifestMigrated = {
         ...migrated.migration.note !== undefined ? { note: migrated.migration.note } : {},
-        kept: join17(sessionsRoot, sessionId, PRE_MIGRATE_FILE)
+        kept: join19(sessionsRoot, sessionId, PRE_MIGRATE_FILE)
       };
     m.app = migrateSlot(app, m.app, sessionId, report);
     let droppedWorkspace = false;
@@ -25891,13 +26678,13 @@ class WorkspaceSession {
       }
     } else if (typeof m.workspace !== "string" || m.workspace === "") {
       const first = m.context[0]?.root;
-      m.workspace = first !== undefined && overlapOf(first, m.context) === null ? first : join17(sessionsRoot, sessionId, IMPORTED_DIR);
+      m.workspace = first !== undefined && overlapOf(first, m.context) === null ? first : join19(sessionsRoot, sessionId, IMPORTED_DIR);
       report.workspaceDefaulted = m.workspace;
     }
     const s = new WorkspaceSession(sessionsRoot, app, m);
     s.restoreReport = report;
     s.setAppHome(opts.appHome);
-    s.own.mkdir(join17(s.dir, "docs"), { recursive: true });
+    s.own.mkdir(join19(s.dir, "docs"), { recursive: true });
     s.core.pinDir();
     s.settleOwnPlaceSets(report);
     for (const e of s.core.m.context)
@@ -25913,11 +26700,11 @@ class WorkspaceSession {
     }
     for (const d of s.core.m.docs) {
       const p = s.core.versionPath(d, d.active);
-      const text = existsSync5(p) ? readFileSync11(p, "utf8") : "";
-      s.adoptActive(d, text);
+      const text = existsSync7(p) ? readFileSync14(p, "utf8") : "";
+      s.documents.adoptActive(d, text);
       let now = null;
       try {
-        now = contentHash(readFileSync11(d.original, "utf8"));
+        now = contentHash(readFileSync14(d.original, "utf8"));
       } catch {
         now = null;
       }
@@ -25960,13 +26747,13 @@ class WorkspaceSession {
   }
   static listSaved(sessionsRoot) {
     try {
-      return readdirSync8(sessionsRoot).filter((id) => existsSync5(join17(sessionsRoot, id, "manifest.json")));
+      return readdirSync8(sessionsRoot).filter((id) => existsSync7(join19(sessionsRoot, id, "manifest.json")));
     } catch {
       return [];
     }
   }
   keepDroppedWorkspace(folder) {
-    if (realOr3(folder) === realOr3(join17(this.dir, IMPORTED_DIR)))
+    if (realOr3(folder) === realOr3(join19(this.dir, IMPORTED_DIR)))
       return;
     if (notAddedWhole(folder, this.sessionsRoot) !== null)
       return;
@@ -25979,10 +26766,10 @@ class WorkspaceSession {
     if (!names.some((n) => !n.startsWith(".")))
       return;
     const real = realOr3(folder);
-    if (this.core.m.context.some((e) => e.membership === "mirrored" && (real === realOr3(e.root) || real.startsWith(realOr3(e.root) + sep16))))
+    if (this.core.m.context.some((e) => e.membership === "mirrored" && (real === realOr3(e.root) || real.startsWith(realOr3(e.root) + sep17))))
       return;
     const id = `c-${randHex(3)}`;
-    const entry = entryForPath(resolve9(folder), id, (root) => this.scanSkip(id, root), this.scanGuard());
+    const entry = entryForPath(resolve10(folder), id, (root) => this.scanSkip(id, root), this.scanGuard());
     if (entry.membership !== "mirrored")
       return;
     this.core.m.context.push(entry);
@@ -25994,10 +26781,10 @@ class WorkspaceSession {
       const r = noWorkspaceToSet(this.app);
       throw new SessionError(r.message, 400, undefined, r.hint);
     }
-    const abs = this.places.notOwnPlaceOrDie(resolve9(rawPath));
+    const abs = this.places.notOwnPlaceOrDie(resolve10(rawPath));
     let isDir = false;
     try {
-      isDir = statSync13(abs).isDirectory();
+      isDir = statSync14(abs).isDirectory();
     } catch {
       throw new SessionError(`no such folder: ${abs}`, 404);
     }
@@ -26011,7 +26798,7 @@ class WorkspaceSession {
     }
     const overlap = overlapOf(abs, this.core.m.context);
     if (overlap)
-      throw new SessionError(`the workspace cannot be ${overlap.same ? "the folder of" : "inside"} the set ${overlap.label} (${tilde(overlap.root)}): a file there would belong to both. Choose a folder outside it, such as ${tilde(dirname16(overlap.root))}, or remove ${overlap.label} from the context first`, 409);
+      throw new SessionError(`the workspace cannot be ${overlap.same ? "the folder of" : "inside"} the set ${overlap.label} (${tilde(overlap.root)}): a file there would belong to both. Choose a folder outside it, such as ${tilde(dirname18(overlap.root))}, or remove ${overlap.label} from the context first`, 409);
     const from = this.workspace;
     this.core.m.workspace = abs;
     this.persist();
@@ -26067,13 +26854,13 @@ ${o.root}` : undefined;
       const only = listedFile(e);
       if (only?.kind === "bundle")
         roots.push({ path: only.abs, watch: realOr3(only.abs), recursive: true, entryId: e.id });
-      const profiles = join17(e.root, PROFILES_DIR);
+      const profiles = join19(e.root, PROFILES_DIR);
       if (e.membership !== "mirrored" && isFolder(profiles))
         roots.push({ path: profiles, watch: realOr3(profiles), recursive: false });
     }
     for (const d of this.core.m.docs) {
-      const realDir = dirname16(realOr3(d.original));
-      if (!roots.some((r) => r.watch === realDir && r.recursive === false) && !roots.some((r) => r.recursive && (realDir === r.watch || realDir.startsWith(r.watch + sep16))))
+      const realDir = dirname18(realOr3(d.original));
+      if (!roots.some((r) => r.watch === realDir && r.recursive === false) && !roots.some((r) => r.recursive && (realDir === r.watch || realDir.startsWith(r.watch + sep17))))
         roots.push({ path: realDir, watch: realDir, recursive: false });
     }
     return roots;
@@ -26119,7 +26906,7 @@ ${o.root}` : undefined;
   }
   static OWN_BUNDLE_ECHO_MS = Writes.OWN_BUNDLE_ECHO_MS;
   setAppHome(appHome) {
-    this.core.appHome = appHome === undefined ? undefined : resolve9(appHome);
+    this.core.appHome = appHome === undefined ? undefined : resolve10(appHome);
   }
   writeShown(rawPath, text) {
     const { abs } = this.shownAt(rawPath);
@@ -26130,7 +26917,7 @@ ${o.root}` : undefined;
     const own = this.places.ownPlaces;
     const out = [];
     this.core.m.context = this.core.m.context.filter((e) => {
-      const paths = e.membership === "mirrored" ? [e.root] : [e.root, ...e.nodes.map((n) => join17(e.root, n.rel))];
+      const paths = e.membership === "mirrored" ? [e.root] : [e.root, ...e.nodes.map((n) => join19(e.root, n.rel))];
       const inside = paths.map((p) => inOwnPlaces(p, own)).find((w) => w !== null);
       if (inside) {
         out.push({ label: e.label, root: e.root, outcome: "dropped", why: inside });
@@ -26150,34 +26937,8 @@ ${o.root}` : undefined;
       this.viewer.closeOrphaned();
     }
   }
-  adoptActive(d, text) {
-    const p = this.core.versionPath(d, d.active);
-    this.writes.own(p, text);
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-  }
-  writeActive(d, text) {
-    this.writes.writeVersion(this.core.versionPath(d, d.active), text);
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-  }
-  preserveOutside(d, text) {
-    const n = this.takeVersion(d);
-    const rec = {
-      n,
-      by: "agent",
-      fromVersion: d.active,
-      createdAt: nowIso(),
-      label: `outside write to v${d.active}`,
-      outside: true
-    };
-    d.versions.push(rec);
-    this.writes.writeVersion(this.core.versionPath(d, n), text);
-    this.persist();
-    return { ...rec, path: this.core.versionPath(d, n) };
-  }
   addContext(rawPath) {
-    const abs = resolve9(rawPath);
+    const abs = resolve10(rawPath);
     this.places.mayBeASetOrDie(abs);
     const id = `c-${randHex(3)}`;
     const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
@@ -26185,7 +26946,7 @@ ${o.root}` : undefined;
     if (same)
       return { entry: same, added: false };
     if (probe.membership === "mirrored" && this.hasHome && overlapOf(this.workspace, [probe]))
-      throw new SessionError(`${probe.label} cannot be added as a set: its folder ${realOr3(this.workspace) === realOr3(probe.root) ? "is" : "holds"} the workspace folder (${tilde(this.workspace)}), so a file there would belong to both. Set the workspace to a folder outside it first, such as ${tilde(dirname16(probe.root))} (the pencil in the sidebar, or \`workspace <dir>\`)`, 409);
+      throw new SessionError(`${probe.label} cannot be added as a set: its folder ${realOr3(this.workspace) === realOr3(probe.root) ? "is" : "holds"} the workspace folder (${tilde(this.workspace)}), so a file there would belong to both. Set the workspace to a folder outside it first, such as ${tilde(dirname18(probe.root))} (the pencil in the sidebar, or \`workspace <dir>\`)`, 409);
     this.core.m.context.push(probe);
     const only = listedFile(probe);
     const sidecar = only?.kind === "image" ? this.sidecars.sidecarFileOf(only.abs) : null;
@@ -26211,7 +26972,7 @@ ${o.root}` : undefined;
     if (this.core.m.context.some((e) => e.id === entry.id))
       throw new GoneError(`${entry.label} (${entry.id}) is in the context already`, 409);
     const only = entry.membership === "listed" ? entry.nodes[0] : undefined;
-    const path = entry.membership === "mirrored" ? entry.root : only ? join17(entry.root, only.rel) : null;
+    const path = entry.membership === "mirrored" ? entry.root : only ? join19(entry.root, only.rel) : null;
     if (path === null)
       throw new GoneError(`${entry.label} (${entry.id}) shows nothing to put back`, 409);
     this.places.mayBeASetOrDie(path, true);
@@ -26271,8 +27032,8 @@ ${o.root}` : undefined;
           rules.push({ root: e.root, skip });
       }
     return (abs) => rules.some(({ root, skip }) => {
-      const rel = toPosix(relative13(root, abs));
-      if (rel === "" || rel.startsWith("..") || isAbsolute11(rel))
+      const rel = toPosix(relative15(root, abs));
+      if (rel === "" || rel.startsWith("..") || isAbsolute12(rel))
         return false;
       const parts = rel.split("/");
       return parts.some((_, i) => skip(parts.slice(0, i + 1).join("/"), i < parts.length - 1));
@@ -26297,7 +27058,7 @@ ${o.root}` : undefined;
     return {
       abs: item.abs,
       entryId: item.entry.id,
-      rel: toPosix(relative13(item.entry.root, item.abs)),
+      rel: toPosix(relative15(item.entry.root, item.abs)),
       whole: item.whole
     };
   }
@@ -26308,559 +27069,97 @@ ${o.root}` : undefined;
       d.rel = at?.rel ?? null;
     }
   }
-  docOrDie(slug, opts = {}) {
-    const want = slug ?? this.core.m.openDoc ?? undefined;
-    const opened = this.core.m.docs.flatMap((d) => {
-      const alias = this.docAlias(d);
-      return alias === undefined ? [d.slug] : [d.slug, alias];
-    });
-    const choices = opened.length > 0 ? opened : this.core.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
-    const hint = opened.length > 0 ? undefined : "nothing is open yet: pass a PATH from the context (a filename only resolves once a document is open)";
-    if (want === undefined)
-      throw new SessionError("no document is open: name one with --doc", 409, choices, hint);
-    const d = this.findDoc(want);
-    if (!d) {
-      const unopened = isAbsolute11(want) ? [] : this.unopenedNamed(want);
-      if (unopened.length > 0)
-        throw new SessionError(`no document "${want}" in this session`, 404, opts.takesPath ? [...unopened, ...choices.filter((c) => !unopened.includes(c))] : choices, `${want} is in the context but not open, at ${unopened.join(" or ")}: ${opts.takesPath ? "pass that absolute path to --doc" : "open it first (version-new --doc <that path> opens it), then name it here"}`);
-      throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
-    }
-    return d;
-  }
-  unopenedNamed(name) {
-    const held = new Set(this.core.m.docs.map((d) => d.original));
-    const out = [];
-    for (const e of this.core.m.context)
-      for (const p of docPaths(e)) {
-        if (held.has(p) || out.includes(p))
-          continue;
-        if (basename14(p) === name || toPosix(relative13(e.root, p)) === name)
-          out.push(p);
-        if (out.length >= 20)
-          return out;
-      }
-    return out;
-  }
   heldPaths() {
-    return new Map(this.core.m.docs.map((d) => [d.original, d.slug]));
+    return this.documents.heldPaths();
   }
   findDoc(key) {
-    const bySlug = this.core.m.docs.find((d) => d.slug === key);
-    if (bySlug)
-      return bySlug;
-    if (isAbsolute11(key)) {
-      const path = this.mainOf(key.length > 1 ? key.replace(/\/+$/, "") : key);
-      const byPath = this.core.m.docs.find((d) => d.original === path || realOr3(d.original) === realOr3(path));
-      if (byPath)
-        return byPath;
-    }
-    const byAlias = this.core.m.docs.find((d) => this.docAlias(d) === key);
-    if (byAlias)
-      return byAlias;
-    const byName = this.core.m.docs.filter((d) => basename14(d.original) === key || d.rel === key);
-    return byName.length === 1 ? byName[0] : undefined;
-  }
-  docAlias(d) {
-    if (!isBundleMain(d.original))
-      return;
-    const b = bundleOf(d.original);
-    if (!b)
-      return;
-    const alias = slugBase(bundleNameAt(b.root));
-    if (alias === d.slug || this.core.m.docs.some((x) => x.slug === alias))
-      return;
-    const others = this.core.m.docs.filter((x) => x !== d && isBundleMain(x.original) && slugBase(this.docName(x)) === alias);
-    return others.length === 0 ? alias : undefined;
-  }
-  takeVersion(d) {
-    const n = d.nextVersion;
-    d.nextVersion = n + 1;
-    return n;
-  }
-  versionOrDie(d, n) {
-    const v = d.versions.find((x) => x.n === n);
-    if (!v)
-      throw new SessionError(`${d.slug} has no v${n}`, 404, d.versions.map((x) => `v${x.n}`));
-    return v;
-  }
-  mainOf(abs) {
-    const b = bundleOf(abs);
-    return b && b.inner === "" ? join17(abs, b.type.main) : abs;
-  }
-  docName(d) {
-    const b = isBundleMain(d.original) ? bundleOf(d.original) : null;
-    return b ? bundleNameAt(b.root) : d.name;
+    return this.documents.findDoc(key);
   }
   itemName(abs, title) {
-    const b = bundleOf(abs);
-    if (b && b.inner === "")
-      return title !== undefined ? bundleDisplayName(basename14(abs), title) : bundleNameAt(abs);
-    return basename14(abs);
+    return this.documents.itemName(abs, title);
   }
   bundleTitleAt(abs) {
-    const title = readBundleInfo(abs)?.title;
-    return typeof title === "string" ? title : undefined;
-  }
-  slugFor(original) {
-    const bundle = bundleOf(original);
-    const named = bundle && bundle.inner === bundle.type.main ? bundleStem(bundle.root) : null;
-    const stem = slugBase(named ?? basename14(original, extname3(original)));
-    let slug = stem;
-    for (let i = 2;this.core.m.docs.some((d) => d.slug === slug); i++)
-      slug = `${stem}-${i}`;
-    return slug;
+    return this.documents.bundleTitleAt(abs);
   }
   openPath(rawPath, opts = {}) {
-    const focus = opts.focus ?? true;
-    const abs = this.places.canonical(this.mainOf(resolve9(rawPath)));
-    const existing = this.core.m.docs.find((d) => d.original === abs);
-    if (existing) {
-      if (focus)
-        this.viewer.showDoc(existing.slug);
-      this.persist();
-      return { slug: existing.slug, created: false };
-    }
-    if (!isDocName(abs) && !isBundleMain(abs))
-      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
-    const at = locate(this.core.m.context, abs);
-    if (!at)
-      throw new SessionError(`${abs} is not in this session's context: add it (or its folder) first`, 400);
-    let text;
-    try {
-      if (!statSync13(abs).isFile())
-        throw new Error("not a file");
-      text = readFileSync11(abs, "utf8");
-    } catch {
-      throw new SessionError(`cannot open ${abs}: no such file`, 404);
-    }
-    const lower = extname3(abs).toLowerCase();
-    const ext = docExtensions().includes(lower) || isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower) ? lower : ".md";
-    const d = {
-      slug: this.slugFor(abs),
-      name: basename14(abs),
-      original: abs,
-      entryId: at.entryId,
-      rel: at.rel,
-      ext,
-      versions: [{ n: 1, by: "human", createdAt: nowIso() }],
-      active: 1,
-      nextVersion: 2,
-      notes: [],
-      originalHash: contentHash(text),
-      admitted: true,
-      outsideChanged: false
-    };
-    this.core.m.docs.push(d);
-    this.writeActive(d, text);
-    if (focus)
-      this.viewer.showDoc(d.slug);
-    this.persist();
-    return { slug: d.slug, created: true };
+    return this.documents.openPath(rawPath, opts);
   }
   openSlug(slug) {
-    this.viewer.showDoc(this.docOrDie(slug).slug);
-    this.persist();
+    this.documents.openSlug(slug);
   }
   readVersion(slug, n) {
-    const d = this.docOrDie(slug);
-    this.versionOrDie(d, n);
-    const path = this.core.versionPath(d, n);
-    return { text: readFileSync11(path, "utf8"), path };
+    return this.documents.readVersion(slug, n);
   }
   activePath(slug) {
-    const d = slug ? this.findDoc(slug) : this.core.m.openDoc ? this.findDoc(this.core.m.openDoc) : undefined;
-    return d ? this.core.versionPath(d, d.active) : null;
+    return this.documents.activePath(slug);
   }
   edit(slug, n, text) {
-    const d = this.docOrDie(slug);
-    if (n !== d.active)
-      throw new SessionError(`v${n} is not the active version of ${d.slug} (v${d.active} is): only the active version is editable`, 409);
-    const before = this.isDirty(d);
-    const path = this.core.versionPath(d, n);
-    this.places.ownFileOrDie(path);
-    const staged = this.own.stage(path, text, "edit");
-    let preserved = null;
-    let landed = false;
-    try {
-      let onDisk = null;
-      try {
-        onDisk = readFileSync11(path, "utf8");
-      } catch {
-        onDisk = null;
-      }
-      if (onDisk !== null && !this.isOwnWrite(path, onDisk))
-        preserved = this.preserveOutside(d, onDisk);
-      this.writes.own(path, text);
-      this.own.rename(staged, path);
-      landed = true;
-    } finally {
-      if (!landed)
-        try {
-          this.own.unlink(staged);
-        } catch {}
-    }
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-    return { dirtyChanged: before !== this.isDirty(d), preserved };
+    return this.documents.edit(slug, n, text);
   }
   editLeft(slug, n, text) {
-    const d = this.docOrDie(slug);
-    const was = d.versions.find((v) => v.n === n);
-    if (was) {
-      const path = this.core.versionPath(d, n);
-      let onDisk = null;
-      try {
-        onDisk = readFileSync11(path, "utf8");
-      } catch {
-        onDisk = null;
-      }
-      if (onDisk !== null && (onDisk === text || this.isOwnWrite(path, onDisk))) {
-        this.writes.writeVersion(path, text);
-        return { saved: n, kept: null, path };
-      }
-    }
-    const v = this.takeVersion(d);
-    const rec = {
-      n: v,
-      by: "human",
-      fromVersion: was ? n : d.active,
-      createdAt: nowIso(),
-      label: `edit to v${n} after a switch`
-    };
-    d.versions.push(rec);
-    const path = this.core.versionPath(d, v);
-    this.writes.writeVersion(path, text);
-    this.persist();
-    return { saved: v, kept: was ? "changed" : "deleted", path };
+    return this.documents.editLeft(slug, n, text);
   }
   newVersion(opts) {
-    const d = this.docOrDie(opts.doc, { takesPath: true });
-    const from = opts.from ?? d.active;
-    this.versionOrDie(d, from);
-    const text = opts.body ?? readFileSync11(this.core.versionPath(d, from), "utf8");
-    const n = this.takeVersion(d);
-    const rec = {
-      n,
-      by: opts.by,
-      fromVersion: from,
-      createdAt: nowIso(),
-      ...opts.label ? { label: opts.label } : {}
-    };
-    d.versions.push(rec);
-    this.writes.writeVersion(this.core.versionPath(d, n), text);
-    this.persist();
-    return { slug: d.slug, version: { ...rec, path: this.core.versionPath(d, n) } };
+    return this.documents.newVersion(opts);
   }
   checkDeletable(opts) {
-    const d = this.docOrDie(opts.doc);
-    this.versionOrDie(d, opts.version);
-    if (opts.version === d.active)
-      throw new SessionError(`v${opts.version} is the active version of ${d.slug}: activate another one first, then delete this`, 409);
-    return d.slug;
+    return this.documents.checkDeletable(opts);
   }
   deleteVersion(opts) {
-    this.checkDeletable(opts);
-    const d = this.docOrDie(opts.doc);
-    const v = this.versionOrDie(d, opts.version);
-    const path = this.places.ownFileOrDie(this.core.versionPath(d, opts.version));
-    d.versions = d.versions.filter((x) => x.n !== opts.version);
-    try {
-      this.own.rm(path);
-    } catch (e) {
-      if (e instanceof SessionError)
-        throw e;
-    }
-    this.writes.disown(path);
-    this.persist();
-    return {
-      slug: d.slug,
-      version: opts.version,
-      ...v.label ? { label: v.label } : {},
-      remaining: d.versions.length
-    };
+    return this.documents.deleteVersion(opts);
   }
   activate(opts) {
-    const d = this.docOrDie(opts.doc);
-    this.versionOrDie(d, opts.version);
-    if (opts.json === "refuse")
-      this.refuseInvalidJson(d, opts.version, readFileSync11(this.core.versionPath(d, opts.version), "utf8"), "activated");
-    const previous = d.active;
-    for (const v of d.versions)
-      if (v.n === previous || v.n === opts.version)
-        v.activated = true;
-    d.active = opts.version;
-    this.adoptActive(d, readFileSync11(this.core.versionPath(d, d.active), "utf8"));
-    this.persist();
-    return { slug: d.slug, previous };
-  }
-  sideText(d, side) {
-    if (side === "original")
-      return readFileSync11(d.original, "utf8");
-    this.versionOrDie(d, side);
-    return readFileSync11(this.core.versionPath(d, side), "utf8");
+    return this.documents.activate(opts);
   }
   compare(opts) {
-    const d = this.docOrDie(opts.doc);
-    const left = readFileSync11(this.core.versionPath(d, d.active), "utf8");
-    if (opts.pick) {
-      const sides = [
-        "original",
-        ...d.versions.map((v) => v.n).filter((n) => n !== d.active).sort((a, b) => b - a)
-      ];
-      for (const side of sides) {
-        let right;
-        try {
-          right = this.sideText(d, side);
-        } catch {
-          continue;
-        }
-        if (right !== left)
-          return {
-            doc: d.slug,
-            active: d.active,
-            against: side,
-            diff: diffText(left, right),
-            picked: true
-          };
-      }
-    }
-    if (opts.against === d.active)
-      throw new SessionError(`v${d.active} is the active version of ${d.slug}: comparing it with itself says nothing`, 400);
-    return {
-      doc: d.slug,
-      active: d.active,
-      against: opts.against,
-      diff: diffText(left, this.sideText(d, opts.against)),
-      ...opts.pick ? { picked: true, everyMatches: true } : {}
-    };
+    return this.comparePart.compare(opts);
   }
   merge(opts) {
-    const d = this.docOrDie(opts.doc);
-    const payload = this.compare({ doc: d.slug, against: opts.against });
-    const known = new Set(payload.diff.hunks.map((h) => h.id));
-    const missing = opts.hunks.filter((id) => !known.has(id));
-    if (missing.length)
-      throw new SessionError(`${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against, d.name)}: it has ${known.size === 0 ? "none" : `1..${Math.max(...known)}`}. Run diff again: the text changed under the numbers.`, 409);
-    const before = readFileSync11(this.core.versionPath(d, d.active), "utf8");
-    const text = applyHunks(before, payload.diff.hunks, opts.hunks);
-    if (opts.json === "refuse" && docFormat(d.original) === "json") {
-      const p = jsonProblem(text);
-      if (p) {
-        const from = sideName(opts.against, d.name);
-        throw new SessionError(`taking change${opts.hunks.length === 1 ? "" : "s"} ${opts.hunks.join(", ")} from ${from} into v${d.active} of ${d.name} would leave invalid JSON (${describeJsonProblem(p)}, in the merged text): fix ${from}, or take fewer changes. Nothing was merged.`, 409);
-      }
-    }
-    const { preserved } = this.edit(d.slug, d.active, text);
-    return {
-      slug: d.slug,
-      version: d.active,
-      text,
-      applied: opts.hunks.filter((id) => known.has(id)).length,
-      preserved
-    };
-  }
-  activeText(d) {
-    return readFileSync11(this.core.versionPath(d, d.active), "utf8");
-  }
-  placedNotes(d) {
-    if (d.notes.length === 0)
-      return [];
-    const text = this.activeText(d);
-    return d.notes.map((n) => placeNote(text, n));
+    return this.comparePart.merge(opts);
   }
   addNote(opts) {
-    const d = this.docOrDie(opts.doc);
-    const body = opts.body.trim();
-    if (!body)
-      throw new SessionError("a note needs something written in it", 400);
-    const text = this.activeText(d);
-    let anchor;
-    if (opts.range) {
-      const { from, to } = opts.range;
-      if (from < 0 || to > text.length || from >= to)
-        throw new SessionError(`${from}..${to} is not a range in v${d.active} of ${d.slug} (${text.length} characters)`, 400);
-      if (opts.seen !== undefined && !guardLoaded()(text, from, to, opts.seen))
-        throw new SessionError(`The note on ${JSON.stringify(quoteLabel(opts.seen, 40))} was not added. ${NOT_PLACED}`, 409);
-      anchor = anchorOf(text, from, to);
-    } else {
-      const quote = opts.quote ?? "";
-      if (!quote)
-        throw new SessionError("a note needs a selection or a quote", 400);
-      const at = text.indexOf(quote);
-      if (at === -1)
-        throw new SessionError(`v${d.active} of ${d.slug} does not contain that text: quote it exactly as it appears`, 404);
-      anchor = anchorOf(text, at, at + quote.length);
-    }
-    const note = {
-      id: `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      version: d.active,
-      ...anchor,
-      body,
-      by: opts.by,
-      createdAt: nowIso(),
-      resolved: false
-    };
-    d.notes = [...d.notes, note];
-    this.persist();
-    return { slug: d.slug, note, how: opts.range ? "selection" : "quote" };
+    return this.notes.addNote(opts);
   }
   noteLines(doc, note) {
-    const d = this.docOrDie(doc);
-    const text = this.activeText(d);
-    const at = findAnchor(text, note);
-    return at.from === null ? null : linesOf(text, at.from, at.to);
+    return this.notes.noteLines(doc, note);
   }
   noteDoc(id) {
-    return this.core.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
+    return this.notes.noteDoc(id);
   }
   notesOf(opts) {
-    const d = this.docOrDie(opts.doc);
-    const placed = this.placedNotes(d);
-    return { slug: d.slug, notes: opts.all ? placed : placed.filter((n) => !n.resolved) };
-  }
-  noteOrDie(d, id) {
-    const note = d.notes.find((n) => n.id === id);
-    if (!note)
-      throw new SessionError(`${d.slug} has no note ${id}`, 404, d.notes.map((n) => n.id));
-    return note;
+    return this.notes.notesOf(opts);
   }
   noteFacts() {
-    return this.core.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
+    return this.notes.noteFacts();
   }
   editNote(opts) {
-    const d = this.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    if (opts.by === "agent" && (note.by === "human" || note.editedBy === "human"))
-      throw new SessionError(`note ${note.id} on ${d.slug} holds the human's words, and the agent does not rewrite them: reply to it instead`, 409, ["note-reply", "note-resolve"], `run: note-reply ${note.id} --doc ${d.slug} <your answer> (the note keeps its words), or note-resolve ${note.id} --doc ${d.slug} when it is dealt with`);
-    const body = opts.body.trim();
-    if (!body)
-      throw new SessionError("a note needs something written in it", 400);
-    if (body === note.body)
-      return { slug: d.slug, note, changed: false };
-    if (opts.by === "agent" && body !== (note.replacedBody ?? note.body))
-      note.replacedBody ??= note.body;
-    else
-      delete note.replacedBody;
-    note.body = body;
-    note.editedAt = nowIso();
-    note.editedBy = opts.by;
-    this.persist();
-    return { slug: d.slug, note, changed: true };
+    return this.notes.editNote(opts);
   }
   replyToNote(opts) {
-    const d = this.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    const text = opts.text.trim();
-    if (!text)
-      throw new SessionError("a reply needs something written in it", 400);
-    const message = this.addMessage({ from: "agent", text, about: { noteId: note.id } });
-    return { slug: d.slug, note, message };
+    return this.notes.replyToNote(opts);
   }
   resolveNote(opts) {
-    const d = this.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    if (note.resolved && !opts.resolved) {
-      note.reopenedAt = nowIso();
-      note.reopenedBy = opts.by;
-    }
-    note.resolved = opts.resolved;
-    if (opts.resolved)
-      note.resolvedAt = nowIso();
-    else
-      delete note.resolvedAt;
-    this.persist();
-    return { slug: d.slug, note };
+    return this.notes.resolveNote(opts);
   }
   removeNote(opts) {
-    const d = this.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    d.notes = d.notes.filter((n) => n.id !== opts.id);
-    this.persist();
-    return { slug: d.slug, note };
+    return this.notes.removeNote(opts);
   }
   jsonProblemOf(slug, version) {
-    const d = this.docOrDie(slug);
-    if (docFormat(d.original) !== "json")
-      return null;
-    this.versionOrDie(d, version);
-    return jsonProblem(readFileSync11(this.core.versionPath(d, version), "utf8"));
-  }
-  refuseInvalidJson(d, version, text, what) {
-    if (docFormat(d.original) !== "json")
-      return;
-    const p = jsonProblem(text);
-    if (!p)
-      return;
-    throw new SessionError(`v${version} of ${d.name} is not valid JSON, so it was not ${what}: ${describeJsonProblem(p)}`, 409, undefined, `fix the JSON in v${version} first; nothing was written`);
+    return this.documents.jsonProblemOf(slug, version);
   }
   save(slug, opts = {}) {
-    const d = this.docOrDie(slug);
-    if (!d.admitted || !(isDocName(d.original) || isBundleMain(d.original)))
-      throw new SessionError(`refusing to save ${d.original}: it was not opened from the context`, 409);
-    const folderThere = existsSync5(dirname16(d.original));
-    const fileThere = folderThere && existsSync5(d.original);
-    if (!fileThere) {
-      if (!d.missing) {
-        d.missing = true;
-        this.persist();
-      }
-      if (!folderThere && opts.recreate !== "folder")
-        throw new SessionError(`${d.name} and its folder are gone from disk, so Save waits: choose "Save, making the folder again" in the document's banner to bring both back`, 409);
-      if (!opts.recreate)
-        throw new SessionError(`${d.name} is gone from disk, so Save waits: choose "Save to recreate it" in the document's banner to bring it back`, 409);
-    }
-    const text = readFileSync11(this.core.versionPath(d, d.active), "utf8");
-    this.refuseInvalidJson(d, d.active, text, "saved");
-    const disk = fileThere ? readFileSync11(d.original, "utf8") : null;
-    if (disk !== null && d.outsideChanged) {
-      const h = contentHash(disk);
-      if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
-        const again = d.outsideHash !== undefined;
-        d.outsideHash = h;
-        this.persist();
-        throw new UnseenChangeError(again ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner` : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`, { kind: "original.conflict", doc: d.slug, original: d.original }, `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`);
-      }
-    }
-    if (disk !== null && !d.outsideChanged) {
-      if (contentHash(disk) !== d.originalHash && disk !== text) {
-        const event = this.onFileEvent(d.original);
-        if (event?.kind === "original.reloaded")
-          throw new UnseenChangeError(`${d.name} changed on disk and you had no unsaved edits, so its text was loaded and Save wrote nothing`, event, "the file's new text is in the active version now: edit it and Save again to change the file");
-        throw new UnseenChangeError(`${d.name} changed on disk since it was last read, so Save waits and wrote nothing: choose in the document's banner`, event, `"See the difference" compares the file with yours; "Keep mine" saves yours over it; "Take the file's" loads it`);
-      }
-    }
-    const unchanged = fileThere && readFileSync11(d.original).equals(Buffer.from(text, "utf8"));
-    this.writes.writeOwned(d.original, text, this.places.world);
-    d.originalHash = contentHash(text);
-    d.outsideChanged = false;
-    delete d.outsideHash;
-    const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
-    if (!fileThere) {
-      delete d.missing;
-      this.rescanAround(d.original);
-      this.relink();
-    }
-    this.persist();
-    return {
-      original: d.original,
-      version: d.active,
-      ...recreated ? { recreated } : {},
-      ...unchanged ? { unchanged: true } : {}
-    };
+    return this.saving.save(slug, opts);
   }
   closeDoc(slug) {
-    const d = this.docOrDie(slug);
-    this.viewer.closeDoc(d.slug);
-    this.persist();
-    return { slug: d.slug };
+    return this.saving.closeDoc(slug);
   }
   forgetDoc(ref) {
-    const d = this.docOrDie(ref);
-    if (existsSync5(d.original))
+    const d = this.documents.docOrDie(ref);
+    if (existsSync7(d.original))
       throw new SessionError(`${this.display(d.original)} is still on disk: forget is for a document whose file is gone`, 409);
     const forgotten = {
       slug: d.slug,
-      name: this.docName(d),
+      name: this.documents.docName(d),
       original: d.original,
       versions: d.versions.length
     };
@@ -26875,9 +27174,9 @@ ${o.root}` : undefined;
     return this.media.imageFile(rawPath);
   }
   openImage(rawPath) {
-    if (!isAbsolute11(rawPath))
+    if (!isAbsolute12(rawPath))
       throw new SessionError(`"${rawPath}" is not a full path: start it with /`, 400);
-    const abs = this.places.contextForm(resolve9(rawPath));
+    const abs = this.places.contextForm(resolve10(rawPath));
     const at = isImageName(abs) ? this.media.imageNodeAt(abs) : null;
     if (!at)
       throw new SessionError(`${abs} is not an image shown in this session: add its folder to the context first`, 400);
@@ -26918,7 +27217,7 @@ ${o.root}` : undefined;
         return null;
       return {
         path: abs,
-        name: basename14(abs),
+        name: basename16(abs),
         entryId: at.entry.id,
         rel: at.rel,
         size: st.size,
@@ -26946,7 +27245,7 @@ ${o.root}` : undefined;
     const image = imageOfSidecar(abs);
     if (image === null || sidecarFile(image) !== abs)
       return;
-    throw new SessionError(`${this.display(abs)} is ${basename14(image)}'s description: ${act} the image instead, and its description goes with it`, 409);
+    throw new SessionError(`${this.display(abs)} is ${basename16(image)}'s description: ${act} the image instead, and its description goes with it`, 409);
   }
   unchangedOrDie(path, hash) {
     let dir = false;
@@ -26958,7 +27257,7 @@ ${o.root}` : undefined;
       if (dir)
         now = treeHash(path);
       else if (lstatSync8(path).isFile())
-        now = contentHash(readFileSync11(path, "utf8"));
+        now = contentHash(readFileSync14(path, "utf8"));
     } catch {
       now = null;
     }
@@ -26966,8 +27265,8 @@ ${o.root}` : undefined;
       throw new SessionError(`${this.display(path)} is not where it was: what this would undo has moved or gone`, 409);
     if (now !== hash)
       throw new SessionError(`${this.display(path)} has been written into since it was ${dir ? "made" : "started"}, so undo leaves it: delete it from the sidebar if it should go`, 409);
-    const held = this.core.m.docs.find((d) => (d.original === path || d.original.startsWith(path + sep16)) && !d.missing);
-    if (held && this.isDirty(held))
+    const held = this.core.m.docs.find((d) => (d.original === path || d.original.startsWith(path + sep17)) && !d.missing);
+    if (held && this.documents.isDirty(held))
       throw new SessionError(`${this.display(path)} has unsaved edits, so undo leaves it: delete it from the sidebar if it should go`, 409);
   }
   carrySidecar(from, to, sidecar, sidecarTo) {
@@ -26977,13 +27276,13 @@ ${o.root}` : undefined;
       try {
         this.places.world.rename(to, from);
       } catch {}
-      throw new SessionError(`cannot move ${this.display(sidecar)}, the description of ${basename14(from)}, with it: ${e.code ?? String(e)}. Nothing was moved.`, 409);
+      throw new SessionError(`cannot move ${this.display(sidecar)}, the description of ${basename16(from)}, with it: ${e.code ?? String(e)}. Nothing was moved.`, 409);
     }
   }
   describeImage(rawImage, source = "user") {
-    if (!isAbsolute11(rawImage))
+    if (!isAbsolute12(rawImage))
       throw new SessionError(`"${rawImage}" is not a full path: start it with /`, 400);
-    const abs = this.places.contextForm(resolve9(rawImage));
+    const abs = this.places.contextForm(resolve10(rawImage));
     if (!isImageName(abs) || !this.media.imageNodeAt(abs))
       throw new SessionError(`${abs} is not an image shown in this session: add it, or its folder, first`, 400);
     const path = sidecarOf(abs);
@@ -26993,13 +27292,13 @@ ${o.root}` : undefined;
       taken = true;
     } catch {}
     if (taken)
-      throw new SessionError(`${this.display(abs)} already has a description, ${basename14(path)}: change it with version-new --doc ${path}`, 409);
+      throw new SessionError(`${this.display(abs)} already has a description, ${basename16(path)}: change it with version-new --doc ${path}`, 409);
     let added = new Date;
     try {
-      added = statSync13(abs).mtime;
+      added = statSync14(abs).mtime;
     } catch {}
     const cameAs = this.core.m.importedAs?.[abs];
-    const text = sidecarSkeleton(cameAs ?? basename14(abs), source, added);
+    const text = sidecarSkeleton(cameAs ?? basename16(abs), source, added);
     this.places.world.writeFile(path, text, { flag: "wx" });
     if (cameAs !== undefined && this.core.m.importedAs) {
       delete this.core.m.importedAs[abs];
@@ -27022,10 +27321,10 @@ ${o.root}` : undefined;
     return { name: n, heic: false, given: n };
   }
   rememberImportName(abs, given) {
-    const at = this.places.contextForm(resolve9(abs));
+    const at = this.places.contextForm(resolve10(abs));
     const names = { ...this.core.m.importedAs ?? {} };
     delete names[at];
-    if (given !== basename14(at))
+    if (given !== basename16(at))
       names[at] = given;
     const keys = Object.keys(names);
     for (const k of keys.slice(0, Math.max(0, keys.length - IMPORT_NAMES_MAX)))
@@ -27046,7 +27345,7 @@ ${o.root}` : undefined;
     }
     const real = realOr3(dir);
     const root = rootReal(set);
-    if (real !== root && !real.startsWith(root + sep16))
+    if (real !== root && !real.startsWith(root + sep17))
       throw new SessionError(`${this.display(dir)} leads outside ${set.label} through a link: drop it on a folder that is really in the set`, 400);
     return dir;
   }
@@ -27060,32 +27359,32 @@ ${o.root}` : undefined;
     this.imageBytesOrDie(name, bytes);
     const dir = this.imageDestinationOrDie(opts.dir);
     let file = name;
-    if (existsSync5(join17(dir, file))) {
+    if (existsSync7(join19(dir, file))) {
       if (opts.onTaken === "ask")
         throw new SessionError(`${file} is already in ${this.display(dir)}`, 409, ["replace", "keep-both"], "replace it (the old file goes to the Trash), or keep both under a new name");
       file = this.placing.freeImageName(dir, file);
-    } else if (existsSync5(sidecarOf(join17(dir, file)))) {
+    } else if (existsSync7(sidecarOf(join19(dir, file)))) {
       file = this.placing.freeImageName(dir, file);
     }
-    const abs = join17(dir, file);
+    const abs = join19(dir, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     this.placing.adoptNew(abs);
     this.persist();
     return { path: abs };
   }
   bundleAssetsOrDie(rawBundle) {
-    if (!rawBundle || !isAbsolute11(rawBundle))
+    if (!rawBundle || !isAbsolute12(rawBundle))
       throw new SessionError(`"${rawBundle}" is not a full path: start it with /`, 400);
-    const abs = this.places.contextForm(resolve9(rawBundle));
+    const abs = this.places.contextForm(resolve10(rawBundle));
     const b = bundleOf(abs);
     if (!b || b.root !== abs || b.inner !== "")
       throw new SessionError(`${this.display(abs)} is not a bundle's folder`, 400);
-    const entry = this.core.m.context.find((e) => e.membership === "mirrored" && abs.startsWith(e.root + sep16) && findNode(e.nodes, toPosix(relative13(e.root, abs)))?.kind === "bundle");
+    const entry = this.core.m.context.find((e) => e.membership === "mirrored" && abs.startsWith(e.root + sep17) && findNode(e.nodes, toPosix(relative15(e.root, abs)))?.kind === "bundle");
     if (!entry)
       throw new SessionError(`${this.display(abs)} is not a bundle a set shows`, 404);
     this.places.realInsideOrDie(abs, entry, "not written into");
     this.places.notOwnPlaceOrDie(abs);
-    const assets = join17(abs, "assets");
+    const assets = join19(abs, "assets");
     let st = null;
     try {
       st = lstatSync8(assets);
@@ -27099,13 +27398,13 @@ ${o.root}` : undefined;
   importImageIntoBundle(rawBundle, name, bytes, how = "drop") {
     this.imageBytesOrDie(name, bytes);
     const { assets } = this.bundleAssetsOrDie(rawBundle);
-    let given = basename14(name);
+    let given = basename16(name);
     if (how === "paste") {
       const type = sniffImage(bytes.subarray(0, 32));
-      given = `${given.slice(0, given.length - extname3(given).length)}${EXTENSION_OF[type]}`;
+      given = `${given.slice(0, given.length - extname4(given).length)}${EXTENSION_OF[type]}`;
     }
     const file = this.placing.freeImageName(assets, given);
-    const abs = join17(assets, file);
+    const abs = join19(assets, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     return { path: abs, card: `./assets/${file}` };
   }
@@ -27118,24 +27417,24 @@ ${o.root}` : undefined;
       closeSync6(f.fd);
     }
     const { assets } = this.bundleAssetsOrDie(rawBundle);
-    if (f.abs.startsWith(assets + sep16))
-      throw new SessionError(`${basename14(f.abs)} is already this board's own`, 400);
-    const file = this.placing.freeImageName(assets, basename14(f.abs));
-    const abs = join17(assets, file);
+    if (f.abs.startsWith(assets + sep17))
+      throw new SessionError(`${basename16(f.abs)} is already this board's own`, 400);
+    const file = this.placing.freeImageName(assets, basename16(f.abs));
+    const abs = join19(assets, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const from = sidecarOf(f.abs);
     const to = sidecarOf(abs);
     let sidecar;
     try {
-      if (lstatSync8(from).isFile() && !existsSync5(to)) {
-        this.places.world.writeFile(to, readFileSync11(from), { flag: "wx" });
+      if (lstatSync8(from).isFile() && !existsSync7(to)) {
+        this.places.world.writeFile(to, readFileSync14(from), { flag: "wx" });
         sidecar = to;
       }
     } catch {}
     return { path: abs, card: `./assets/${file}`, ...sidecar ? { sidecar } : {} };
   }
   importImageBeside(rawDoc, name, bytes, how) {
-    const doc = this.places.contextForm(resolve9(rawDoc));
+    const doc = this.places.contextForm(resolve10(rawDoc));
     const item = this.places.itemOrDie(doc);
     if (item.dir || docFormat(doc) !== "markdown" || !isDocName(doc))
       throw new SessionError(`${this.display(doc)} is not a markdown document to embed in`, 400);
@@ -27143,11 +27442,11 @@ ${o.root}` : undefined;
     let file = name;
     if (how === "paste") {
       const type = sniffImage(bytes.subarray(0, 32));
-      file = `${file.slice(0, file.length - extname3(file).length)}${EXTENSION_OF[type]}`;
+      file = `${file.slice(0, file.length - extname4(file).length)}${EXTENSION_OF[type]}`;
     }
     const dir = this.imagesDirBeside(doc);
     file = this.placing.freeImageName(dir, file);
-    const abs = join17(dir, file);
+    const abs = join19(dir, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const set = this.places.coveringEntry(abs);
     if (set)
@@ -27158,17 +27457,17 @@ ${o.root}` : undefined;
     return { path: abs, doc, href: relativeHref(doc, abs) };
   }
   imagesDirBeside(doc) {
-    const docDir = dirname16(doc);
+    const docDir = dirname18(doc);
     this.places.notOwnPlaceOrDie(docDir);
-    const dir = join17(docDir, IMAGES_DIR);
+    const dir = join19(docDir, IMAGES_DIR);
     const set = this.places.coveringEntry(docDir);
     if (!set && !this.isWorkspace(docDir))
       throw new SessionError(`${this.display(doc)} is not in a set${this.hasHome ? " or in the workspace folder" : ""}, so an image has nowhere of the session's to go beside it: move the document into one first`, 400);
     if (set) {
       const real = realOr3(docDir);
       const root = rootReal(set);
-      if (real !== root && !real.startsWith(root + sep16))
-        throw new SessionError(`${this.display(docDir)} leads outside ${set.label} through a link: an image cannot go beside ${basename14(doc)}`, 400);
+      if (real !== root && !real.startsWith(root + sep17))
+        throw new SessionError(`${this.display(docDir)} leads outside ${set.label} through a link: an image cannot go beside ${basename16(doc)}`, 400);
     }
     let st = null;
     try {
@@ -27181,7 +27480,7 @@ ${o.root}` : undefined;
       if (set)
         this.rescan(set.id);
     } else if (!st.isDirectory() && !(set && st.isSymbolicLink()))
-      throw new SessionError(`${this.display(dir)} is already there and is not a folder: rename it to bring images in beside ${basename14(doc)}`, 409);
+      throw new SessionError(`${this.display(dir)} is already there and is not a folder: rename it to bring images in beside ${basename16(doc)}`, 409);
     if (!set)
       return dir;
     try {
@@ -27203,14 +27502,14 @@ ${o.root}` : undefined;
   }
   replaceTargetOrDie(name, rawDir) {
     const dir = this.imageDestinationOrDie(rawDir);
-    const abs = join17(dir, name);
+    const abs = join19(dir, name);
     if (!this.media.imageNodeAt(abs)) {
       if (!this.places.coveringEntry(dir) && !this.places.itemAt(abs) && isImageName(abs)) {
         let st = null;
         try {
           st = lstatSync8(abs);
         } catch {}
-        if (st?.isFile() && realOr3(abs) === join17(realOr3(dir), name)) {
+        if (st?.isFile() && realOr3(abs) === join19(realOr3(dir), name)) {
           const fd = openNoFollow(abs);
           if (fd !== null) {
             let type = null;
@@ -27233,8 +27532,8 @@ ${o.root}` : undefined;
   }
   stageImage(target, name, bytes) {
     this.imageBytesOrDie(name, bytes);
-    this.places.notOwnPlaceOrDie(dirname16(target));
-    const staged = join17(dirname16(target), `.${basename14(target)}.incoming-${randHex(4)}`);
+    this.places.notOwnPlaceOrDie(dirname18(target));
+    const staged = join19(dirname18(target), `.${basename16(target)}.incoming-${randHex(4)}`);
     this.places.world.writeFile(staged, bytes, { flag: "wx" });
     return staged;
   }
@@ -27255,7 +27554,7 @@ ${o.root}` : undefined;
   }
   static TRASH_COUNT_CAP = 1e4;
   trashPreview(rawPath) {
-    if (!isAbsolute11(rawPath))
+    if (!isAbsolute12(rawPath))
       throw new SessionError(`"${rawPath}" is not a full path`, 400);
     const item = this.places.itemOrDie(rawPath);
     this.places.notOwnSourceOrDie(item.abs);
@@ -27268,8 +27567,8 @@ ${o.root}` : undefined;
     } catch {
       throw new SessionError(`${item.abs} is not on disk`, 404);
     }
-    const within = (p, root) => p === root || p.startsWith(root + sep16);
-    const real = join17(realOr3(dirname16(item.abs)), basename14(item.abs));
+    const within = (p, root) => p === root || p.startsWith(root + sep17);
+    const real = join19(realOr3(dirname18(item.abs)), basename16(item.abs));
     if (!within(real, rootReal(item.entry)))
       throw new SessionError(`${shown} leads outside ${item.entry.label} through a link: delete it in your file manager if you mean to`, 409);
     const holds = (p) => within(p, item.abs) || within(realOr3(p), real);
@@ -27309,7 +27608,7 @@ ${o.root}` : undefined;
               truncated = true;
               break walk;
             }
-            const p = join17(at, name);
+            const p = join19(at, name);
             let isDir = false;
             try {
               isDir = lstatSync8(p).isDirectory();
@@ -27325,11 +27624,11 @@ ${o.root}` : undefined;
     const sidecar = dir || link ? null : this.sidecars.sidecarFileOf(item.abs);
     if (sidecar)
       files++;
-    const inside = (p) => p === item.abs || p.startsWith(item.abs + sep16) || sidecar !== null && p === sidecar;
+    const inside = (p) => p === item.abs || p.startsWith(item.abs + sep17) || sidecar !== null && p === sidecar;
     const docs = this.core.m.docs.filter((d) => inside(d.original) && !d.missing).map((d) => ({
       slug: d.slug,
-      name: this.docName(d),
-      unsaved: this.isDirty(d),
+      name: this.documents.docName(d),
+      unsaved: this.documents.isDirty(d),
       versions: d.versions.length,
       open: this.core.m.openDoc === d.slug
     }));
@@ -27352,7 +27651,7 @@ ${o.root}` : undefined;
     };
   }
   trashed(path) {
-    const inside = (p) => p === path || p.startsWith(path + sep16);
+    const inside = (p) => p === path || p.startsWith(path + sep17);
     const docs = [];
     let closed = null;
     for (const d of this.core.m.docs) {
@@ -27383,7 +27682,7 @@ ${o.root}` : undefined;
   }
   rescanAround(abs) {
     for (const e of this.core.m.context)
-      if (e.membership === "mirrored" && abs.startsWith(e.root + sep16))
+      if (e.membership === "mirrored" && abs.startsWith(e.root + sep17))
         this.rescan(e.id);
     const listed = this.listedBundleHolding(abs);
     if (listed)
@@ -27399,15 +27698,15 @@ ${o.root}` : undefined;
       kind: "original.missing",
       doc: d.slug,
       original: d.original,
-      folder: !existsSync5(dirname16(d.original))
+      folder: !existsSync7(dirname18(d.original))
     };
   }
   originalsUnder(abs) {
     const out = [];
     for (const d of this.core.m.docs) {
-      if (d.original !== abs && !d.original.startsWith(abs + sep16))
+      if (d.original !== abs && !d.original.startsWith(abs + sep17))
         continue;
-      const there = existsSync5(d.original);
+      const there = existsSync7(d.original);
       if (!d.missing && !there) {
         const ev = this.markMissing(d);
         if (ev)
@@ -27421,22 +27720,19 @@ ${o.root}` : undefined;
     return out;
   }
   revert(slug) {
-    const d = this.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     let text;
     try {
-      text = readFileSync11(d.original, "utf8");
+      text = readFileSync14(d.original, "utf8");
     } catch {
       throw new SessionError(`${d.original} is gone from disk: there is no file to revert to`, 409);
     }
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
-    this.writeActive(d, text);
+    this.documents.writeActive(d, text);
     this.persist();
     return { version: d.active, text };
-  }
-  isDirty(d) {
-    return (this.activeHash.get(d.slug) ?? "") !== d.originalHash;
   }
   onFileEvents(abs) {
     const ev = this.onFileEvent(abs);
@@ -27446,13 +27742,13 @@ ${o.root}` : undefined;
     if (!this.core.m.docs.some((d) => d.original === abs))
       return out;
     const bundle = this.shownBundleOf(abs);
-    if (bundle && existsSync5(abs))
+    if (bundle && existsSync7(abs))
       out.push({ kind: "bundle", path: bundle, file: abs });
     return out;
   }
   onFileEvent(abs) {
-    if (abs.startsWith(this.docsDir + sep16)) {
-      const rest = abs.slice(this.docsDir.length + 1).split(sep16);
+    if (abs.startsWith(this.docsDir + sep17)) {
+      const rest = abs.slice(this.docsDir.length + 1).split(sep17);
       if (rest.length !== 2)
         return null;
       const [slug, file] = rest;
@@ -27463,7 +27759,7 @@ ${o.root}` : undefined;
       const n = Number(match[1]);
       let text;
       try {
-        text = readFileSync11(abs, "utf8");
+        text = readFileSync14(abs, "utf8");
       } catch {
         return null;
       }
@@ -27471,7 +27767,7 @@ ${o.root}` : undefined;
         return null;
       if (!d.versions.some((v) => v.n === n)) {
         if (n < d.nextVersion) {
-          const next = this.takeVersion(d);
+          const next = this.documents.takeVersion(d);
           const to = this.core.versionPath(d, next);
           this.writes.own(to, text);
           this.own.rename(abs, this.places.ownFileOrDie(to));
@@ -27488,8 +27784,8 @@ ${o.root}` : undefined;
         return { kind: "version.created", doc: d.slug, version: n, path: abs };
       }
       if (n === d.active) {
-        const kept = this.preserveOutside(d, text);
-        this.writeActive(d, this.lastActiveText.get(d.slug) ?? text);
+        const kept = this.documents.preserveOutside(d, text);
+        this.documents.writeActive(d, this.documents.lastActiveText.get(d.slug) ?? text);
         return {
           kind: "active.outside",
           doc: d.slug,
@@ -27506,7 +27802,7 @@ ${o.root}` : undefined;
     if (d) {
       let text;
       try {
-        text = readFileSync11(abs, "utf8");
+        text = readFileSync14(abs, "utf8");
       } catch {
         return null;
       }
@@ -27526,10 +27822,10 @@ ${o.root}` : undefined;
       }
       if (h === d.originalHash)
         return null;
-      const clean = !this.isDirty(d);
+      const clean = !this.documents.isDirty(d);
       if (clean) {
         d.originalHash = h;
-        this.writeActive(d, text);
+        this.documents.writeActive(d, text);
         this.persist();
         return {
           kind: "original.reloaded",
@@ -27547,7 +27843,7 @@ ${o.root}` : undefined;
       return { kind: "original.conflict", doc: d.slug, original: d.original };
     }
     const bundle = this.shownBundleOf(abs);
-    if (bundle && existsSync5(bundle)) {
+    if (bundle && existsSync7(bundle)) {
       this.rescanAround(bundle);
       this.refreshListed(bundle);
       if (this.writes.isOwnBundleEcho(bundle))
@@ -27555,7 +27851,7 @@ ${o.root}` : undefined;
       return { kind: "bundle", path: bundle, file: abs };
     }
     for (const e of this.core.m.context) {
-      if (e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep16))) {
+      if (e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep17))) {
         return this.rescan(e.id) ? { kind: "tree", entryId: e.id } : null;
       }
     }
@@ -27570,70 +27866,6 @@ ${o.root}` : undefined;
         if (at === b.root)
           return at;
     return null;
-  }
-  followMove(from, to) {
-    this.moves.push([from, to]);
-    if (this.moves.length > MOVES_KEPT)
-      this.moves.splice(0, this.moves.length - MOVES_KEPT);
-    const moved = (p) => p === from ? to : p.startsWith(from + sep16) ? to + p.slice(from.length) : null;
-    for (const d of this.core.m.docs) {
-      const now = moved(d.original);
-      if (now) {
-        d.original = now;
-        d.name = basename14(now);
-      }
-    }
-    this.viewer.followMove(moved);
-    if (this.core.m.importedAs) {
-      const names = {};
-      for (const [p, n] of Object.entries(this.core.m.importedAs)) {
-        const now = moved(p);
-        if (now)
-          names[now] = n;
-        else if (p !== to && !p.startsWith(to + sep16))
-          names[p] = n;
-      }
-      this.core.m.importedAs = names;
-    }
-    const drop = new Set;
-    for (const e of this.core.m.context) {
-      if (e.membership === "listed") {
-        const only = listedFile(e);
-        if (!only)
-          continue;
-        const now = moved(only.abs);
-        if (!now)
-          continue;
-        if (this.places.coveringEntry(now, e.id))
-          drop.add(e.id);
-        else {
-          e.root = dirname16(now);
-          e.realRoot = realOr3(e.root);
-          e.label = basename14(now);
-          const bundle = only.kind === "bundle" ? bundleTypeOf(now) : null;
-          e.nodes = [
-            only.kind === "image" ? { kind: "image", rel: basename14(now) } : bundle ? bundleNode(basename14(now), now, bundle) : docNode(basename14(now), now)
-          ];
-        }
-      } else {
-        const now = moved(e.root);
-        if (!now)
-          continue;
-        if (this.places.coveringEntry(now, e.id))
-          drop.add(e.id);
-        else {
-          e.root = now;
-          e.realRoot = realOr3(now);
-          e.label = basename14(now) || now;
-        }
-      }
-    }
-    this.core.m.context = this.core.m.context.filter((e) => !drop.has(e.id));
-    for (const e of this.core.m.context)
-      if (e.membership === "mirrored")
-        this.rescan(e.id);
-    this.refreshListedContents();
-    this.relink();
   }
   listedBundleHolding(abs) {
     const b = bundleOf(abs);
@@ -27657,7 +27889,7 @@ ${o.root}` : undefined;
     const dir = this.places.destinationOrDie(rawDir);
     const wanted = name === undefined ? "Untitled.md" : this.places.docNameOrDie(name);
     const file = name === undefined || opts.free === true ? this.placing.freeName(dir, wanted, false) : wanted;
-    const abs = join17(dir, file);
+    const abs = join19(dir, file);
     this.placing.refuseExisting(abs);
     if (opts.text !== undefined && Buffer.byteLength(opts.text) > WorkspaceSession.IMPORT_MAX_BYTES)
       throw new SessionError(`a new document's text is larger than ${WorkspaceSession.IMPORT_MAX_BYTES / 1024 / 1024} MB: not created`, 400);
@@ -27673,7 +27905,7 @@ ${o.root}` : undefined;
     const makesSet = !this.places.coveringEntry(dir) && this.isWorkspace(dir);
     const folder = name === undefined ? this.placing.freeName(dir, makesSet ? "New set" : "New folder", true) : this.places.nameOrDie(name);
     this.refuseBundleName(folder, "a new folder");
-    const abs = join17(dir, folder);
+    const abs = join19(dir, folder);
     this.placing.refuseExisting(abs);
     this.places.world.mkdir(abs);
     this.placing.adoptNew(abs);
@@ -27690,30 +27922,30 @@ ${o.root}` : undefined;
       throw new SessionError(`a ${type.label} is not made inside the ${holder.type.label} ${bundleNameAt(holder.root)}: make it beside it`, 409);
     const given = name === undefined ? null : this.places.nameOrDie(name);
     const folder = given === null ? this.placing.freeName(dir, `Untitled${type.extension}`, false) : bundleTypeOf(given) === type ? given : fitName(given, type.extension);
-    const abs = join17(dir, folder);
+    const abs = join19(dir, folder);
     this.placing.refuseExisting(abs);
     this.writes.wroteBundle(abs);
     this.places.world.mkdir(abs);
-    this.places.world.writeFile(join17(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
+    this.places.world.writeFile(join19(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
       flag: "wx"
     });
-    this.places.world.writeFile(join17(abs, type.main), type.mainTemplate, { flag: "wx" });
+    this.places.world.writeFile(join19(abs, type.main), type.mainTemplate, { flag: "wx" });
     this.placing.adoptNew(abs);
     this.persist();
     return { path: abs, hash: treeHash(abs) };
   }
   duplicate(rawPath) {
     const item = this.places.itemOrDie(rawPath);
-    this.places.notOwnPlaceOrDie(dirname16(item.abs));
+    this.places.notOwnPlaceOrDie(dirname18(item.abs));
     const isDoc = !item.dir && isDocName(item.abs) && !isImageName(item.abs);
     if (!item.bundle && !isDoc)
       throw new SessionError(`${this.display(item.abs)} cannot be duplicated: only a document or a bundle can`, 400);
     if (lstatSync8(item.abs).isSymbolicLink())
       throw new SessionError(`${this.display(item.abs)} is a link to ${tilde(realOr3(item.abs))}: duplicate it where it really is`, 409);
-    const dir = dirname16(item.abs);
-    const ext = item.bundle ? item.bundle.extension : extname3(item.abs);
-    const { name, suffix } = copyName(dir, basename14(item.abs), ext);
-    const to = join17(dir, name);
+    const dir = dirname18(item.abs);
+    const ext = item.bundle ? item.bundle.extension : extname4(item.abs);
+    const { name, suffix } = copyName(dir, basename16(item.abs), ext);
+    const to = join19(dir, name);
     const refused = (e) => new SessionError(`cannot copy ${this.display(item.abs)}: ${e.code ?? String(e)}`, 409);
     if (item.bundle) {
       this.writes.wroteBundle(to);
@@ -27726,7 +27958,7 @@ ${o.root}` : undefined;
       }
       try {
         for (const name of readdirSync8(item.abs))
-          this.places.world.cp(join17(item.abs, name), join17(to, name), {
+          this.places.world.cp(join19(item.abs, name), join19(to, name), {
             recursive: true,
             errorOnExist: true,
             force: false,
@@ -27739,9 +27971,9 @@ ${o.root}` : undefined;
         throw refused(e);
       }
       const info = readBundleInfo(to);
-      const title = typeof info?.title === "string" ? info.title : bundleStem(basename14(item.abs));
+      const title = typeof info?.title === "string" ? info.title : bundleStem(basename16(item.abs));
       if (info !== null)
-        this.places.world.writeFile(join17(to, BUNDLE_INFO), writeBundleInfo(info, item.bundle, { title: `${uncopied(title)}${suffix}` }));
+        this.places.world.writeFile(join19(to, BUNDLE_INFO), writeBundleInfo(info, item.bundle, { title: `${uncopied(title)}${suffix}` }));
     } else {
       this.placing.refuseExisting(to);
       try {
@@ -27757,17 +27989,17 @@ ${o.root}` : undefined;
     return { path: to, from: item.abs, hash: treeHash(to), dir: item.bundle !== undefined };
   }
   move(rawPath, rawInto, opts = {}) {
-    if (opts.back && !existsSync5(resolve9(rawPath)))
-      throw new GoneError(`${tilde(resolve9(rawPath))} is gone: the move this would undo cannot go back`, 409);
+    if (opts.back && !existsSync7(resolve10(rawPath)))
+      throw new GoneError(`${tilde(resolve10(rawPath))} is gone: the move this would undo cannot go back`, 409);
     const item = this.places.itemOrDie(rawPath);
     if (!item.dir)
       this.refuseLoneSidecar(item.abs, "move");
     const into = opts.back ? this.places.folderOrDie(rawInto) : this.places.destinationOrDie(rawInto);
-    if (into === item.abs || into.startsWith(item.abs + sep16))
+    if (into === item.abs || into.startsWith(item.abs + sep17))
       throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
-    if (dirname16(item.abs) === into)
+    if (dirname18(item.abs) === into)
       throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
-    const to = join17(into, basename14(item.abs));
+    const to = join19(into, basename16(item.abs));
     this.placing.refuseExisting(to);
     const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
@@ -27779,9 +28011,9 @@ ${o.root}` : undefined;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo)
       this.carrySidecar(item.abs, to, sidecar, sidecarTo);
-    this.followMove(item.abs, to);
+    this.follow.followMove(item.abs, to);
     if (sidecar && sidecarTo)
-      this.followMove(sidecar, sidecarTo);
+      this.follow.followMove(sidecar, sidecarTo);
     if (!this.places.itemAt(to))
       this.placing.adoptNew(to);
     if (sidecarTo && sidecarShown && !this.places.itemAt(sidecarTo))
@@ -27803,11 +28035,11 @@ ${o.root}` : undefined;
     if (!item.dir)
       this.refuseLoneSidecar(item.abs, "move");
     const into = this.places.destinationOrDie(rawInto);
-    if (into === item.abs || into.startsWith(item.abs + sep16))
+    if (into === item.abs || into.startsWith(item.abs + sep17))
       throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
-    if (dirname16(item.abs) === into)
+    if (dirname18(item.abs) === into)
       throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
-    const to = join17(into, basename14(item.abs));
+    const to = join19(into, basename16(item.abs));
     this.placing.refuseExisting(to);
     const sidecar = item.dir ? null : this.sidecars.sidecarFileOf(item.abs);
     const sidecarTo = sidecar ? sidecarOf(to) : null;
@@ -27823,12 +28055,12 @@ ${o.root}` : undefined;
     ];
     const world = this.planWorld(movedWorld(pairs), adopted);
     const plan = this.planRelink(pins, pairs, world);
-    const docs = item.dir ? [...this.places.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep16)).length : 1;
+    const docs = item.dir ? [...this.places.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep17)).length : 1;
     return {
       from: item.abs,
       to,
       into,
-      name: basename14(item.abs),
+      name: basename16(item.abs),
       folder: item.dir,
       docs,
       ...sidecarTo ? { sidecar: sidecarTo } : {},
@@ -27849,34 +28081,34 @@ ${o.root}` : undefined;
       const now = world.forward(was);
       if (now !== was && this.places.coveringEntry(now, e.id))
         continue;
-      entries.push({ e: { ...e, root: only ? dirname16(now) : now }, file: only ? now : null });
+      entries.push({ e: { ...e, root: only ? dirname18(now) : now }, file: only ? now : null });
     }
     for (const p of adopted) {
-      const shown = entries.some(({ e, file }) => file !== null ? p === file || p.startsWith(file + sep16) : e.membership === "mirrored" && (p === e.root || p.startsWith(e.root + sep16)));
+      const shown = entries.some(({ e, file }) => file !== null ? p === file || p.startsWith(file + sep17) : e.membership === "mirrored" && (p === e.root || p.startsWith(e.root + sep17)));
       if (shown)
         continue;
       const at = world.back(p);
       let dir = false;
       try {
-        dir = at !== null && statSync13(at).isDirectory();
+        dir = at !== null && statSync14(at).isDirectory();
       } catch {
         continue;
       }
       const set = dir && bundleTypeOf(p) === null;
       const e = {
         id: `c-plan-${entries.length}`,
-        label: basename14(p),
-        root: set ? p : dirname16(p),
+        label: basename16(p),
+        root: set ? p : dirname18(p),
         membership: set ? "mirrored" : "listed",
         nodes: [],
-        realRoot: set ? p : dirname16(p)
+        realRoot: set ? p : dirname18(p)
       };
       entries.push({ e, file: set ? null : p });
     }
     return { ...world, entries };
   }
   listedAfter(path, world) {
-    return world.entries.findIndex(({ e, file }) => file !== null ? path === file || path.startsWith(file + sep16) : path.startsWith(e.root + sep16));
+    return world.entries.findIndex(({ e, file }) => file !== null ? path === file || path.startsWith(file + sep17) : path.startsWith(e.root + sep17));
   }
   entryAfter(path, world, entryOf) {
     if (world.back(path) === path) {
@@ -27886,7 +28118,7 @@ ${o.root}` : undefined;
     const at = this.listedAfter(path, world);
     if (at >= 0)
       return world.entries[at]?.e;
-    return world.entries.find(({ e }) => path.startsWith(e.root + sep16))?.e;
+    return world.entries.find(({ e }) => path.startsWith(e.root + sep17))?.e;
   }
   docsAfter(index, world) {
     if (world.docs)
@@ -27902,7 +28134,7 @@ ${o.root}` : undefined;
       const e = world.entries[a.at]?.e;
       if (!e)
         return a.i - b.i;
-      return treeOrder(relative13(e.root, a.d.path), relative13(e.root, b.d.path)) || a.i - b.i;
+      return treeOrder(relative15(e.root, a.d.path), relative15(e.root, b.d.path)) || a.i - b.i;
     });
     world.docs = keyed.map((k) => k.d);
     return world.docs;
@@ -27910,7 +28142,7 @@ ${o.root}` : undefined;
   pinEdges(moved) {
     if (!this.readIndex.appEdges)
       return [];
-    const under = (p) => moved.some((m) => p === m || p.startsWith(m + sep16));
+    const under = (p) => moved.some((m) => p === m || p.startsWith(m + sep17));
     const index = this.places.contextIndex();
     const entryOf = this.readIndex.entryFinder(index);
     const read = new Set;
@@ -27967,10 +28199,10 @@ ${o.root}` : undefined;
       this.refuseBundleName(next, "a folder");
     if (!item.dir && isImageName(item.abs)) {
       if (!isImageName(next))
-        next += extname3(item.abs);
+        next += extname4(item.abs);
     } else if (!item.dir && !isDocName(next))
-      next += extname3(item.abs) || ".md";
-    const to = join17(dirname16(item.abs), next);
+      next += extname4(item.abs) || ".md";
+    const to = join19(dirname18(item.abs), next);
     if (to === item.abs)
       return { path: to, from: item.abs };
     const caseOnly = to.toLowerCase() === item.abs.toLowerCase();
@@ -27984,9 +28216,9 @@ ${o.root}` : undefined;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo)
       this.carrySidecar(item.abs, to, sidecar, sidecarTo);
-    this.followMove(item.abs, to);
+    this.follow.followMove(item.abs, to);
     if (sidecar && sidecarTo)
-      this.followMove(sidecar, sidecarTo);
+      this.follow.followMove(sidecar, sidecarTo);
     const seeded = item.dir ? undefined : this.seedJson(item.abs, to);
     this.persist();
     const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, sidecar, sidecarTo)) : null;
@@ -28007,7 +28239,7 @@ ${o.root}` : undefined;
     const before = readBundleInfo(from);
     const titleFrom = typeof before?.title === "string" ? before.title : undefined;
     const titleTo = before === null ? titleFrom : opts.title === null ? undefined : opts.title ?? (exact ? bundleStem(given) : given);
-    const to = join17(dirname16(from), folder);
+    const to = join19(dirname18(from), folder);
     const caseOnly = to !== from && to.toLowerCase() === from.toLowerCase();
     if (to !== from && !caseOnly)
       this.placing.refuseExisting(to);
@@ -28015,11 +28247,11 @@ ${o.root}` : undefined;
     if (to !== from) {
       this.renameOrDie(from, to);
       this.writes.wroteBundle(to);
-      this.followMove(from, to);
+      this.follow.followMove(from, to);
     }
     if (titleTo !== titleFrom) {
       this.writes.wroteBundle(to);
-      this.places.world.writeFile(join17(to, BUNDLE_INFO), writeBundleInfo(before, type, { title: titleTo }));
+      this.places.world.writeFile(join19(to, BUNDLE_INFO), writeBundleInfo(before, type, { title: titleTo }));
       this.rescanAround(to);
       this.refreshListed(to);
     }
@@ -28050,7 +28282,7 @@ ${o.root}` : undefined;
       const type = bundleTypeOf(abs);
       if (!type)
         continue;
-      const nodes = [bundleNode(basename14(abs), abs, type)];
+      const nodes = [bundleNode(basename16(abs), abs, type)];
       const changed = JSON.stringify(nodes) !== JSON.stringify(e.nodes);
       e.nodes = nodes;
       if (changed && type.expand)
@@ -28061,7 +28293,7 @@ ${o.root}` : undefined;
     if (docFormat(to) !== "json" || docFormat(from) === "json")
       return null;
     try {
-      if (statSync13(to).size !== 0)
+      if (statSync14(to).size !== 0)
         return null;
     } catch {
       return null;
@@ -28069,19 +28301,19 @@ ${o.root}` : undefined;
     const text = `{}
 `;
     const d = this.core.m.docs.find((x) => x.original === to);
-    if (d && this.activeText(d) !== "")
+    if (d && this.documents.activeText(d) !== "")
       return null;
     this.writes.writeOwned(to, text, this.places.world);
     if (!d)
       return null;
-    this.edit(d.slug, d.active, text);
+    this.documents.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
     return { doc: d.slug, version: d.active, text };
   }
   pinLinks(moved) {
-    const under = (p) => moved.some((m) => p === m || p.startsWith(m + sep16));
+    const under = (p) => moved.some((m) => p === m || p.startsWith(m + sep17));
     const index = this.places.contextIndex();
     const entryOf = this.readIndex.entryFinder(index);
     const read = new Set;
@@ -28132,7 +28364,7 @@ ${o.root}` : undefined;
       for (const [a, b] of pairs) {
         if (p === a)
           return b;
-        if (p.startsWith(a + sep16))
+        if (p.startsWith(a + sep17))
           return b + p.slice(a.length);
       }
       return p;
@@ -28192,11 +28424,11 @@ ${o.root}` : undefined;
     return { fixes: [...byDoc.values()], wiki };
   }
   rebaseCopy(text, src, dest, copies) {
-    const holders = this.core.m.context.filter((e) => src.startsWith(e.root + sep16));
+    const holders = this.core.m.context.filter((e) => src.startsWith(e.root + sep17));
     const root = holders.sort((a, b) => b.root.length - a.root.length)[0]?.root ?? null;
     const stat = (p) => {
       try {
-        return statSync13(p);
+        return statSync14(p);
       } catch {
         return null;
       }
@@ -28227,7 +28459,7 @@ ${o.root}` : undefined;
       }
       const read = (p) => {
         try {
-          return readFileSync11(p, "utf8");
+          return readFileSync14(p, "utf8");
         } catch {
           return null;
         }
@@ -28271,11 +28503,11 @@ ${o.root}` : undefined;
         }
         let activeCount = heldCount ?? 0;
         if (heldCount === undefined) {
-          const was = this.activeText(d);
+          const was = this.documents.activeText(d);
           const active = swapIn(was);
           activeCount = active.count;
           if (active.count > 0) {
-            this.writeActive(d, active.text);
+            this.documents.writeActive(d, active.text);
             texts.push({ doc: d.slug, version: d.active, text: active.text, was });
           }
         }
@@ -28314,10 +28546,10 @@ ${o.root}` : undefined;
     }
   }
   removeCreated(rawPath, dir) {
-    const abs = this.places.notOwnSourceOrDie(resolve9(rawPath));
+    const abs = this.places.notOwnSourceOrDie(resolve10(rawPath));
     let st;
     try {
-      st = statSync13(abs);
+      st = statSync14(abs);
     } catch {
       return { path: abs, removed: false };
     }
@@ -28335,13 +28567,13 @@ ${o.root}` : undefined;
     return { path: abs, removed: true };
   }
   forgetPath(abs) {
-    const inside = (p) => p === abs || p.startsWith(abs + sep16);
+    const inside = (p) => p === abs || p.startsWith(abs + sep17);
     for (const e of [...this.core.m.context]) {
       if (e.membership === "mirrored" && !inside(e.root)) {
         this.rescan(e.id);
         continue;
       }
-      const prune = (nodes) => nodes.filter((n) => !inside(join17(e.root, n.rel))).map((n) => n.kind === "group" ? { ...n, children: prune(n.children) } : n);
+      const prune = (nodes) => nodes.filter((n) => !inside(join19(e.root, n.rel))).map((n) => n.kind === "group" ? { ...n, children: prune(n.children) } : n);
       e.nodes = prune(e.nodes);
       if (e.nodes.length === 0 || inside(e.root))
         this.removeContext(e.id);
@@ -28360,12 +28592,12 @@ ${o.root}` : undefined;
       throw new SessionError(`${this.display(item.abs)} is already in a set: make a folder there instead`, 400);
     if (listedFile(e)?.kind !== "doc")
       throw new SessionError(`${this.display(item.abs)} is not a document: only a document listed on its own becomes a set`, 400);
-    const parent = dirname16(item.abs);
-    const stem = basename14(item.abs, extname3(item.abs)) || "Untitled";
+    const parent = dirname18(item.abs);
+    const stem = basename16(item.abs, extname4(item.abs)) || "Untitled";
     const name = this.placing.freeName(parent, stem, true);
     this.refuseBundleName(name, "the set's folder");
-    const folder = join17(parent, name);
-    const to = join17(folder, basename14(item.abs));
+    const folder = join19(parent, name);
+    const to = join19(folder, basename16(item.abs));
     this.places.notOwnSourceOrDie(item.abs);
     this.places.mayBeASetOrDie(folder);
     const pins = opts.links ? this.pinLinks([item.abs]) : null;
@@ -28387,10 +28619,10 @@ ${o.root}` : undefined;
     e.membership = "mirrored";
     e.root = folder;
     e.realRoot = realOr3(folder);
-    e.label = basename14(folder);
+    e.label = basename16(folder);
     e.nodes = [];
     delete e.truncated;
-    this.followMove(item.abs, to);
+    this.follow.followMove(item.abs, to);
     this.persist();
     const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, null, null)) : null;
     return {
@@ -28402,20 +28634,20 @@ ${o.root}` : undefined;
     };
   }
   unmakeSet(rawPath) {
-    const abs = this.places.contextForm(resolve9(rawPath));
-    const folder = dirname16(abs);
+    const abs = this.places.contextForm(resolve10(rawPath));
+    const folder = dirname18(abs);
     const e = this.core.m.context.find((x) => x.membership === "mirrored" && x.root === folder);
     let left = null;
     try {
-      left = statSync13(abs).isFile() ? readdirSync8(folder) : null;
+      left = statSync14(abs).isFile() ? readdirSync8(folder) : null;
     } catch {
       left = null;
     }
     if (!e || left === null)
       throw new GoneError(`${tilde(abs)} is no longer a document in a set of its own: it cannot be turned back`, 409);
     if (left.length !== 1)
-      throw new SessionError(`${this.display(folder)} holds more than ${basename14(abs)} now (${left.length} items): move the rest out first`, 409, left.slice(0, 10));
-    const to = join17(dirname16(folder), basename14(abs));
+      throw new SessionError(`${this.display(folder)} holds more than ${basename16(abs)} now (${left.length} items): move the rest out first`, 409, left.slice(0, 10));
+    const to = join19(dirname18(folder), basename16(abs));
     this.places.mayBeASetOrDie(to, true);
     this.placing.refuseExisting(to);
     this.renameOrDie(abs, to);
@@ -28423,25 +28655,25 @@ ${o.root}` : undefined;
       this.places.world.rmdir(folder);
     } catch {}
     e.membership = "listed";
-    e.root = dirname16(to);
+    e.root = dirname18(to);
     e.realRoot = realOr3(e.root);
-    e.label = basename14(to);
-    e.nodes = [docNode(basename14(to), to)];
+    e.label = basename16(to);
+    e.nodes = [docNode(basename16(to), to)];
     delete e.truncated;
-    this.followMove(abs, to);
+    this.follow.followMove(abs, to);
     this.persist();
     return { path: to, from: abs, folder, entry: e.id };
   }
   addFolder(rawPath) {
-    const raw = resolve9(rawPath);
-    const name = basename14(raw);
-    const abs = join17(this.places.contextForm(dirname16(raw)), name);
+    const raw = resolve10(rawPath);
+    const name = basename16(raw);
+    const abs = join19(this.places.contextForm(dirname18(raw)), name);
     this.places.notOwnPlaceOrDie(raw, 400);
     this.places.notOwnPlaceOrDie(abs, 400);
     if (this.places.nameOrDie(name) !== name)
       throw new SessionError(`"${name}" is not a usable name: no space at either end`, 400);
     this.refuseBundleName(name, "a new folder");
-    const parent = dirname16(abs);
+    const parent = dirname18(abs);
     let shown = false;
     try {
       this.places.destinationOrDie(parent);
@@ -28451,19 +28683,19 @@ ${o.root}` : undefined;
         throw err;
     }
     if (!shown) {
-      const real = join17(realOr3(parent), name);
+      const real = join19(realOr3(parent), name);
       const inBundle = bundleOf(abs) ?? bundleOf(real);
       if (inBundle)
         throw new SessionError(`${tilde(abs)} is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`, 409);
-      const sessions = dirname16(this.dir);
+      const sessions = dirname18(this.dir);
       const realSessions = realOr3(sessions);
-      const among = (p, root) => p === root || p.startsWith(root + sep16);
+      const among = (p, root) => p === root || p.startsWith(root + sep17);
       if (among(abs, sessions) || among(real, realSessions))
         throw new SessionError(`${tilde(abs)} is among the sessions' own folders`, 400);
       this.places.mayBeASetOrDie(abs);
       let isDir = false;
       try {
-        isDir = statSync13(parent).isDirectory();
+        isDir = statSync14(parent).isDirectory();
       } catch {
         isDir = false;
       }
@@ -28482,11 +28714,11 @@ ${o.root}` : undefined;
     this.persist();
     const e = this.places.coveringEntry(abs) ?? this.core.m.context.find((x) => {
       const only = listedFile(x);
-      return only?.kind === "bundle" && abs.startsWith(only.abs + sep16);
+      return only?.kind === "bundle" && abs.startsWith(only.abs + sep17);
     });
     return { path: abs, entry: e?.id ?? "", set: e?.root === abs };
   }
-  static IMPORT_MAX_BYTES = 8388608;
+  static IMPORT_MAX_BYTES = 8 * 1024 * 1024;
   importText(name, text, into) {
     const file = this.places.nameOrDie(name);
     if (!isDocName(file))
@@ -28494,7 +28726,7 @@ ${o.root}` : undefined;
     if (Buffer.byteLength(text) > WorkspaceSession.IMPORT_MAX_BYTES)
       throw new SessionError(`${file} is larger than ${WorkspaceSession.IMPORT_MAX_BYTES / 1024 / 1024} MB: not imported`, 400);
     const dir = into ? this.places.destinationOrDie(into) : this.places.workspaceOrDie();
-    const abs = join17(dir, this.placing.freeName(dir, file, false));
+    const abs = join19(dir, this.placing.freeName(dir, file, false));
     this.places.world.writeFile(abs, text, { flag: "wx" });
     this.placing.adoptNew(abs);
     this.persist();
@@ -28530,15 +28762,15 @@ ${o.root}` : undefined;
   docView(d) {
     let hash = "";
     try {
-      hash = contentHash(readFileSync11(this.core.versionPath(d, d.active), "utf8"));
+      hash = contentHash(readFileSync14(this.core.versionPath(d, d.active), "utf8"));
     } catch {
       hash = "";
     }
-    const alias = this.docAlias(d);
+    const alias = this.documents.docAlias(d);
     return {
       slug: d.slug,
       ...alias !== undefined ? { alias } : {},
-      name: this.docName(d),
+      name: this.documents.docName(d),
       original: d.original,
       entryId: d.entryId,
       rel: d.rel,
@@ -28546,15 +28778,15 @@ ${o.root}` : undefined;
       versions: d.versions.map((v) => ({ ...v, path: this.core.versionPath(d, v.n) })),
       active: d.active,
       hash,
-      dirty: !d.missing && this.isDirty(d),
+      dirty: !d.missing && this.documents.isDirty(d),
       outsideChanged: d.outsideChanged,
       ...d.outsideChanged && d.outsideHash ? { outsideHash: d.outsideHash } : {},
-      ...d.missing ? { missing: existsSync5(dirname16(d.original)) ? "file" : "folder" } : {},
-      notes: this.placedNotes(d)
+      ...d.missing ? { missing: existsSync7(dirname18(d.original)) ? "file" : "folder" } : {},
+      notes: this.notes.placedNotes(d)
     };
   }
   doc(slug, opts = {}) {
-    return this.docView(this.docOrDie(slug, opts));
+    return this.docView(this.documents.docOrDie(slug, opts));
   }
   search(opts) {
     return this.searchPart.search(opts);
@@ -28591,45 +28823,6 @@ ${o.root}` : undefined;
   }
   profileCheck() {
     return this.profilesPart.profileCheck();
-  }
-  movedTo(path) {
-    let p = path;
-    for (const [from, to] of this.moves)
-      if (p === from)
-        p = to;
-      else if (p.startsWith(from + sep16))
-        p = to + p.slice(from.length);
-    return p;
-  }
-  movedFrom(path) {
-    let p = path;
-    for (let i = this.moves.length - 1;i >= 0; i--) {
-      const [from, to] = this.moves[i];
-      if (p === to)
-        p = from;
-      else if (p.startsWith(to + sep16))
-        p = from + p.slice(to.length);
-    }
-    return p;
-  }
-  movedTarget(raw, src, wasAt, tried, entry, index) {
-    if (this.moves.length === 0)
-      return;
-    const looked = [...tried];
-    if (wasAt !== src && !raw.startsWith("/"))
-      for (const t of tried)
-        looked.push(join17(dirname16(wasAt), relative13(dirname16(src), t)));
-    for (const at of looked) {
-      const now = this.movedTo(at);
-      if (!existsSync5(now))
-        continue;
-      const written = retarget(raw, src, now, entry?.root ?? null);
-      const r = this.linkResolve.resolveFrom(written, src, entry, "document", index, "markdown");
-      const folderLink = splitTarget(raw).path.endsWith("/");
-      if (r.state !== "missing" && (folderLink || r.state !== "folder"))
-        return written;
-    }
-    return;
   }
   linkCheck(opts = {}) {
     return this.linkCheckPart.linkCheck(opts);
@@ -28678,7 +28871,7 @@ ${o.root}` : undefined;
     const nodes = [];
     for (const e of this.core.m.context)
       for (const p of docPaths(e))
-        nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync5(p) });
+        nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync7(p) });
     const check = this.linkCheck();
     const profiles = this.profileCheck();
     const overlap = this.workspaceOverlap();
@@ -28702,7 +28895,7 @@ ${o.root}` : undefined;
         slug: d.slug,
         name: d.name,
         original: d.original,
-        exists: existsSync5(d.original),
+        exists: existsSync7(d.original),
         versions: d.versions.length
       })),
       nodes
@@ -28721,13 +28914,6 @@ ${o.root}` : undefined;
       tasks: this.tasks()
     };
   }
-}
-function placeNote(text, note) {
-  const at = findAnchor(text, note);
-  if (at.from === null)
-    return { ...note, ...at, fromLine: null, toLine: null };
-  const lines = linesOf(text, at.from, at.to);
-  return { ...note, ...at, fromLine: lines.from, toLine: lines.to };
 }
 
 // src/kit/workspace/tasks.ts
@@ -28969,8 +29155,8 @@ class TaskEngine {
 }
 
 // src/kit/workspace/trash.ts
-import { existsSync as existsSync6 } from "fs";
-import { isAbsolute as isAbsolute12 } from "path";
+import { existsSync as existsSync8 } from "fs";
+import { isAbsolute as isAbsolute13 } from "path";
 var MAC_TRASH = "/usr/bin/trash";
 var MAC_TRASH_JXA = [
   "function run(argv) {",
@@ -28983,9 +29169,9 @@ var MAC_TRASH_JXA = [
 ].join(`
 `);
 function trashCommand(host, path) {
-  if (!isAbsolute12(path))
+  if (!isAbsolute13(path))
     throw new Error(`trash: not an absolute path: ${path}`);
-  const exists = host.exists ?? existsSync6;
+  const exists = host.exists ?? existsSync8;
   const which = host.which ?? ((c) => Bun.which(c));
   if (host.platform === "darwin") {
     if (exists(MAC_TRASH))
@@ -29011,7 +29197,7 @@ function systemTrash(platform) {
     const [err, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
     if (code !== 0)
       throw new Error(`could not move it to the Trash (exit ${code}): ${err.trim() || "no reason given"}`);
-    if (existsSync6(path))
+    if (existsSync8(path))
       throw new Error("the Trash did not take it: it is still there");
   };
 }
@@ -29189,7 +29375,7 @@ function createWorkspaceDaemon(opts) {
   const platform = opts.platform ?? process.platform;
   const timeoutS = opts.timeoutS ?? 1800;
   const sessionId = opts.restore ?? newSessionId();
-  const dir = join18(opts.sessionsRoot, sessionId);
+  const dir = join20(opts.sessionsRoot, sessionId);
   const mode = opts.surface?.distDir ? resolveMode(opts.surface.distDir) : "dev";
   let resolveDone;
   const done = new Promise((r) => {
@@ -29259,7 +29445,7 @@ function createWorkspaceDaemon(opts) {
   async function boot() {
     const devIndex = mode === "dev" ? await opts.surface?.devIndex?.() : undefined;
     const routes = devIndex ? { "/": devIndex } : {};
-    if (opts.restore && existsSync7(join18(opts.sessionsRoot, checkSessionId(opts.restore))))
+    if (opts.restore && existsSync9(join20(opts.sessionsRoot, checkSessionId(opts.restore))))
       lockOrRefuse();
     const session = opts.restore ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore, {
       ...opts.appHome !== undefined ? { appHome: opts.appHome } : {}
@@ -29281,14 +29467,14 @@ function createWorkspaceDaemon(opts) {
       selection = selectionOnScreen(selection, screen());
       return selection;
     };
-    const prefsFile = join18(dirname17(opts.sessionsRoot), "prefs.json");
+    const prefsFile = join20(dirname19(opts.sessionsRoot), "prefs.json");
     const PREF_KEY = /^[a-z][a-z0-9:._-]{0,63}$/;
     const PREF_VALUE_MAX = 4096;
     const PREF_KEYS_MAX = 64;
     const readPrefs = () => {
       const out = {};
       try {
-        const raw = JSON.parse(readFileSync12(prefsFile, "utf8"));
+        const raw = JSON.parse(readFileSync15(prefsFile, "utf8"));
         if (raw && typeof raw === "object" && !Array.isArray(raw)) {
           for (const [k, v] of Object.entries(raw))
             if (PREF_KEY.test(k) && typeof v === "string" && v.length <= PREF_VALUE_MAX)
@@ -29333,7 +29519,7 @@ function createWorkspaceDaemon(opts) {
         count: o.fixes.reduce((n, d) => n + d.fixes.length, 0),
         docs: o.fixes.map((d) => ({
           path: d.path,
-          shown: d.noun ? session.itemName(dirname17(d.path)) : session.display(d.path),
+          shown: d.noun ? session.itemName(dirname19(d.path)) : session.display(d.path),
           fixes: d.fixes,
           ...d.noun ? { noun: d.noun } : {}
         })),
@@ -29538,7 +29724,7 @@ function createWorkspaceDaemon(opts) {
           return {
             path: c.path,
             dir: c.dir,
-            unchanged: c.dir ? treeHash(c.path) : contentHash(readFileSync12(c.path, "utf8"))
+            unchanged: c.dir ? treeHash(c.path) : contentHash(readFileSync15(c.path, "utf8"))
           };
         } catch {
           throw new SessionError(`history.push: ${session.display(c.path)} is not there`, 400);
@@ -29661,7 +29847,7 @@ function createWorkspaceDaemon(opts) {
             if (name && !r.recursive && r.entryId && name.toString() === "_meta")
               resyncSoon();
             if (name)
-              onFs(join18(r.path, name.toString()), inContext && !isDotPath(name.toString()));
+              onFs(join20(r.path, name.toString()), inContext && !isDotPath(name.toString()));
             else if (r.entryId)
               onFs(r.path, inContext);
           });
@@ -29855,7 +30041,7 @@ function createWorkspaceDaemon(opts) {
       await decodesOrDie(raw, r.bytes);
       let file = name;
       if (r.done && r.type && !(r.type === "image/jpeg" && /\.jpe?g$/i.test(name)))
-        file = `${name.slice(0, name.length - extname4(name).length)}${EXTENSION_OF[r.type]}`;
+        file = `${name.slice(0, name.length - extname5(name).length)}${EXTENSION_OF[r.type]}`;
       return {
         name: file,
         given,
@@ -29903,7 +30089,7 @@ function createWorkspaceDaemon(opts) {
         session.rememberImportName(r.path, i.given);
         syncWatchers();
         history.did({
-          label: `copied in ${basename15(r.path)}`,
+          label: `copied in ${basename17(r.path)}`,
           inverse: { kind: "delete", path: r.path, dir: false }
         });
         announce(`You copied ${raw} in as ${session.display(r.path)}${how}.`, {
@@ -29960,7 +30146,7 @@ function createWorkspaceDaemon(opts) {
       const what = a.images.length === 1 ? "An image" : `${a.images.length} images`;
       const verb = { paste: "pasted", drop: "dropped", both: "pasted and dropped" }[how];
       const shown = a.images.map((p) => {
-        const rel = relative14(dirname17(doc), p).split(sep17).join("/");
+        const rel = relative16(dirname19(doc), p).split(sep18).join("/");
         return a.notes[p] ? `${rel} (${a.notes[p]})` : rel;
       });
       emit("system", {
@@ -30054,12 +30240,12 @@ function createWorkspaceDaemon(opts) {
       return { doc: r.slug, version, previous: r.previous, path };
     };
     const isBundleRoot = (p) => bundleOf(p)?.inner === "";
-    const nameOf = (p, title) => isBundleRoot(p) ? title ? bundleDisplayName(basename15(p), title.was) : session.itemName(p) : basename15(p);
+    const nameOf = (p, title) => isBundleRoot(p) ? title ? bundleDisplayName(basename17(p), title.was) : session.itemName(p) : basename17(p);
     const named = (p, name) => {
       const type = isBundleRoot(p) ? bundleTypeOf(p) : null;
       return type ? `the ${type.label} ${name ?? nameOf(p)}` : session.display(p);
     };
-    const placeOf = (p, word = "in") => session.isWorkspace(dirname17(p)) ? `${word} the workspace` : `${word} ${session.display(dirname17(p))}`;
+    const placeOf = (p, word = "in") => session.isWorkspace(dirname19(p)) ? `${word} the workspace` : `${word} ${session.display(dirname19(p))}`;
     const renamedNames = (m) => {
       const before = m.title ? m.title.from : session.bundleTitleAt(m.path);
       const after = m.title ? m.title.to : session.bundleTitleAt(m.path);
@@ -30078,7 +30264,7 @@ function createWorkspaceDaemon(opts) {
         now = m.path;
         noteRedoBroke(m, "redo");
       };
-      return { kind: "app", label: `turned ${basename15(from)} into a set`, undo, redo };
+      return { kind: "app", label: `turned ${basename17(from)} into a set`, undo, redo };
     };
     const structure = (op, by) => {
       const who = by === "agent" ? "Agent" : "You";
@@ -30114,7 +30300,7 @@ function createWorkspaceDaemon(opts) {
           fixes = links ?? [];
           wiki = w ?? [];
           r = m;
-          text = `${who} turned ${basename15(m.from)} into a set: ${shown(m.folder)}.`;
+          text = `${who} turned ${basename17(m.from)} into a set: ${shown(m.folder)}.`;
           own = { inverse: setMakeInverse(m.from, m.path) };
           break;
         }
@@ -30147,7 +30333,7 @@ function createWorkspaceDaemon(opts) {
             names = { from: nameOf(m.path), to: nameOf(m.path) };
             text = `${who} moved ${named(m.path)} ${placeOf(m.path, "to")}.`;
           } else {
-            const where = session.isWorkspace(dirname17(m.path)) ? "the workspace" : shown(m.path);
+            const where = session.isWorkspace(dirname19(m.path)) ? "the workspace" : shown(m.path);
             text = `${who} moved ${shown(m.from)} to ${where}${m.sidecar ? ", with its description" : ""}.`;
           }
           break;
@@ -30205,7 +30391,7 @@ function createWorkspaceDaemon(opts) {
         act.inverse.follow = follow;
       let linkFact = {};
       if ((fixes.length > 0 || wiki.length > 0) && act && carriesLinks(act.inverse)) {
-        const what = names?.from ?? basename15(r.from);
+        const what = names?.from ?? basename17(r.from);
         if (fixes.length > 0 && "updateLinks" in op && op.updateLinks) {
           const edits = linkEditsOf(fixes);
           const done = applyLinkEdits(edits, what);
@@ -30376,7 +30562,7 @@ function createWorkspaceDaemon(opts) {
       const wiki = m.wiki ?? [];
       if (fixes.length === 0 && wiki.length === 0)
         return;
-      const what = basename15(m.from);
+      const what = basename17(m.from);
       redoBroke = { fixes, wiki, what };
       linkNote = ` ${brokenText(fixes, wiki, what)}`;
     };
@@ -30401,11 +30587,11 @@ function createWorkspaceDaemon(opts) {
           const links = inv.links ? followLinks(inv.links, what) : null;
           const follow = inv.follow ? runFollow(inv.follow) : undefined;
           return {
-            label: `moved ${what} back into ${basename15(dirname17(m.path))}${links?.label ?? ""}`,
+            label: `moved ${what} back into ${basename17(dirname19(m.path))}${links?.label ?? ""}`,
             inverse: {
               kind: "move",
               path: m.path,
-              into: dirname17(m.from),
+              into: dirname19(m.from),
               ...links ? { links: links.back } : {},
               ...follow ? { follow } : {}
             }
@@ -30417,7 +30603,7 @@ function createWorkspaceDaemon(opts) {
             ...inv.title ? { title: inv.title.to ?? null } : {}
           });
           noteRedoBroke(m, dir);
-          const n = isBundleRoot(m.path) ? renamedNames(m) : { from: basename15(m.from), to: basename15(m.path) };
+          const n = isBundleRoot(m.path) ? renamedNames(m) : { from: basename17(m.from), to: basename17(m.path) };
           const links = inv.links ? followLinks(inv.links, n.from) : null;
           const follow = inv.follow ? runFollow(inv.follow) : undefined;
           return {
@@ -30425,7 +30611,7 @@ function createWorkspaceDaemon(opts) {
             inverse: {
               kind: "rename",
               path: m.path,
-              name: basename15(m.from),
+              name: basename17(m.from),
               ...links ? { links: links.back } : {},
               ...follow ? { follow } : {},
               ...m.title ? { title: m.title.from !== undefined ? { to: m.title.from } : {} } : {}
@@ -30528,14 +30714,14 @@ function createWorkspaceDaemon(opts) {
       }
       try {
         const at = session.shownFolderOrDie(surfacePath(dir));
-        reply({ op: "fs.same", dir, name, ...await sameFileAt(join18(at, name), size, sha256) });
+        reply({ op: "fs.same", dir, name, ...await sameFileAt(join20(at, name), size, sha256) });
       } catch (e) {
         reply({ op: "error", message: messageOf(e) });
       }
     };
     const isDirectory = (p) => {
       try {
-        return statSync14(p).isDirectory();
+        return statSync15(p).isDirectory();
       } catch {
         return false;
       }
@@ -31367,19 +31553,19 @@ function createWorkspaceDaemon(opts) {
       };
       if (byHunk && (!Number.isInteger(cmd.hunk) || cmd.hunk < 1))
         throw new SessionError(`show: ${String(cmd.hunk)} is not a hunk id`, 400);
-      if (cmd.doc && isAbsolute13(cmd.doc) && !session.findDoc(cmd.doc)) {
+      if (cmd.doc && isAbsolute14(cmd.doc) && !session.findDoc(cmd.doc)) {
         if (byHunk)
-          throw new SessionError(`${basename15(cmd.doc)} is not open in this session, so it has no changes to show`, 404, undefined, "run: version-new --doc <path>, write the version, then diff and show");
+          throw new SessionError(`${basename17(cmd.doc)} is not open in this session, so it has no changes to show`, 404, undefined, "run: version-new --doc <path>, write the version, then diff and show");
         let onDisk;
         try {
-          onDisk = readFileSync12(cmd.doc, "utf8");
+          onDisk = readFileSync15(cmd.doc, "utf8");
         } catch {
           throw new SessionError(`no document at ${cmd.doc}`, 404);
         }
         if (byHeading)
-          headingIn(onDisk, basename15(cmd.doc));
+          headingIn(onDisk, basename17(cmd.doc));
         else if (!onDisk.includes(cmd.quote))
-          throw new SessionError(`${basename15(cmd.doc)} does not contain that text: quote it exactly as it appears`, 404);
+          throw new SessionError(`${basename17(cmd.doc)} does not contain that text: quote it exactly as it appears`, 404);
         const o = session.openPath(cmd.doc, { focus: false });
         syncWatchers();
         if (o.created)
@@ -31498,7 +31684,7 @@ function createWorkspaceDaemon(opts) {
           const made = session.describeImage(cmd.image, source);
           syncWatchers();
           history.did({
-            label: `created ${basename15(made.path)}`,
+            label: `created ${basename17(made.path)}`,
             inverse: { kind: "delete", path: made.path, dir: false, unchanged: made.hash }
           });
           announce(`Agent started a description of ${session.display(made.image)}, in ${session.display(made.path)}.`, { fact: "image.describe", by: "agent", path: made.path, image: made.image });
@@ -31670,7 +31856,7 @@ function createWorkspaceDaemon(opts) {
           return { entries: added.map((a) => ({ ...a.entry, added: a.added })) };
         }
         case "version.new": {
-          if (cmd.doc && isAbsolute13(cmd.doc) && !session.findDoc(cmd.doc)) {
+          if (cmd.doc && isAbsolute14(cmd.doc) && !session.findDoc(cmd.doc)) {
             const o = session.openPath(cmd.doc, { focus: false });
             syncWatchers();
             if (o.created)
@@ -32071,11 +32257,11 @@ function createWorkspaceDaemon(opts) {
     publishOwnPointer(true);
     const ownPointer = pointerPath(app.name, sessionId, { tmp: opts.tmp });
     const keepPointer = () => {
-      if (!existsSync7(ownPointer))
+      if (!existsSync9(ownPointer))
         publishOwnPointer(false);
     };
     try {
-      recordLastOpened(dirname17(opts.sessionsRoot), sessionId);
+      recordLastOpened(dirname19(opts.sessionsRoot), sessionId);
     } catch {}
     syncWatchers();
     emit("ready", {
@@ -32276,7 +32462,7 @@ async function runWorkspaceDaemon(argv, build, name = "workspace") {
   await d.shutdown;
   if (res.code === 0 && flags.log) {
     try {
-      if (statSync14(flags.log).size === 0)
+      if (statSync15(flags.log).size === 0)
         unlinkSync4(flags.log);
     } catch {}
   }
@@ -32285,7 +32471,7 @@ async function runWorkspaceDaemon(argv, build, name = "workspace") {
 
 // src/scriptorium/backend/kit/app.ts
 import { lstatSync as lstatSync9 } from "fs";
-import { join as join19, resolve as resolve10 } from "path";
+import { join as join21, resolve as resolve11 } from "path";
 function hiddenLists(slot) {
   const h = slot.hidden;
   if (h === null || typeof h !== "object" || Array.isArray(h))
@@ -32297,7 +32483,7 @@ function hiddenLists(slot) {
   return out;
 }
 function scriptoriumHome(env = process.env) {
-  return resolve10(env.SCRIPTORIUM_HOME ?? join19(homeDir(), ".scriptorium"));
+  return resolve11(env.SCRIPTORIUM_HOME ?? join21(homeDir(), ".scriptorium"));
 }
 function migrateWriteRefusal(at) {
   const dir = onDisk(at.dir);
@@ -32305,13 +32491,13 @@ function migrateWriteRefusal(at) {
   if (dir === root || !within(dir, root))
     return `its folder ${at.dir} leads outside the sessions folder (to ${dir}): it is converted only where it is`;
   try {
-    if (lstatSync9(join19(at.dir, "manifest.json")).nlink > 1)
+    if (lstatSync9(join21(at.dir, "manifest.json")).nlink > 1)
       return "its manifest is a hard link to a file elsewhere: copy the session folder, do not link it";
   } catch {}
   return null;
 }
 function sessionsRoot(env = process.env) {
-  return join19(scriptoriumHome(env), "sessions");
+  return join21(scriptoriumHome(env), "sessions");
 }
 var scriptoriumApp = {
   name: "scriptorium",
@@ -32329,8 +32515,8 @@ var scriptoriumApp = {
 };
 
 // src/scriptorium/backend/kit/convert.ts
-import { readdirSync as readdirSync9, realpathSync as realpathSync7, statSync as statSync15 } from "fs";
-import { basename as basename16, dirname as dirname18, isAbsolute as isAbsolute14, join as join20, sep as sep18 } from "path";
+import { readdirSync as readdirSync9, realpathSync as realpathSync7, statSync as statSync16 } from "fs";
+import { basename as basename18, dirname as dirname20, isAbsolute as isAbsolute15, join as join22, sep as sep19 } from "path";
 var isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 var WORKSPACE_ENTRY_ID = "c-workspace";
 function isShippedManifest(raw) {
@@ -32428,7 +32614,7 @@ function doc(d, at, sessionDir) {
   const versions = list2(d.versions, `${at}.versions`).map((v, j) => version(v, `${at}.versions[${j}]`));
   if (versions.length === 0)
     throw unconvertible(`\`${at}.versions\` is empty: the document has no text`);
-  const nextVersion = Math.max(typeof d.nextVersion === "number" ? d.nextVersion : 0, ...versions.map((v) => v.n + 1), highestOnDisk(join20(sessionDir, "docs", slug)) + 1);
+  const nextVersion = Math.max(typeof d.nextVersion === "number" ? d.nextVersion : 0, ...versions.map((v) => v.n + 1), highestOnDisk(join22(sessionDir, "docs", slug)) + 1);
   return {
     slug,
     name: str(d.name, `${at}.name`),
@@ -32446,7 +32632,7 @@ function doc(d, at, sessionDir) {
   };
 }
 function versionAt(path, sessionDir) {
-  const docsDir = join20(sessionDir, "docs") + sep18;
+  const docsDir = join22(sessionDir, "docs") + sep19;
   if (!path.startsWith(docsDir))
     return null;
   const m = /^([^/\\]+)[/\\]v(\d+)(?:\.[^/\\]*)?$/.exec(path.slice(docsDir.length));
@@ -32510,15 +32696,15 @@ var realOr4 = (p) => {
 function workspaceEntry(workspace, context, at) {
   if (typeof workspace !== "string" || workspace === "")
     return { skipped: "it had no workspace folder of its own (it used your home folder)" };
-  if (!isAbsolute14(workspace))
+  if (!isAbsolute15(workspace))
     return { skipped: `its workspace ${JSON.stringify(workspace)} is not a full path` };
   const real = realOr4(workspace);
-  const notWhole = notAddedWhole(workspace, at.sessionsRoot, dirname18(at.sessionsRoot));
+  const notWhole = notAddedWhole(workspace, at.sessionsRoot, dirname20(at.sessionsRoot));
   if (notWhole !== null)
     return { skipped: notWhole };
   let isDir = false;
   try {
-    isDir = statSync15(workspace).isDirectory();
+    isDir = statSync16(workspace).isDirectory();
   } catch {
     isDir = false;
   }
@@ -32528,7 +32714,7 @@ function workspaceEntry(workspace, context, at) {
     if (e.membership !== "mirrored" || typeof e.root !== "string")
       continue;
     const root = realOr4(e.root);
-    if (real === root || real.startsWith(root + sep18))
+    if (real === root || real.startsWith(root + sep19))
       return {
         skipped: `its workspace folder ${workspace} is already shown in ${String(e.label)}`
       };
@@ -32536,7 +32722,7 @@ function workspaceEntry(workspace, context, at) {
   return {
     entry: {
       id: WORKSPACE_ENTRY_ID,
-      label: basename16(workspace) || workspace,
+      label: basename18(workspace) || workspace,
       root: workspace,
       membership: "mirrored",
       nodes: []
@@ -32571,7 +32757,7 @@ function convert2(raw, at) {
   const context = list2(raw.context, "context").map((e, i) => {
     const { hidden: h, ...rest } = e;
     const id = str(e.id, `context[${i}].id`);
-    if (!isAbsolute14(str(e.root, `context[${i}].root`)))
+    if (!isAbsolute15(str(e.root, `context[${i}].root`)))
       throw unconvertible(`\`context[${i}].root\` is not a full path`);
     oneOf(e.membership, ["mirrored", "listed"], `context[${i}].membership`);
     if (!Array.isArray(e.nodes))
@@ -32705,7 +32891,7 @@ function writtenBackDoc(d, at, sessionDir, count) {
   return {
     ...d,
     versions: vs,
-    nextVersion: Math.max(typeof d.nextVersion === "number" ? d.nextVersion : 0, ...vs.map((v, j) => num(v.n, `${at}.versions[${j}].n`) + 1), highestOnDisk(join20(sessionDir, "docs", slug)) + 1),
+    nextVersion: Math.max(typeof d.nextVersion === "number" ? d.nextVersion : 0, ...vs.map((v, j) => num(v.n, `${at}.versions[${j}].n`) + 1), highestOnDisk(join22(sessionDir, "docs", slug)) + 1),
     notes: notes.map((n, j) => {
       if (!shippedNote(n))
         return n;
@@ -32790,8 +32976,8 @@ for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
   registerDocExtension(ext);
 
 // src/scriptorium/backend/kit/hide.ts
-import { existsSync as existsSync8, statSync as statSync16 } from "fs";
-import { basename as basename17 } from "path";
+import { existsSync as existsSync10, statSync as statSync17 } from "fs";
+import { basename as basename19 } from "path";
 function fullPathOrDie(path, verb) {
   try {
     return surfacePath(path);
@@ -32873,7 +33059,7 @@ function listAct(s, label, entryId, was, after = () => {}) {
 }
 var who = (from) => from === "agent" ? "Agent" : "You";
 var by = (from) => from === "agent" ? "agent" : "human";
-var hideLabel = (path) => `removed ${basename17(path)} from the context`;
+var hideLabel = (path) => `removed ${basename19(path)} from the context`;
 var unhideLabel = (n) => `brought back ${n} hidden item${n === 1 ? "" : "s"}`;
 var hideVerbs = {
   "scriptorium.hide": (ctx, args, call) => {
@@ -32881,8 +33067,8 @@ var hideVerbs = {
       throw new SessionError("hide needs a path", 400);
     const { before, ...r } = hide(ctx.session, fullPathOrDie(args.path, "hide"));
     const shown = ctx.session.display(r.path);
-    const gone = !existsSync8(r.path);
-    const kind = gone ? "" : statSync16(r.path).isDirectory() ? "folder" : "file";
+    const gone = !existsSync10(r.path);
+    const kind = gone ? "" : statSync17(r.path).isDirectory() ? "folder" : "file";
     ctx.announce(gone ? `${who(call.from)} removed ${shown} from Scriptorium (it was already gone from disk).` : `${who(call.from)} removed ${shown} from Scriptorium (the ${kind} is still on disk).`, { fact: "hide", by: by(call.from), ...r });
     const after = () => ctx.broadcast();
     ctx.history.push(before.removed ? removalAct(ctx.session, hideLabel(r.path), before.removed, before.hidden, after) : listAct(ctx.session, hideLabel(r.path), r.entry, before.hidden, after));
@@ -32902,8 +33088,8 @@ var hideVerbs = {
 };
 
 // src/scriptorium/backend/kit/links.ts
-import { existsSync as existsSync9 } from "fs";
-import { basename as basename18, dirname as dirname19, extname as extname5, join as join21, normalize as normalize2, sep as sep19 } from "path";
+import { existsSync as existsSync11 } from "fs";
+import { basename as basename20, dirname as dirname21, extname as extname6, join as join23, normalize as normalize2, sep as sep20 } from "path";
 
 // src/scriptorium/backend/kit/fieldRefs.ts
 var EXTERNAL = /^[a-z][a-z0-9+.-]*:/i;
@@ -32960,13 +33146,13 @@ function frontmatterEdges(frontmatter) {
     key: r.key
   }));
 }
-var stem2 = (p) => basename18(p, extname5(p));
+var stem2 = (p) => basename20(p, extname6(p));
 function gitRootOf(dir) {
   let at = dir;
   for (;; ) {
-    if (existsSync9(join21(at, ".git")))
+    if (existsSync11(join23(at, ".git")))
       return at;
-    const up = dirname19(at);
+    const up = dirname21(at);
     if (up === at)
       return null;
     at = up;
@@ -32994,15 +33180,15 @@ function wikiFormsResolver(repoRoot = gitRootOf) {
   return ({ target, root, documents }) => {
     const folderish = target.length > 1 && target.endsWith("/");
     const anchored = target.startsWith("/") || target.startsWith("./") || target.startsWith("../");
-    if (folderish || anchored || extname5(target) !== "") {
+    if (folderish || anchored || extname6(target) !== "") {
       if (anchored || folderish)
         return;
       if (!roots.has(root))
         roots.set(root, repoRoot(root));
       const repo = roots.get(root) ?? null;
-      return repo === null ? undefined : [normalize2(join21(repo, target))];
+      return repo === null ? undefined : [normalize2(join23(repo, target))];
     }
-    const inSet = (d) => d.path.startsWith(root + sep19);
+    const inSet = (d) => d.path.startsWith(root + sep20);
     const m = named(documents());
     const out = [];
     const slash = target.indexOf("/");
@@ -33026,8 +33212,8 @@ function scriptoriumLinkSlot() {
 }
 
 // src/scriptorium/backend/kit/wiki.ts
-import { closeSync as closeSync8, openSync as openSync4, readFileSync as readFileSync13, readSync as readSync3, statSync as statSync17 } from "fs";
-import { basename as basename19, dirname as dirname21 } from "path";
+import { closeSync as closeSync8, openSync as openSync4, readFileSync as readFileSync16, readSync as readSync3, statSync as statSync18 } from "fs";
+import { basename as basename21, dirname as dirname23 } from "path";
 
 // src/scriptorium/backend/kit/frontmatter.ts
 var META_SCAN_CAP = 500;
@@ -33213,14 +33399,14 @@ function setKey(text, key, value) {
 }
 
 // src/scriptorium/backend/kit/gitRoot.ts
-import { existsSync as existsSync10 } from "fs";
-import { dirname as dirname20, join as join22 } from "path";
+import { existsSync as existsSync12 } from "fs";
+import { dirname as dirname22, join as join24 } from "path";
 function gitRootOf2(dir) {
   let at = dir;
   for (;; ) {
-    if (existsSync10(join22(at, ".git")))
+    if (existsSync12(join24(at, ".git")))
       return at;
-    const up = dirname20(at);
+    const up = dirname22(at);
     if (up === at)
       return null;
     at = up;
@@ -33256,7 +33442,7 @@ function shownOrDie(s, rawPath) {
   }
 }
 function fileStamp(abs) {
-  const st = statSync17(abs);
+  const st = statSync18(abs);
   return `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
 }
 var caches = new WeakMap;
@@ -33323,7 +33509,7 @@ function noFrontmatter(s) {
     if (!hit || hit.stamp !== stamp) {
       let none = false;
       try {
-        none = splitFrontmatter2(readFileSync13(path, "utf8")).raw === null;
+        none = splitFrontmatter2(readFileSync16(path, "utf8")).raw === null;
       } catch {
         none = true;
       }
@@ -33388,18 +33574,18 @@ function filterOf(raw) {
 }
 function suggestMeta(s, rawPath, by) {
   const abs = shownOrDie(s, rawPath);
-  const text = readFileSync13(abs, "utf8");
+  const text = readFileSync16(abs, "utf8");
   if (splitFrontmatter2(text).raw !== null)
-    throw new SessionError(`${basename19(abs)} already has frontmatter`, 409);
-  const folder = dirname21(abs);
+    throw new SessionError(`${basename21(abs)} already has frontmatter`, 409);
+  const folder = dirname23(abs);
   const siblings = [];
   for (const { abs: p } of contextDocs(s))
-    if (p !== abs && dirname21(p) === folder) {
+    if (p !== abs && dirname23(p) === folder) {
       const t = readMeta(readHead(p))?.type;
       if (t)
         siblings.push(t);
     }
-  const type = guessType(siblings, basename19(folder));
+  const type = guessType(siblings, basename21(folder));
   const title = titleFromBody(text);
   return {
     path: abs,
@@ -33414,7 +33600,7 @@ function suggestMeta(s, rawPath, by) {
 function metaInit(s, rawPath, opts = {}) {
   const suggested = suggestMeta(s, rawPath, opts.by);
   const abs = suggested.path;
-  const text = readFileSync13(abs, "utf8");
+  const text = readFileSync16(abs, "utf8");
   const title = titleFromBody(text);
   const block = opts.type ? buildBlock({
     type: opts.type,
@@ -33430,9 +33616,9 @@ function metaInit(s, rawPath, opts = {}) {
 }
 function metaSet(s, rawPath, pairs) {
   const abs = shownOrDie(s, rawPath);
-  let text = readFileSync13(abs, "utf8");
+  let text = readFileSync16(abs, "utf8");
   if (splitFrontmatter2(text).raw === null)
-    throw new SessionError(`${basename19(abs)} has no frontmatter \u2014 add it first (meta-init)`, 409);
+    throw new SessionError(`${basename21(abs)} has no frontmatter \u2014 add it first (meta-init)`, 409);
   for (const [key, value] of Object.entries(pairs)) {
     if (!/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(key))
       throw new SessionError(`"${key}" is not a frontmatter key`, 400);
@@ -33445,11 +33631,11 @@ function writeOriginal(s, abs, text) {
 }
 function movePlan(s, rawPath, rawInto) {
   const plan = s.movePlan(rawPath, rawInto);
-  const fromRepo = gitRootOf2(dirname21(plan.from));
+  const fromRepo = gitRootOf2(dirname23(plan.from));
   const intoRepo = gitRootOf2(plan.into);
   return {
     ...plan,
-    repo: fromRepo ? basename19(fromRepo) : null,
+    repo: fromRepo ? basename21(fromRepo) : null,
     leavesRepo: fromRepo !== null && fromRepo !== intoRepo
   };
 }
@@ -33585,8 +33771,8 @@ var daemonApp = {
 };
 var HERE = import.meta.dir;
 function kitLauncher(here = HERE, env = process.env) {
-  const cli = join23(here, "..", "scripts", "cli.ts");
-  if (!existsSync11(cli))
+  const cli = join25(here, "..", "scripts", "cli.ts");
+  if (!existsSync13(cli))
     return;
   const home = env.SCRIPTORIUM_HOME ? [`SCRIPTORIUM_HOME=${scriptoriumHome(env)}`] : [];
   return commandLine([...home, "bun", cli]);
@@ -33595,8 +33781,8 @@ function withLauncher(app) {
   const launcher = kitLauncher();
   return launcher ? { ...app, launcher } : app;
 }
-var DIST_DIR = join23(HERE, "..", "dist");
-var FROM_SOURCE = HERE.endsWith(join23("src", "scriptorium", "backend", "kit"));
+var DIST_DIR = join25(HERE, "..", "dist");
+var FROM_SOURCE = HERE.endsWith(join25("src", "scriptorium", "backend", "kit"));
 function frameSurface() {
   return {
     distDir: DIST_DIR,
