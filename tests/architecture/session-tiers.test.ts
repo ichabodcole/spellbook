@@ -439,7 +439,7 @@ describe("the session parts import only downward", () => {
 // through a sibling module at run time. Parts may import the session and its
 // parts, and nothing in `session/` imports `daemon/`. Strict from the start:
 // each step of the split adds its parts here and on the page as it builds
-// them, so the table is empty until D1.
+// them. D1 built the first (tier 0).
 
 const DAEMON_DIR = join(WORKSPACE, "daemon");
 
@@ -451,8 +451,8 @@ const daemonPartOf = (file: string, dir: string = DAEMON_DIR) =>
   stem(relative(dir, file)).split(sep).join("/");
 
 /**
- * Each daemon module's tier, as the architecture page gives it. Empty until D1
- * builds the first modules; each step adds the rows for the modules it builds.
+ * Each daemon module's tier, as the architecture page gives it. D1 built the
+ * first modules; each step adds the rows for the modules it builds.
  */
 export const DAEMON_TIERS: Record<string, number> = {
   // Tier 0: pure, no daemon state (D1).
