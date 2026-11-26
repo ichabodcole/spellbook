@@ -2,9 +2,9 @@
  * Saving: the active version's text over the original, the only write to it
  * (`save`), and putting a document away (`closeDoc`). Tier 4 of the session
  * parts (docs/architecture/workspace-session.md); it takes the core,
- * `places`, `writes`, the `viewer`, the `documents` and the `context` (its
- * `rescanAround` and `relink`), and as hooks the facade's `persist` and the
- * watcher's `onFileEvent` (reconcile, not built).
+ * `places`, `writes`, the `viewer`, the `documents`, the `context` (its
+ * `rescanAround` and `relink`) and `reconcile` (the watcher's `onFileEvent`,
+ * its own tier, one way), and as a hook the facade's `persist`.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -16,8 +16,8 @@ import type { Documents } from "./documents.ts";
 import { SessionError, UnseenChangeError } from "./errors.ts";
 import { contentHash } from "./names.ts";
 import type { Places } from "./places.ts";
+import type { Reconcile } from "./reconcile.ts";
 import type { State } from "./state.ts";
-import type { FileEvent } from "./types.ts";
 import type { Viewer } from "./viewer.ts";
 import type { Writes } from "./writes.ts";
 
@@ -29,9 +29,9 @@ export class Saving {
     private readonly viewer: Viewer,
     private readonly documents: Documents,
     private readonly context: Context,
+    private readonly reconcile: Reconcile,
     private readonly hooks: {
       persist: () => void;
-      onFileEvent: (abs: string) => FileEvent | null;
     },
   ) {}
 
@@ -104,7 +104,7 @@ export class Saving {
     }
     if (disk !== null && !d.outsideChanged) {
       if (contentHash(disk) !== d.originalHash && disk !== text) {
-        const event = this.hooks.onFileEvent(d.original);
+        const event = this.reconcile.onFileEvent(d.original);
         if (event?.kind === "original.reloaded")
           throw new UnseenChangeError(
             `${d.name} changed on disk and you had no unsaved edits, so its text was loaded and Save wrote nothing`,

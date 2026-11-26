@@ -81,6 +81,9 @@ export const TIERS: Record<string, number> = {
   compare: 4,
   saving: 4,
   notes: 4,
+  // What reacts to the watcher (S9 built `reconcile`). Within it, one way:
+  // `saving` takes `reconcile` (`onFileEvent`).
+  reconcile: 4,
   // Tier 5: across the tree and the whole view (S5 built the link check and
   // the link reports).
   linkCheck: 5,

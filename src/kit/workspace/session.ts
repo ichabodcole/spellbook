@@ -49,7 +49,6 @@ import {
   bundleStem,
   bundleTypeOf,
   bundleTypes,
-  isBundleMember,
   newBundleInfo,
   referencingBundle,
   writeBundleInfo,
@@ -172,6 +171,7 @@ import { Places } from "./session/places.ts";
 import { Placing } from "./session/placing.ts";
 import { Profiles } from "./session/profiles.ts";
 import { ReadIndex } from "./session/readIndex.ts";
+import { Reconcile } from "./session/reconcile.ts";
 import { Relations } from "./session/relations.ts";
 import { Saving } from "./session/saving.ts";
 import { Search } from "./session/search.ts";
@@ -194,7 +194,6 @@ import { Viewer } from "./session/viewer.ts";
 import { Workspace } from "./session/workspace.ts";
 import { Writes } from "./session/writes.ts";
 import {
-  bundlesIn,
   docExtensions,
   docNode,
   docPaths,
@@ -281,6 +280,8 @@ export class WorkspaceSession {
   private readonly taskList: Tasks;
   /** Tier 4: comparing and merging (`comparePart`, since `compare()` is a public verb). */
   private readonly comparePart: Compare;
+  /** Tier 4: the watcher's question, whose write was that (reconcile). */
+  private readonly reconcile: Reconcile;
   /** Tier 4: saving, the one write to an original. */
   private readonly saving: Saving;
   /** Tier 4: the notes on a document. */
@@ -333,6 +334,15 @@ export class WorkspaceSession {
     });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.comparePart = new Compare(this.core, this.documents);
+    this.reconcile = new Reconcile(
+      this.core,
+      this.places,
+      this.writes,
+      this.viewer,
+      this.documents,
+      this.contextPart,
+      { persist: () => this.persist() },
+    );
     this.saving = new Saving(
       this.core,
       this.places,
@@ -340,10 +350,8 @@ export class WorkspaceSession {
       this.viewer,
       this.documents,
       this.contextPart,
-      {
-        persist: () => this.persist(),
-        onFileEvent: (abs) => this.onFileEvent(abs),
-      },
+      this.reconcile,
+      { persist: () => this.persist() },
     );
     this.notes = new Notes(this.core, this.chats, this.documents, {
       persist: () => this.persist(),
@@ -1217,24 +1225,7 @@ export class WorkspaceSession {
    * is gone, and removing them would be a second deletion nobody asked for.
    */
   forgetDoc(ref?: string): { slug: string; name: string; original: string; versions: number } {
-    const d = this.documents.docOrDie(ref);
-    if (existsSync(d.original))
-      throw new SessionError(
-        `${this.display(d.original)} is still on disk: forget is for a document whose file is gone`,
-        409,
-      );
-    const forgotten = {
-      slug: d.slug,
-      name: this.documents.docName(d),
-      original: d.original,
-      versions: d.versions.length,
-    };
-    this.core.m.docs = this.core.m.docs.filter((x) => x.slug !== d.slug);
-    this.viewer.docForgotten(d.slug);
-    this.contextPart.relink();
-    this.viewer.closeOrphaned();
-    this.persist();
-    return forgotten;
+    return this.reconcile.forgetDoc(ref);
   }
 
   // ── images: shown in the tree, opened in the viewer, served, brought in ─
@@ -2098,26 +2089,7 @@ export class WorkspaceSession {
    * so a document just copied in opens by its path straight away.
    */
   refreshBundle(abs: string): void {
-    this.contextPart.rescanAround(abs);
-    // A bundle listed on its own (made in the workspace) is its entry's one
-    // row: read that row again, whether `abs` is the bundle or inside it.
-    const b = bundleOf(abs);
-    if (b) this.contextPart.refreshListed(b.root);
-    this.contextPart.relink();
-  }
-
-  /** Mark a document's original missing; the event to announce, or null when it already was. */
-  private markMissing(d: Doc): FileEvent | null {
-    if (d.missing) return null;
-    d.missing = true;
-    this.contextPart.rescanAround(d.original);
-    this.persist();
-    return {
-      kind: "original.missing",
-      doc: d.slug,
-      original: d.original,
-      folder: !existsSync(dirname(d.original)),
-    };
+    this.reconcile.refreshBundle(abs);
   }
 
   /**
@@ -2127,36 +2099,12 @@ export class WorkspaceSession {
    * found the same way.
    */
   originalsUnder(abs: string): FileEvent[] {
-    const out: FileEvent[] = [];
-    for (const d of this.core.m.docs) {
-      if (d.original !== abs && !d.original.startsWith(abs + sep)) continue;
-      const there = existsSync(d.original);
-      if (!d.missing && !there) {
-        const ev = this.markMissing(d);
-        if (ev) out.push(ev);
-      } else if (d.missing && there) {
-        const ev = this.onFileEvent(d.original);
-        if (ev) out.push(ev);
-      }
-    }
-    return out;
+    return this.reconcile.originalsUnder(abs);
   }
 
   /** Revert: the original's text back over the active version. */
   revert(slug: string): { version: number; text: string } {
-    const d = this.documents.docOrDie(slug);
-    let text: string;
-    try {
-      text = readFileSync(d.original, "utf8");
-    } catch {
-      throw new SessionError(`${d.original} is gone from disk: there is no file to revert to`, 409);
-    }
-    d.originalHash = contentHash(text);
-    d.outsideChanged = false;
-    delete d.outsideHash;
-    this.documents.writeActive(d, text);
-    this.persist();
-    return { version: d.active, text };
+    return this.reconcile.revert(slug);
   }
 
   // ── the watcher's question: whose write was that? ──────────────────────
@@ -2168,13 +2116,7 @@ export class WorkspaceSession {
    * change to its bundle as well, so a view of the bundle hears of it.
    */
   onFileEvents(abs: string): FileEvent[] {
-    const ev = this.onFileEvent(abs);
-    const out = ev ? [ev] : [];
-    if (ev?.kind === "bundle" || ev?.kind === "tree" || !isBundleMember(abs)) return out;
-    if (!this.core.m.docs.some((d) => d.original === abs)) return out;
-    const bundle = this.shownBundleOf(abs);
-    if (bundle && existsSync(abs)) out.push({ kind: "bundle", path: bundle, file: abs });
-    return out;
+    return this.reconcile.onFileEvents(abs);
   }
 
   /**
@@ -2182,147 +2124,7 @@ export class WorkspaceSession {
    * the daemon's own write, unchanged, gone, or not ours to care about.
    */
   onFileEvent(abs: string): FileEvent | null {
-    // A version file under docs/<slug>/vN.ext?
-    if (abs.startsWith(this.docsDir + sep)) {
-      const rest = abs.slice(this.docsDir.length + 1).split(sep);
-      if (rest.length !== 2) return null;
-      const [slug, file] = rest as [string, string];
-      const d = this.core.m.docs.find((x) => x.slug === slug);
-      const match = /^v(\d+)(\.[a-z]+)$/.exec(file);
-      if (!d || !match || match[2] !== d.ext) return null;
-      const n = Number(match[1]);
-      let text: string;
-      try {
-        text = readFileSync(abs, "utf8");
-      } catch {
-        return null;
-      }
-      if (this.isOwnWrite(abs, text)) return null;
-      if (!d.versions.some((v) => v.n === n)) {
-        // The agent wrote a version file by hand rather than through
-        // `version-new`: adopt it rather than leave a file the surface cannot
-        // see. The counter moves past it, so the next number is still unused.
-        // A number below the counter was used once and may have been deleted:
-        // reusing it would make a "v2" named in a chat message or an agent's
-        // notes point at a different document, so the file is renumbered.
-        if (n < d.nextVersion) {
-          const next = this.documents.takeVersion(d);
-          const to = this.core.versionPath(d, next);
-          this.writes.own(to, text);
-          this.own.rename(abs, this.places.ownFileOrDie(to));
-          d.versions.push({ n: next, by: "agent", createdAt: nowIso() });
-          d.versions.sort((a, b) => a.n - b.n);
-          this.persist();
-          return { kind: "version.created", doc: d.slug, version: next, path: to, renamedFrom: n };
-        }
-        d.versions.push({ n, by: "agent", createdAt: nowIso() });
-        d.versions.sort((a, b) => a.n - b.n);
-        d.nextVersion = Math.max(d.nextVersion, n + 1);
-        this.writes.own(abs, text);
-        this.persist();
-        return { kind: "version.created", doc: d.slug, version: n, path: abs };
-      }
-      if (n === d.active) {
-        // The outside text becomes a new agent version, and the active version
-        // goes back to the daemon's own last text, so the active version only
-        // ever holds what the human typed, and nothing anyone wrote is lost.
-        const kept = this.documents.preserveOutside(d, text);
-        this.documents.writeActive(d, this.documents.lastActiveText.get(d.slug) ?? text);
-        return {
-          kind: "active.outside",
-          doc: d.slug,
-          version: n,
-          path: abs,
-          preservedAs: kept.n,
-          preservedPath: kept.path,
-        };
-      }
-      this.writes.own(abs, text);
-      return { kind: "version.changed", doc: d.slug, version: n, text, active: false };
-    }
-
-    // An opened original: by its stored path, or by realpath for a symlink.
-    const d = this.core.m.docs.find((x) => x.original === abs || realOr(x.original) === abs);
-    if (d) {
-      let text: string;
-      try {
-        text = readFileSync(abs, "utf8");
-      } catch {
-        // Gone, or unreadable for a moment. Not marked here: an atomic save or a
-        // quick rename back leaves a gap, and a banner that flashes would be a
-        // false alarm. The daemon asks again a moment later (`originalsUnder`).
-        return null;
-      }
-      const h = contentHash(text);
-      if (d.missing) {
-        // Back on disk (restored from the Trash, moved back). As it was: nothing
-        // to ask. With other text: asked, as any outside change with edits is,
-        // never reloaded over the session's text.
-        delete d.missing;
-        this.contextPart.rescanAround(d.original);
-        this.contextPart.relink();
-        if (h !== d.originalHash) {
-          d.outsideChanged = true;
-          d.outsideHash = h;
-          this.persist();
-          return { kind: "original.conflict", doc: d.slug, original: d.original };
-        }
-        this.persist();
-        return { kind: "original.back", doc: d.slug, original: d.original };
-      }
-      if (h === d.originalHash) return null; // our own save, or no change
-      const clean = !this.documents.isDirty(d);
-      if (clean) {
-        d.originalHash = h;
-        this.documents.writeActive(d, text);
-        this.persist();
-        return {
-          kind: "original.reloaded",
-          doc: d.slug,
-          version: d.active,
-          text,
-          original: d.original,
-        };
-      }
-      // Already asked. The same text: nothing new. A newer text is asked about
-      // again (the comparison, the toast, the chat line, the agent), so the
-      // human is never asked about one text and Keep mine writes over another;
-      // Save checks the same of a change the watcher missed (`outsideHash`).
-      if (d.outsideChanged && h === d.outsideHash) return null;
-      d.outsideChanged = true;
-      d.outsideHash = h;
-      this.persist();
-      return { kind: "original.conflict", doc: d.slug, original: d.original };
-    }
-
-    // Anything inside a bundle the context shows is a change to the bundle:
-    // its row is read again (its title may be new), and the change is said.
-    // One gone from disk is a change to the tree, below.
-    const bundle = this.shownBundleOf(abs);
-    if (bundle && existsSync(bundle)) {
-      this.contextPart.rescanAround(bundle);
-      this.contextPart.refreshListed(bundle);
-      // The echo of the session's own act: the tree is read again, and that is all.
-      if (this.writes.isOwnBundleEcho(bundle)) return null;
-      return { kind: "bundle", path: bundle, file: abs };
-    }
-
-    // Something under a mirrored root: the tree may have changed.
-    for (const e of this.core.m.context) {
-      if (e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep))) {
-        return this.contextPart.rescan(e.id) ? { kind: "tree", entryId: e.id } : null;
-      }
-    }
-    return null;
-  }
-
-  /** The bundle the context shows that `abs` is in, or is, by its folder's path; else null. */
-  private shownBundleOf(abs: string): string | null {
-    const b = bundleOf(abs);
-    if (!b) return null;
-    for (const e of this.core.m.context)
-      for (const { abs: at } of bundlesIn(e)) if (at === b.root) return at;
-    return null;
+    return this.reconcile.onFileEvent(abs);
   }
 
   // ── structure: real changes on disk, one path for both parties ─────────
@@ -3273,7 +3075,8 @@ export class WorkspaceSession {
         if (!d.missing && !d.outsideChanged) {
           const now = read(d.original);
           if (now === null || contentHash(now) !== d.originalHash) {
-            const ev = now === null ? this.markMissing(d) : this.onFileEvent(d.original);
+            const ev =
+              now === null ? this.reconcile.markMissing(d) : this.reconcile.onFileEvent(d.original);
             if (ev) events.push(ev);
           }
         }
