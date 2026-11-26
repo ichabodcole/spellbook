@@ -6944,24 +6944,16 @@ var require_public_api = __commonJS(function(exports) {
 });
 
 // src/scriptorium/backend/cli.ts
-import { existsSync as existsSync3, readFileSync as readFileSync5 } from "fs";
-import { dirname as dirname4, join as join6 } from "path";
+import { existsSync as existsSync4, readFileSync as readFileSync6 } from "fs";
+import { dirname as dirname5, join as join7 } from "path";
 
 // src/scriptorium/backend/kit/cli.ts
-import { resolve as resolve5 } from "path";
+import { resolve as resolve6 } from "path";
 
 // src/kit/workspace/verbs.ts
 import { spawn as spawn2 } from "child_process";
-import {
-  existsSync as existsSync2,
-  mkdirSync as mkdirSync2,
-  readdirSync as readdirSync3,
-  readFileSync as readFileSync4,
-  realpathSync as realpathSync2,
-  statSync as statSync2,
-  unlinkSync as unlinkSync3
-} from "fs";
-import { basename as basename2, dirname as dirname3, join as join4, resolve as resolve2, sep as sep2 } from "path";
+import { existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync as readdirSync3, readFileSync as readFileSync5, statSync as statSync3, unlinkSync as unlinkSync3 } from "fs";
+import { basename as basename2, dirname as dirname4, join as join5, resolve as resolve3 } from "path";
 
 // src/kit/cli/registry.ts
 import { parseArgs } from "util";
@@ -7555,54 +7547,6 @@ ${spec.helpFooter}` : ""}`;
   return cli;
 }
 
-// src/kit/lib/bundles.ts
-var registry = new Map;
-
-// src/kit/lib/docFormat.ts
-var DOC_EXTENSIONS = [".md", ".markdown", ".txt", ".json"];
-var appKinds = new Map;
-function registerDocExtension(extension, format = "markdown") {
-  const ext = extension.toLowerCase();
-  if (!/^\.[a-z0-9]+$/.test(ext))
-    throw new Error(`a document extension is a dot and letters or digits: ${extension}`);
-  if (DOC_EXTENSIONS.includes(ext) || isImageName(`x${ext}`))
-    throw new Error(`${ext} already has its meaning in the kit`);
-  appKinds.set(ext, format);
-}
-function docExtensions() {
-  return [...DOC_EXTENSIONS, ...appKinds.keys()];
-}
-function isDocName(name) {
-  const lower = name.toLowerCase();
-  return docExtensions().some((ext) => lower.endsWith(ext));
-}
-var IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
-function isImageName(name) {
-  const lower = name.toLowerCase();
-  return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
-}
-function isHeicName(name) {
-  return /\.(?:heic|heif)$/i.test(name);
-}
-function isSvgName(name) {
-  return /\.svgz?$/i.test(name);
-}
-var SVG_REFUSED = "SVG is not brought in: an SVG can carry script, which would run inside the app. Export it as PNG or WebP instead.";
-var IMAGE_HEAD_BYTES = 64 * 1024;
-
-// src/kit/lib/home.ts
-import { homedir, userInfo } from "os";
-var SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
-function underTest(env = process.env) {
-  return env.NODE_ENV === "test" || SCRATCH_HOME.test(env.HOME ?? "");
-}
-function homeDir() {
-  const home = process.env.HOME || homedir();
-  if (underTest() && !SCRATCH_HOME.test(home))
-    throw new Error(`refusing the real home folder (${home}) in a test run: no scratch HOME was preloaded. ` + "Run `bun test` from the repo root or a spell's folder, whose bunfig.toml preloads " + "src/kit/lib/scratchHome.ts, or pass --preload <repo>/src/kit/lib/scratchHome.ts.");
-  return home;
-}
-
 // src/kit/wire/daemonLock.ts
 import { linkSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
@@ -7920,64 +7864,6 @@ function readSeconds(token) {
   return { ok: true, seconds: Number(t) };
 }
 var TIMER_MAX_S = Math.floor((2 ** 31 - 1) / 1000);
-
-// src/kit/wire/stdinPeek.ts
-import { fstatSync } from "fs";
-var STDIN_PEEK_MS = 100;
-var POLLIN = 1;
-var MSG_PEEK = 2;
-var MSG_DONTWAIT = process.platform === "darwin" ? 128 : 64;
-var libc;
-async function loadLibc() {
-  if (libc !== undefined)
-    return libc;
-  try {
-    const { dlopen, FFIType, ptr } = await import("bun:ffi");
-    const name = process.platform === "darwin" ? "libc.dylib" : "libc.so.6";
-    const { symbols } = dlopen(name, {
-      poll: {
-        args: [FFIType.ptr, process.platform === "darwin" ? FFIType.u32 : FFIType.u64, FFIType.i32],
-        returns: FFIType.i32
-      },
-      recv: { args: [FFIType.i32, FFIType.ptr, FFIType.u64, FFIType.i32], returns: FFIType.i64 }
-    });
-    const one = new Uint8Array(1);
-    libc = {
-      poll: (fds, nfds, timeoutMs) => symbols.poll(ptr(fds), nfds, timeoutMs),
-      recvPeek: (fd) => Number(symbols.recv(fd, ptr(one), 1, MSG_PEEK | MSG_DONTWAIT))
-    };
-  } catch {
-    libc = null;
-  }
-  return libc;
-}
-async function stdinWaiting(graceMs = STDIN_PEEK_MS) {
-  try {
-    const st = fstatSync(0);
-    if (st.isFile())
-      return st.size > 0 ? "text" : "none";
-    const fifo = st.isFIFO();
-    if (!fifo && !st.isSocket())
-      return "none";
-    const c = await loadLibc();
-    if (!c)
-      return process.platform === "darwin" && st.size > 0 ? "text" : "none";
-    const pfd = new Int16Array(4);
-    pfd[2] = POLLIN;
-    const ready = c.poll(pfd, 1, graceMs);
-    if (ready === 0)
-      return "silent";
-    if (ready < 0)
-      return "none";
-    if (process.platform === "darwin")
-      return fstatSync(0).size > 0 ? "text" : "none";
-    if (!fifo)
-      return c.recvPeek(0) > 0 ? "text" : "none";
-    return ((pfd[3] ?? 0) & POLLIN) !== 0 ? "text" : "none";
-  } catch {
-    return "none";
-  }
-}
 
 // src/kit/wire/tailEvents.ts
 var DEFAULT_IDLE_MS = 45000;
@@ -8477,6 +8363,21 @@ var NOT_PRESENCE_HEADER = "x-spellbook-not-presence";
 // src/kit/workspace/noHome.ts
 import { lstatSync as lstatSync2, readlinkSync, realpathSync } from "fs";
 import { basename, dirname as dirname2, isAbsolute, join as join3, parse, relative, resolve, sep } from "path";
+
+// src/kit/lib/home.ts
+import { homedir, userInfo } from "os";
+var SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
+function underTest(env = process.env) {
+  return env.NODE_ENV === "test" || SCRATCH_HOME.test(env.HOME ?? "");
+}
+function homeDir() {
+  const home = process.env.HOME || homedir();
+  if (underTest() && !SCRATCH_HOME.test(home))
+    throw new Error(`refusing the real home folder (${home}) in a test run: no scratch HOME was preloaded. ` + "Run `bun test` from the repo root or a spell's folder, whose bunfig.toml preloads " + "src/kit/lib/scratchHome.ts, or pass --preload <repo>/src/kit/lib/scratchHome.ts.");
+  return home;
+}
+
+// src/kit/workspace/noHome.ts
 var hasHomeWorkspace = (app) => app.homeWorkspace !== false;
 var DEFAULT_LOCATION_HINT = "name a folder inside a set (`state` lists the sets), or add a folder that exists with `add <folder>`";
 var locationHint = (app) => app.locationHint ?? DEFAULT_LOCATION_HINT;
@@ -8554,6 +8455,41 @@ var $stringify = publicApi.stringify;
 var $visit = visit.visit;
 var $visitAsync = visit.visitAsync;
 
+// src/kit/lib/bundles.ts
+var registry = new Map;
+
+// src/kit/lib/docFormat.ts
+var DOC_EXTENSIONS = [".md", ".markdown", ".txt", ".json"];
+var appKinds = new Map;
+function registerDocExtension(extension, format = "markdown") {
+  const ext = extension.toLowerCase();
+  if (!/^\.[a-z0-9]+$/.test(ext))
+    throw new Error(`a document extension is a dot and letters or digits: ${extension}`);
+  if (DOC_EXTENSIONS.includes(ext) || isImageName(`x${ext}`))
+    throw new Error(`${ext} already has its meaning in the kit`);
+  appKinds.set(ext, format);
+}
+function docExtensions() {
+  return [...DOC_EXTENSIONS, ...appKinds.keys()];
+}
+function isDocName(name) {
+  const lower = name.toLowerCase();
+  return docExtensions().some((ext) => lower.endsWith(ext));
+}
+var IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
+function isImageName(name) {
+  const lower = name.toLowerCase();
+  return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+function isHeicName(name) {
+  return /\.(?:heic|heif)$/i.test(name);
+}
+function isSvgName(name) {
+  return /\.svgz?$/i.test(name);
+}
+var SVG_REFUSED = "SVG is not brought in: an SVG can carry script, which would run inside the app. Export it as PNG or WebP instead.";
+var IMAGE_HEAD_BYTES = 64 * 1024;
+
 // src/kit/lib/sidecar.ts
 var SIDECAR_NAME = new RegExp(`(?:${IMAGE_EXTENSIONS.map((e) => e.replace(".", "\\.")).join("|")})\\.md$`, "i");
 
@@ -8563,7 +8499,69 @@ var BUNDLE_INFO_MAX_BYTES = 64 * 1024;
 var SKIP_DIRS = new Set(["node_modules", ".git", "dist", "out", "coverage"]);
 var SAME_FILE_MAX_BYTES = 2 ** 30;
 
-// src/kit/workspace/verbs.ts
+// src/kit/workspace/verbs/parse.ts
+import { existsSync as existsSync2, readFileSync as readFileSync4, realpathSync as realpathSync2, statSync as statSync2 } from "fs";
+import { dirname as dirname3, join as join4, resolve as resolve2, sep as sep2 } from "path";
+
+// src/kit/wire/stdinPeek.ts
+import { fstatSync } from "fs";
+var STDIN_PEEK_MS = 100;
+var POLLIN = 1;
+var MSG_PEEK = 2;
+var MSG_DONTWAIT = process.platform === "darwin" ? 128 : 64;
+var libc;
+async function loadLibc() {
+  if (libc !== undefined)
+    return libc;
+  try {
+    const { dlopen, FFIType, ptr } = await import("bun:ffi");
+    const name = process.platform === "darwin" ? "libc.dylib" : "libc.so.6";
+    const { symbols } = dlopen(name, {
+      poll: {
+        args: [FFIType.ptr, process.platform === "darwin" ? FFIType.u32 : FFIType.u64, FFIType.i32],
+        returns: FFIType.i32
+      },
+      recv: { args: [FFIType.i32, FFIType.ptr, FFIType.u64, FFIType.i32], returns: FFIType.i64 }
+    });
+    const one = new Uint8Array(1);
+    libc = {
+      poll: (fds, nfds, timeoutMs) => symbols.poll(ptr(fds), nfds, timeoutMs),
+      recvPeek: (fd) => Number(symbols.recv(fd, ptr(one), 1, MSG_PEEK | MSG_DONTWAIT))
+    };
+  } catch {
+    libc = null;
+  }
+  return libc;
+}
+async function stdinWaiting(graceMs = STDIN_PEEK_MS) {
+  try {
+    const st = fstatSync(0);
+    if (st.isFile())
+      return st.size > 0 ? "text" : "none";
+    const fifo = st.isFIFO();
+    if (!fifo && !st.isSocket())
+      return "none";
+    const c = await loadLibc();
+    if (!c)
+      return process.platform === "darwin" && st.size > 0 ? "text" : "none";
+    const pfd = new Int16Array(4);
+    pfd[2] = POLLIN;
+    const ready = c.poll(pfd, 1, graceMs);
+    if (ready === 0)
+      return "silent";
+    if (ready < 0)
+      return "none";
+    if (process.platform === "darwin")
+      return fstatSync(0).size > 0 ? "text" : "none";
+    if (!fifo)
+      return c.recvPeek(0) > 0 ? "text" : "none";
+    return ((pfd[3] ?? 0) & POLLIN) !== 0 ? "text" : "none";
+  } catch {
+    return "none";
+  }
+}
+
+// src/kit/workspace/verbs/parse.ts
 var KIT_OPTIONS = {
   against: { type: "string" },
   all: { type: "boolean" },
@@ -8784,6 +8782,8 @@ function openingFolder(cwd, sessionsRoot, appHome) {
   const why = notAddedWhole(cwd, sessionsRoot, appHome);
   return why === null ? { path: cwd } : { skipped: why };
 }
+
+// src/kit/workspace/verbs.ts
 var LOG_KEEP = 10;
 function pruneLogs(logDir) {
   let names = [];
@@ -8795,7 +8795,7 @@ function pruneLogs(logDir) {
   const byAge = names.sort((a, b) => Number(a.split("-")[1]) - Number(b.split("-")[1]));
   for (const n of byAge.slice(0, Math.max(0, byAge.length - (LOG_KEEP - 1)))) {
     try {
-      unlinkSync3(join4(logDir, n));
+      unlinkSync3(join5(logDir, n));
     } catch {}
   }
 }
@@ -8844,28 +8844,28 @@ function createWorkspaceCli(opts) {
   function restorable() {
     const dir = opts.sessionsRoot();
     try {
-      return readdirSync3(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync2(join4(dir, e.name, "manifest.json"))).map((e) => ({ id: e.name, at: statSync2(join4(dir, e.name, "manifest.json")).mtimeMs })).sort((a, b) => b.at - a.at).map((e) => e.id);
+      return readdirSync3(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync3(join5(dir, e.name, "manifest.json"))).map((e) => ({ id: e.name, at: statSync3(join5(dir, e.name, "manifest.json")).mtimeMs })).sort((a, b) => b.at - a.at).map((e) => e.id);
     } catch {
       return [];
     }
   }
   function endedBy(id) {
     try {
-      const m = JSON.parse(readFileSync4(join4(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
+      const m = JSON.parse(readFileSync5(join5(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
       return typeof m.ended?.by === "string" ? m.ended.by : undefined;
     } catch {
       return;
     }
   }
   function newestSession() {
-    const r = readLastOpened(dirname3(opts.sessionsRoot()));
+    const r = readLastOpened(dirname4(opts.sessionsRoot()));
     if (r.kind === "none")
       return restorable()[0];
-    const why = r.kind === "untrusted" ? r.why : existsSync2(join4(opts.sessionsRoot(), r.id, "manifest.json")) ? null : `it names session ${r.id}, which is no longer saved here`;
+    const why = r.kind === "untrusted" ? r.why : existsSync3(join5(opts.sessionsRoot(), r.id, "manifest.json")) ? null : `it names session ${r.id}, which is no longer saved here`;
     if (why === null && r.kind === "ok")
       return r.id;
     const ids = restorable();
-    return die(`the newest ${app} session is unknown: the record of the last one started (${join4(dirname3(opts.sessionsRoot()), LAST_OPENED)}) cannot be trusted: ${why}`, "not_found", {
+    return die(`the newest ${app} session is unknown: the record of the last one started (${join5(dirname4(opts.sessionsRoot()), LAST_OPENED)}) cannot be trusted: ${why}`, "not_found", {
       hint: ids.length === 0 ? "no session is saved here: run `open <path>`" : "name one with --session (the saved sessions are the choices); opening or restoring a session records it again",
       choices: ids.slice(0, 10)
     });
@@ -8938,7 +8938,7 @@ function createWorkspaceCli(opts) {
   }
   function foldersOf(id) {
     try {
-      const m = JSON.parse(readFileSync4(join4(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
+      const m = JSON.parse(readFileSync5(join5(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
       return (m.context ?? []).flatMap((e) => typeof e.root === "string" ? [e.root] : []);
     } catch {
       return [];
@@ -8946,7 +8946,7 @@ function createWorkspaceCli(opts) {
   }
   function refuseAmbiguousWrite() {
     const root = opts.sessionsRoot();
-    const live = livePointers(app, opts.discovery).filter((p) => existsSync2(join4(root, p.session_id, "manifest.json")));
+    const live = livePointers(app, opts.discovery).filter((p) => existsSync3(join5(root, p.session_id, "manifest.json")));
     if (live.length < 2)
       return;
     const ids = live.map((p) => p.session_id);
@@ -8996,7 +8996,7 @@ function createWorkspaceCli(opts) {
     if (flags.stdin === true)
       text = await new Response(Bun.stdin.stream()).text();
     else if (typeof flags["body-file"] === "string")
-      text = readFileSync4(flags["body-file"], "utf8");
+      text = readFileSync5(flags["body-file"], "utf8");
     else
       text = pos.join(" ");
     if (!text.trim())
@@ -9010,7 +9010,7 @@ function createWorkspaceCli(opts) {
     });
   }
   async function refuseLockedRestore(id, pid, waitMs) {
-    const dir = join4(opts.sessionsRoot(), id);
+    const dir = join5(opts.sessionsRoot(), id);
     const rec = readDaemonLock(dir);
     const since = rec !== null && rec.pid === pid ? rec.at : Date.now();
     const deadline = Math.max(since + waitMs, Date.now() + POINTER_HEAL_MS);
@@ -9023,7 +9023,7 @@ function createWorkspaceCli(opts) {
     if (!pidAlive(pid))
       return die(`session ${id} was held by another daemon (pid ${pid}), which stopped before it answered`, "conflict", { hint: `bring it back: open --restore ${id}` });
     const held = Math.round((Date.now() - since) / 1000);
-    const lockPath = join4(dir, DAEMON_LOCK);
+    const lockPath = join5(dir, DAEMON_LOCK);
     const confirmed = confirmHolder(id, pid, rec);
     if (confirmed === true)
       return die(`session ${id} is held by another daemon (pid ${pid}, for ${held}s), which does not answer (lock: ${lockPath})`, "conflict", {
@@ -9066,7 +9066,7 @@ function createWorkspaceCli(opts) {
         die(`"${id}" is not a session id`, "usage", {
           hint: "a session id is the session_id that `open` printed"
         });
-      if (!existsSync2(join4(root, id, "manifest.json"))) {
+      if (!existsSync3(join5(root, id, "manifest.json"))) {
         const saved = restorable();
         die(`no saved session "${id}" under ${root}`, "not_found", {
           choices: saved.sort(),
@@ -9087,12 +9087,12 @@ function createWorkspaceCli(opts) {
       if (ws !== undefined)
         daemonArgs.push("--workspace", ws);
     }
-    if (opts.daemon.cwd !== undefined && !existsSync2(opts.daemon.cwd))
+    if (opts.daemon.cwd !== undefined && !existsSync3(opts.daemon.cwd))
       die(`${app} cannot start its daemon: the working directory it needs is missing: ${opts.daemon.cwd}`, "internal");
-    const logDir = join4(dirname3(root), "logs");
+    const logDir = join5(dirname4(root), "logs");
     mkdirSync2(logDir, { recursive: true });
     pruneLogs(logDir);
-    const logFile = join4(logDir, `daemon-${Date.now()}-${process.pid}.log`);
+    const logFile = join5(logDir, `daemon-${Date.now()}-${process.pid}.log`);
     daemonArgs.push("--log", logFile);
     const startTimeoutMs = startTimeoutS !== undefined ? Math.max(5000, Math.round(startTimeoutS * 1000)) : DEFAULT_START_TIMEOUT_MS;
     let hs;
@@ -9146,10 +9146,10 @@ function createWorkspaceCli(opts) {
       printJson({ workspace: data.workspace });
       return;
     }
-    const abs = resolve2(dir);
+    const abs = resolve3(dir);
     let st;
     try {
-      st = statSync2(abs);
+      st = statSync3(abs);
     } catch {
       die(`no such folder: ${abs}`, "not_found");
     }
@@ -9160,10 +9160,10 @@ function createWorkspaceCli(opts) {
   async function cmdImport(file, session, into) {
     if (noHome && into === undefined)
       die(`import: name the folder the copy goes in with --into <folder>: ${app} has no default folder`, "usage", { hint: locationHint(opts.app) });
-    const abs = resolve2(file);
+    const abs = resolve3(file);
     let st;
     try {
-      st = statSync2(abs);
+      st = statSync3(abs);
     } catch {
       die(`no such file: ${abs}`, "not_found");
     }
@@ -9176,8 +9176,8 @@ function createWorkspaceCli(opts) {
     printJson(await postCmd(session, {
       op: "import",
       name: basename2(abs),
-      text: readFileSync4(abs, "utf8"),
-      ...into !== undefined ? { dir: resolve2(into) } : {}
+      text: readFileSync5(abs, "utf8"),
+      ...into !== undefined ? { dir: resolve3(into) } : {}
     }));
   }
   let disconnected = false;
@@ -9627,7 +9627,7 @@ function createWorkspaceCli(opts) {
       describe: noHome ? "create an empty document at <path> (its folder must be a set or a folder in one)" : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
       run: async (pos, _flags, session) => {
         const abs = pathArg(pos[0], "new-doc");
-        printJson(await postCmd(session, { op: "doc.create", dir: dirname3(abs), name: basename2(abs) }));
+        printJson(await postCmd(session, { op: "doc.create", dir: dirname4(abs), name: basename2(abs) }));
       }
     },
     {
@@ -9637,7 +9637,7 @@ function createWorkspaceCli(opts) {
       describe: noHome ? "create a folder at <path> inside a set or a folder in one" : "create a folder inside a set, or in the workspace as a new set",
       run: async (pos, _flags, session) => {
         const abs = pathArg(pos[0], "new-folder");
-        printJson(await postCmd(session, { op: "folder.create", dir: dirname3(abs), name: basename2(abs) }));
+        printJson(await postCmd(session, { op: "folder.create", dir: dirname4(abs), name: basename2(abs) }));
       }
     },
     {
@@ -9651,7 +9651,7 @@ function createWorkspaceCli(opts) {
       run: async (pos, flags, session) => {
         printJson(await postCmd(session, {
           op: "rename",
-          path: resolve2(pos[0]),
+          path: resolve3(pos[0]),
           name: pos[1],
           ...flags["update-links"] === true ? { updateLinks: true } : {}
         }));
@@ -9668,8 +9668,8 @@ function createWorkspaceCli(opts) {
       run: async (pos, flags, session) => {
         printJson(await postCmd(session, {
           op: "move",
-          path: resolve2(pos[0]),
-          into: resolve2(pos[1]),
+          path: resolve3(pos[0]),
+          into: resolve3(pos[1]),
           ...flags["update-links"] === true ? { updateLinks: true } : {}
         }));
       }
@@ -9691,7 +9691,7 @@ function createWorkspaceCli(opts) {
       run: async (pos, flags, session) => {
         printJson(await postCmd(session, {
           op: "image.describe",
-          image: resolve2(pos[0]),
+          image: resolve3(pos[0]),
           ...typeof flags.source === "string" ? { source: flags.source } : {},
           ...typeof flags.label === "string" ? { label: flags.label } : {}
         }));
@@ -9793,7 +9793,7 @@ function createWorkspaceCli(opts) {
           ...flags.untyped === true ? { untyped: true } : {},
           ...kind ? { kind } : {},
           ...flags.kindless === true ? { kindless: true } : {},
-          ...typeof flags.within === "string" ? { within: resolve2(flags.within) } : {},
+          ...typeof flags.within === "string" ? { within: resolve3(flags.within) } : {},
           ...limit !== undefined ? { limit } : {},
           ...flags.bundles === true ? { bundles: true } : {},
           ...edge ? { edge } : {}
@@ -9842,7 +9842,7 @@ function createWorkspaceCli(opts) {
       positionals: [{ name: "path", required: true }],
       describe: "show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
       run: async (pos, _flags, session) => {
-        printJson(await postCmd(session, { op: "reveal", path: resolve2(pos[0]) }));
+        printJson(await postCmd(session, { op: "reveal", path: resolve3(pos[0]) }));
       }
     },
     {
@@ -9923,7 +9923,7 @@ ${opts.helpFooter}` : ""}`
 }
 
 // src/scriptorium/backend/kit/app.ts
-import { join as join5, resolve as resolve3 } from "path";
+import { join as join6, resolve as resolve4 } from "path";
 function hiddenLists(slot) {
   const h = slot.hidden;
   if (h === null || typeof h !== "object" || Array.isArray(h))
@@ -9935,10 +9935,10 @@ function hiddenLists(slot) {
   return out;
 }
 function scriptoriumHome(env = process.env) {
-  return resolve3(env.SCRIPTORIUM_HOME ?? join5(homeDir(), ".scriptorium"));
+  return resolve4(env.SCRIPTORIUM_HOME ?? join6(homeDir(), ".scriptorium"));
 }
 function sessionsRoot(env = process.env) {
-  return join5(scriptoriumHome(env), "sessions");
+  return join6(scriptoriumHome(env), "sessions");
 }
 var scriptoriumApp = {
   name: "scriptorium",
@@ -9991,7 +9991,7 @@ for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
   registerDocExtension(ext);
 
 // src/scriptorium/backend/kit/wikiCommands.ts
-import { resolve as resolve4 } from "path";
+import { resolve as resolve5 } from "path";
 var WIKI_OPTIONS = {
   type: { type: "string" },
   status: { type: "string" },
@@ -10016,7 +10016,7 @@ function scriptoriumWikiCommands(h) {
       run: async (inv) => {
         printJson(await postCmd(sessionOf(inv), {
           op: "scriptorium.meta",
-          ...inv.pos[0] !== undefined ? { path: resolve4(inv.pos[0]) } : {}
+          ...inv.pos[0] !== undefined ? { path: resolve5(inv.pos[0]) } : {}
         }));
       }
     },
@@ -10045,7 +10045,7 @@ function scriptoriumWikiCommands(h) {
       run: async (inv) => {
         printJson(await postCmd(sessionOf(inv), {
           op: "scriptorium.meta.init",
-          path: resolve4(inv.pos[0]),
+          path: resolve5(inv.pos[0]),
           ...typeof inv.flags.type === "string" ? { metaType: inv.flags.type } : {},
           ...typeof inv.flags.by === "string" ? { by: inv.flags.by } : {}
         }));
@@ -10071,7 +10071,7 @@ function scriptoriumWikiCommands(h) {
         }
         printJson(await postCmd(sessionOf(inv), {
           op: "scriptorium.meta.set",
-          path: resolve4(inv.pos[0]),
+          path: resolve5(inv.pos[0]),
           fields
         }));
       }
@@ -10099,8 +10099,8 @@ function scriptoriumWikiCommands(h) {
       run: async (inv) => {
         printJson(await postCmd(sessionOf(inv), {
           op: "scriptorium.move.plan",
-          path: resolve4(inv.pos[0]),
-          into: resolve4(inv.pos[1])
+          path: resolve5(inv.pos[0]),
+          into: resolve5(inv.pos[1])
         }));
       }
     },
@@ -10177,7 +10177,7 @@ function scriptoriumKitCli(deps) {
         run: async (inv) => {
           h.printJson(await h.postCmd(h.sessionOf(inv), {
             op: "scriptorium.hide",
-            path: resolve5(inv.pos[0])
+            path: resolve6(inv.pos[0])
           }));
         }
       },
@@ -10204,21 +10204,21 @@ async function runKitCli(argv, deps) {
 }
 
 // src/scriptorium/backend/cli.ts
-var SCRIPT_DIR = dirname4(Bun.fileURLToPath(import.meta.url));
-var SKILL_ROOT = join6(SCRIPT_DIR, "..");
-var DIST_DIR = join6(SKILL_ROOT, "dist");
-var SERVER_SCRIPT = join6(SCRIPT_DIR, "..", "scripts", "server.ts");
-var SURFACE_CWD = join6(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "scriptorium");
+var SCRIPT_DIR = dirname5(Bun.fileURLToPath(import.meta.url));
+var SKILL_ROOT = join7(SCRIPT_DIR, "..");
+var DIST_DIR = join7(SKILL_ROOT, "dist");
+var SERVER_SCRIPT = join7(SCRIPT_DIR, "..", "scripts", "server.ts");
+var SURFACE_CWD = join7(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "scriptorium");
 function daemonCwd() {
   if (process.env.SPELLBOOK_SURFACE_MODE === "release")
     return SKILL_ROOT;
   if (process.env.SPELLBOOK_SURFACE_MODE === "dev")
     return SURFACE_CWD;
-  return existsSync3(join6(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+  return existsSync4(join7(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 function versionInfo() {
   try {
-    const raw = readFileSync5(join6(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const raw = readFileSync6(join7(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
     const pkg = JSON.parse(raw);
     if (typeof pkg.version === "string")
       return { name: "scriptorium", version: pkg.version };
