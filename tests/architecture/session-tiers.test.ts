@@ -454,7 +454,10 @@ const daemonPartOf = (file: string, dir: string = DAEMON_DIR) =>
  * Each daemon module's tier, as the architecture page gives it. Empty until D1
  * builds the first modules; each step adds the rows for the modules it builds.
  */
-export const DAEMON_TIERS: Record<string, number> = {};
+export const DAEMON_TIERS: Record<string, number> = {
+  // Tier 0: pure, no daemon state (D1).
+  types: 0,
+};
 
 /** The kernel: it imports no part, only tier 0. */
 const KERNEL = "core";
