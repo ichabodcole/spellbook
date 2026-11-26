@@ -660,15 +660,15 @@ Cole, 2026-11-24: all eight decisions as recommended.
    [G1](../kit-split-g1/item.md); the session [S2](../kit-split-s2/item.md),
    [S3](../kit-split-s3/item.md), [S4](../kit-split-s4/item.md),
    [S5](../kit-split-s5/item.md), [S6](../kit-split-s6/item.md),
-   [S7](../kit-split-s7.md), [S8](../kit-split-s8.md), [S9](../kit-split-s9.md),
-   [S10](../kit-split-s10.md), [S11](../kit-split-s11.md); the daemon
-   [D1](../kit-split-d1/item.md), [D2](../kit-split-d2.md) (after S11 and D1),
-   [D3](../kit-split-d3.md), [D4](../kit-split-d4.md), [D5](../kit-split-d5.md),
-   [D6](../kit-split-d6.md), [D7](../kit-split-d7.md), [D9](../kit-split-d9.md);
-   [R1](../kit-split-r1.md); [V1](../kit-split-v1.md) to
-   [V4](../kit-split-v4.md); [W1](../kit-split-w1/item.md) to
-   [W5](../kit-split-w5/item.md); [P1](../kit-split-p1.md) to
-   [P6](../kit-split-p6.md); and
+   [S7](../kit-split-s7/item.md), [S8](../kit-split-s8.md),
+   [S9](../kit-split-s9.md), [S10](../kit-split-s10.md),
+   [S11](../kit-split-s11.md); the daemon [D1](../kit-split-d1/item.md),
+   [D2](../kit-split-d2.md) (after S11 and D1), [D3](../kit-split-d3.md),
+   [D4](../kit-split-d4.md), [D5](../kit-split-d5.md), [D6](../kit-split-d6.md),
+   [D7](../kit-split-d7.md), [D9](../kit-split-d9.md); [R1](../kit-split-r1.md);
+   [V1](../kit-split-v1.md) to [V4](../kit-split-v4.md);
+   [W1](../kit-split-w1/item.md) to [W5](../kit-split-w5/item.md);
+   [P1](../kit-split-p1.md) to [P6](../kit-split-p6.md); and
    [cli-yaml-off-start-path](../cli-yaml-off-start-path.md) for decision 6. D1,
    R1, V1, W1, P1 and the yaml item wait only on G1. The eight items above, and
    [kit-profile-layers](../kit-profile-layers.md) (S5), now wait on their steps

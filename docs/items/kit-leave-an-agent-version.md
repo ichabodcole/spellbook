@@ -37,7 +37,7 @@ and
 decide the three together.
 
 The daemon half lands in `session.ts` and `server.ts`, so it waits on the
-split's steps that move them: [S7](kit-split-s7.md) (documents) and
+split's steps that move them: [S7](kit-split-s7/item.md) (documents) and
 [D9](kit-split-d9.md) (the dispatchers).
 
 ## Definition of done
