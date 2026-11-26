@@ -668,7 +668,7 @@ Cole, 2026-11-24: all eight decisions as recommended.
    [D7](../kit-split-d7.md), [D9](../kit-split-d9.md); [R1](../kit-split-r1.md);
    [V1](../kit-split-v1.md) to [V4](../kit-split-v4.md);
    [W1](../kit-split-w1/item.md) to [W5](../kit-split-w5/item.md);
-   [P1](../kit-split-p1.md) to [P6](../kit-split-p6.md); and
+   [P1](../kit-split-p1/item.md) to [P6](../kit-split-p6.md); and
    [cli-yaml-off-start-path](../cli-yaml-off-start-path.md) for decision 6. D1,
    R1, V1, W1, P1 and the yaml item wait only on G1. The eight items above, and
    [kit-profile-layers](../kit-profile-layers.md) (S5), now wait on their steps
