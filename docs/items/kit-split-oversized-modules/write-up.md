@@ -666,7 +666,7 @@ Cole, 2026-11-24: all eight decisions as recommended.
    [D2](../kit-split-d2.md) (after S11 and D1), [D3](../kit-split-d3.md),
    [D4](../kit-split-d4.md), [D5](../kit-split-d5.md), [D6](../kit-split-d6.md),
    [D7](../kit-split-d7.md), [D9](../kit-split-d9.md); [R1](../kit-split-r1.md);
-   [V1](../kit-split-v1.md) to [V4](../kit-split-v4.md);
+   [V1](../kit-split-v1/item.md) to [V4](../kit-split-v4.md);
    [W1](../kit-split-w1/item.md) to [W5](../kit-split-w5/item.md);
    [P1](../kit-split-p1/item.md) to [P6](../kit-split-p6.md); and
    [cli-yaml-off-start-path](../cli-yaml-off-start-path.md) for decision 6. D1,
