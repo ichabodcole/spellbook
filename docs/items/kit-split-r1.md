@@ -6,7 +6,7 @@ description:
   project.ts, reading.ts and frames.ts, and protocol.ts re-exports them, so none
   of its 67 importers changes.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-963f-72f6-9865-d50569fd5f78
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
