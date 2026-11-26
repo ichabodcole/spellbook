@@ -23,7 +23,6 @@ export function useFocusMode({
   // view must never arrive here, or in split the editor would take focus and
   // collapse the passage being selected: the rendered scroller is focusable by
   // script for exactly that reason (see `MarkdownView`).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: rootRef is the pane's own useRef, the same object for its life, so the effect runs once on mount as it did inside DocumentPane.
   useEffect(() => {
     const pane = rootRef.current?.closest<HTMLElement>('[data-pane="centre"]');
     if (!pane) return;
@@ -32,6 +31,8 @@ export function useFocusMode({
     };
     pane.addEventListener("focus", onFocus);
     return () => pane.removeEventListener("focus", onFocus);
-  }, []);
+    // rootRef is the pane's own useRef, the same object for its life, so this
+    // still runs once on mount, as it did inside DocumentPane.
+  }, [rootRef]);
   return { editorHandle, setEditor };
 }
