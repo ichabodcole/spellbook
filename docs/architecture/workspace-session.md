@@ -41,8 +41,10 @@ chat and the tasks"). **S5 built the read side**: `readIndex`, `linkResolve`,
 `profiles`, `relations` and `search` (tier 4), `linkCheck` and `linkReports`
 (tier 5) (below, "The read side"). **S6 built the small tier 2 parts**: `media`,
 `sidecars`, `placing` and `viewer` (below, "What is on screen, and the images").
-The other parts are still planned. When a step builds a part, it adds the part's
-row here and in the tier test, in the same change.
+**S7 built the documents**: `documents` and `follow` (tier 3), `compare`,
+`saving` and `notes` (tier 4) (below, "The documents, and what saves, compares
+and notes them"). The other parts are still planned. When a step builds a part,
+it adds the part's row here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -67,14 +69,14 @@ folder says which is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6; the rest planned) | Story Studio's, not ours                 |
-| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                    |                                          |
-| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                 |                                          |
-| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                          | `bundleStamps`, `top`, `copyIn`          |
-| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                      | `unseen`, `audio`, `orders`              |
-| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                | `markers`, `copyRecords`, `libraryLinks` |
-| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                       | `copySource`, `projectMeta`              |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6, `documents`, `follow`, `compare`, `saving` and `notes` at S7; the rest planned) | Story Studio's, not ours                 |
+| ---- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                                                                                  |                                          |
+| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                                                                               |                                          |
+| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                                                                                        | `bundleStamps`, `top`, `copyIn`          |
+| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                                                                                    | `unseen`, `audio`, `orders`              |
+| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                                                                              | `markers`, `copyRecords`, `libraryLinks` |
+| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                                                                                     | `copySource`, `projectMeta`              |
 
 What each part owns, member by member, is in the write-up's
 [module map](../items/kit-split-oversized-modules/write-up.md#the-proposed-module-map-sessionts).
@@ -334,6 +336,108 @@ Where S6 left the write-up's map, by dependency direction:
   `listedBundleHolding`, which `rescanAround` calls too. `sidecars` reaches
   `activeText` (`documents`, tier 3) as a hook.
 
+### The documents, and what saves, compares and notes them (tiers 3 and 4, built at S7)
+
+The facade builds `documents` and `follow` after the tier 2 parts, and
+`compare`, `saving` and `notes` before the read side, which now takes
+`documents`:
+
+```ts
+this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
+  persist,
+});
+this.follow = new Follow(this.core, this.places, this.viewer, {
+  rescan,
+  refreshListedContents,
+  relink,
+  resolveFrom: (…) => this.linkResolve.resolveFrom(…),
+});
+this.comparePart = new Compare(this.core, this.documents);
+this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
+  persist,
+  onFileEvent,
+  rescanAround,
+  relink,
+});
+this.notes = new Notes(this.core, this.chats, this.documents, { persist });
+this.readIndex = new ReadIndex(this.core, this.places, this.documents, { filteredOut });
+// …
+this.linkResolve = new LinkResolve(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.media,
+  this.sidecars,
+  this.documents,
+  { docsAfter, typedLinks, relationPass }
+);
+// …
+this.linkCheckPart = new LinkChecker(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.linkResolve,
+  this.relationsPart,
+  this.follow
+);
+this.linkReports = new LinkReports(
+  this.core,
+  this.places,
+  this.readIndex,
+  this.linkResolve,
+  this.profilesPart,
+  this.relationsPart,
+  this.documents
+);
+```
+
+| Part           | Tier | Owns                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `documents.ts` | 3    | `activeHash`, `lastActiveText`; `adoptActive`, `writeActive`, `preserveOutside`, `docOrDie`, `unopenedNamed`, `heldPaths`, `findDoc`, `docAlias`, `takeVersion`, `versionOrDie`, `mainOf`, `docName`, `itemName`, `bundleTitleAt`, `slugFor`, `openPath`, `openSlug`, `readVersion`, `activePath`, `edit`, `editLeft`, `newVersion`, `checkDeletable`, `deleteVersion`, `activate`, `activeText`, `isDirty`, `jsonProblemOf`, `refuseInvalidJson`. |
+| `follow.ts`    | 3    | `moves`; `followMove`, `movedTo`, `movedFrom`, `movedTarget`.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `compare.ts`   | 4    | `sideText`, `compare`, `merge`.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `saving.ts`    | 4    | `save`, `closeDoc`.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `notes.ts`     | 4    | The note guard (`noteGuard`, `loadNoteGuard`, `guardLoaded`), `placeNote`; `placedNotes`, `addNote`, `noteLines`, `noteDoc`, `notesOf`, `noteOrDie`, `noteFacts`, `editNote`, `replyToNote`, `resolveNote`, `removeNote`.                                                                                                                                                                                                                          |
+
+All five moved verbatim: the only changes are `this.` to the part, the hook or
+the core (`this.own` became `core.own`, `this.isOwnWrite` became
+`writes.isOwnWrite`), and a relative import one folder deeper. Their public
+members keep one-line delegates with their comments; the facade's own calls,
+`restore`'s included, go to the parts, and a member the facade still calls is no
+longer `private` in its part. `documents`, `saving` and `notes` write the record
+through the facade's `persist` hook, as `tasks` does. The facade field for
+`compare` is `comparePart`, since `compare()` is a public verb. **The note guard
+stays lazy**: `notes.ts` keeps `loadNoteGuard`'s
+`await import("../../document/projection.ts")` and imports `NOT_PLACED` from
+`notPlaced.ts`; `session.ts` re-exports `loadNoteGuard`, so the daemon and
+`noteGuard.lazy.test.ts` import it from where they did. The facade's `addNote`
+delegate stays the daemon's way in, so `DocumentPane.contextMenu.test.tsx`,
+which replaces `daemon.session.addNote`, still sees every call.
+
+Where S7 left the write-up's map, by dependency direction:
+
+- **Hooks from S5 and S6, now parts.** `readIndex` took `activeText`, `mainOf`,
+  `findDoc` and `docOrDie`, `linkResolve` took `docOrDie`, and `linkReports`
+  took `findDoc` and `versionOrDie`, as hooks on the facade; all three now take
+  `documents` (tier 3) directly, and `linkReports`' hooks object went. The link
+  check took `movedFrom` and `movedTarget` as hooks; it now takes `follow` (tier
+  3), and its hooks object went. `sidecars` (tier 2) still reaches `activeText`
+  as a hook, since `documents` is above it.
+- **Rehomed with `documents`**: `activeText` (filed under notes), `isDirty`
+  (under trash), `jsonProblemOf` and `refuseInvalidJson` (under save), as the
+  map says; and the unlisted `adoptActive`, `writeActive`, `preserveOutside`,
+  `itemName` and `bundleTitleAt`, which sat beside them.
+- **Reached as hooks**: `follow.movedTarget` asks `linkResolve.resolveFrom`
+  (tier 4) whether a moved target lands, and `followMove` calls the context's
+  `rescan`, `refreshListedContents` and `relink`, still on the facade. `saving`
+  calls the watcher's `onFileEvent` (`reconcile`, tier 4, not built) and the
+  context's `rescanAround` and `relink`.
+- **Taken directly**: `notes.replyToNote` called the facade's `addMessage`, a
+  delegate to the chat; it now calls `chats.addMessage` (tier 2).
+- **Nothing task-related was left**: the verbs moved at S4, and `restore`'s pass
+  over the daemon's own tasks stays with `restore` (see "The chat and the
+  tasks").
+
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
           │
@@ -397,8 +501,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
   file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
-  S3 to 6,768, S4 to 6,700, S5 to 4,649 and S6 to 4,462; `server.ts` was frozen
-  at 4,876, and D1 lowered it to 4,367.
+  S3 to 6,768, S4 to 6,700, S5 to 4,649, S6 to 4,462 and S7 to 3,671;
+  `server.ts` was frozen at 4,876, and D1 lowered it to 4,367.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
