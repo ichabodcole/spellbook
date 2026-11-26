@@ -5,8 +5,8 @@ description:
   The documents part moves to session/documents.ts with its misfiled helpers
   rehomed, then follow.ts, compare.ts, saving.ts and notes.ts, with the note
   guard still loaded lazily.
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: active
 id: 01a20f86-8efa-774d-b516-2ff089d69144
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
