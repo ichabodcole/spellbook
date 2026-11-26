@@ -21719,14 +21719,13 @@ function wasCancelled(exitCode, stdout) {
   return exitCode !== 0 && parsePickerOutput(stdout).length === 0;
 }
 
-// src/kit/workspace/protocol.ts
+// src/kit/workspace/protocol/frames.ts
 var PICK_WANTS = [
   "context-file",
   "context-folder",
   "choose-folder",
   "choose-file"
 ];
-
 // src/kit/workspace/reveal.ts
 import { dirname as dirname5 } from "path";
 function revealCommand(platform, path) {

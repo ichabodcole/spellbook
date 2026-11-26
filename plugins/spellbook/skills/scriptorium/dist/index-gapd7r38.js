@@ -11390,8 +11390,7 @@ function imageTypeLabel(type) {
   return type.replace(/^image\//, "").toUpperCase();
 }
 var IMAGE_HEAD_BYTES = 64 * 1024;
-
-// src/kit/workspace/protocol.ts
+// src/kit/workspace/protocol/project.ts
 function resolveAppState(prev, next) {
   if (!("appStateUnchanged" in next) || next.appStateUnchanged !== true)
     return next;
@@ -11399,7 +11398,6 @@ function resolveAppState(prev, next) {
   const kept = prev && prev.sessionId === next.sessionId ? prev.appState : null;
   return { ...rest, appState: kept };
 }
-
 // src/kit/context/daemonClient.ts
 var LINK_REFUSED = "That link didn't open";
 var folderOf = (path) => path.slice(0, path.lastIndexOf("/")) || "/";
