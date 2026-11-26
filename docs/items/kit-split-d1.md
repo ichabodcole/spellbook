@@ -5,7 +5,7 @@ description:
   The daemon's types, rules and landing helpers move to daemon/types.ts,
   rules.ts and landings.ts, and server.ts re-exports them.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-91ca-7673-92c9-1c4284d2c0f6
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
