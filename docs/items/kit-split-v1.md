@@ -5,7 +5,7 @@ description:
   The CLI's argument parsing moves to verbs/parse.ts, importing nothing verbs.ts
   doesn't import today.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-96d1-7069-96b6-7360b05f9f0d
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
