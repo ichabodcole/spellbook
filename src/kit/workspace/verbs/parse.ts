@@ -2,8 +2,10 @@
  * The CLI's argument parsing: the kit's flags (`KIT_OPTIONS`,
  * `NO_HOME_OPTIONS`), the usage refusal, `version-new`'s body, and the
  * readers that turn a token into a version, a count, seconds, an edge list,
- * a comparison side, a path or a session's paths and workspace. Pure: no
- * daemon, no network. Part of the CLI's start path, so it imports only what
+ * a comparison side, a path or a session's paths and workspace. No daemon and
+ * no network; a few read stdin or the filesystem (`versionBody`, `pathArg`,
+ * `contextPaths`, `defaultWorkspace`). Part of the CLI's start path, so it
+ * imports only what
  * `../verbs.ts` imports; `verbs.ts` re-exports every name it exported before.
  */
 

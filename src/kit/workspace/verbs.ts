@@ -5,7 +5,9 @@
  * session's events as JSON lines for the agent's Monitor to wrap.
  *
  * The kit's verbs are here, registered through the CLI registry, and an app adds
- * its own to the same table (`createWorkspaceCli({ commands })`).
+ * its own to the same table (`createWorkspaceCli({ commands })`). The argument
+ * parsing (flags, the usage refusal, the token readers) is in `verbs/parse.ts`,
+ * re-exported here.
  *
  * Failure contract (`../wire/errors`): every failure is one JSON envelope on
  * stderr, stdout empty. A daemon refusal maps off its HTTP status (400 usage,
