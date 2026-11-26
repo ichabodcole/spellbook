@@ -5,7 +5,7 @@ description:
   The context tree, with the scan filter and watchRoots, moves to
   session/context.ts, and the workspace and its overlap to session/workspace.ts.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-8f88-70d1-bfc9-53d9b1eb9b9f
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
