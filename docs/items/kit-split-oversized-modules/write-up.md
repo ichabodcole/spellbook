@@ -661,7 +661,7 @@ Cole, 2026-11-24: all eight decisions as recommended.
    [S3](../kit-split-s3/item.md), [S4](../kit-split-s4/item.md),
    [S5](../kit-split-s5/item.md), [S6](../kit-split-s6/item.md),
    [S7](../kit-split-s7/item.md), [S8](../kit-split-s8/item.md),
-   [S9](../kit-split-s9.md), [S10](../kit-split-s10.md),
+   [S9](../kit-split-s9/item.md), [S10](../kit-split-s10.md),
    [S11](../kit-split-s11.md); the daemon [D1](../kit-split-d1/item.md),
    [D2](../kit-split-d2.md) (after S11 and D1), [D3](../kit-split-d3.md),
    [D4](../kit-split-d4.md), [D5](../kit-split-d5.md), [D6](../kit-split-d6.md),
