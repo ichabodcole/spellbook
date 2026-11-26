@@ -32,7 +32,6 @@
 // own files), which checks each path at the syscall. The ward
 // `grimoire/kit-disk-write-ward.test.ts` holds this file to it.
 import {
-  accessSync,
   closeSync,
   constants,
   existsSync,
@@ -100,7 +99,6 @@ import {
   inOwnPlaces,
   notAddedWhole,
   notASet,
-  noWorkspaceToSet,
   ownPlaceGuard,
 } from "./noHome";
 import { PROFILES_DIR } from "./profiles";
@@ -174,7 +172,6 @@ import {
   outsideMembers,
   overlapOf,
   realOr,
-  refuseWorkspaceInBundle,
   rootReal,
   shownOverlap,
   treeHash,
@@ -202,6 +199,7 @@ import {
   type RestoreReport,
 } from "./session/types.ts";
 import { Viewer } from "./session/viewer.ts";
+import { Workspace } from "./session/workspace.ts";
 import { Writes } from "./session/writes.ts";
 import {
   bundleNode,
@@ -278,6 +276,8 @@ export class WorkspaceSession {
   private readonly writes: Writes;
   /** Tier 2: the chat. */
   private readonly chats: Chats;
+  /** Tier 2: our own workspace and no home (`workspacePart`, since `workspace` is a public getter). */
+  private readonly workspacePart: Workspace;
   /** Tier 2: what is on screen, the only writer of `openDoc`, `openImage` and `docAside`. */
   private readonly viewer: Viewer;
   /** Tier 2: the images the session shows, as files. */
@@ -321,6 +321,7 @@ export class WorkspaceSession {
     this.places = new Places(this.core);
     this.writes = new Writes(this.core, this.places);
     this.chats = new Chats(this.core, { persist: () => this.persist() });
+    this.workspacePart = new Workspace(this.core, this.places, { persist: () => this.persist() });
     this.viewer = new Viewer(this.core);
     this.media = new Media(this.core, this.places);
     this.sidecars = new Sidecars(this.core, this.places, {
@@ -687,35 +688,7 @@ export class WorkspaceSession {
 
   /** Point the workspace at an existing folder (relative paths resolve against the daemon's cwd: callers send absolute ones). */
   setWorkspace(rawPath: string): { path: string; from: string } {
-    if (!this.hasHome) {
-      const r = noWorkspaceToSet(this.app);
-      throw new SessionError(r.message, 400, undefined, r.hint);
-    }
-    const abs = this.places.notOwnPlaceOrDie(resolve(rawPath));
-    let isDir = false;
-    try {
-      isDir = statSync(abs).isDirectory();
-    } catch {
-      throw new SessionError(`no such folder: ${abs}`, 404);
-    }
-    if (!isDir) throw new SessionError(`the workspace must be a folder: ${abs}`, 400);
-    // Said when it is set, not at the first write it would refuse.
-    refuseWorkspaceInBundle(abs);
-    try {
-      accessSync(abs, constants.W_OK);
-    } catch {
-      throw new SessionError(`the workspace must be a folder you can write to: ${abs}`, 400);
-    }
-    const overlap = overlapOf(abs, this.core.m.context);
-    if (overlap)
-      throw new SessionError(
-        `the workspace cannot be ${overlap.same ? "the folder of" : "inside"} the set ${overlap.label} (${tilde(overlap.root)}): a file there would belong to both. Choose a folder outside it, such as ${tilde(dirname(overlap.root))}, or remove ${overlap.label} from the context first`,
-        409,
-      );
-    const from = this.workspace;
-    this.core.m.workspace = abs;
-    this.persist();
-    return { path: abs, from };
+    return this.workspacePart.setWorkspace(rawPath);
   }
 
   /**
@@ -724,8 +697,7 @@ export class WorkspaceSession {
    * and the daemon says what to change.
    */
   workspaceOverlap(): Overlap | null {
-    if (!this.hasHome) return null;
-    return overlapOf(this.workspace, this.core.m.context);
+    return this.workspacePart.workspaceOverlap();
   }
 
   /**
@@ -734,13 +706,7 @@ export class WorkspaceSession {
    * workspace or another set). A session that no longer overlaps forgets it.
    */
   overlapToSay(): (Overlap & { workspace: string }) | null {
-    const o = this.workspaceOverlap();
-    const key = o ? `${this.workspace}\n${o.root}` : undefined;
-    if (key === this.core.m.overlapSaid) return null;
-    if (key === undefined) delete this.core.m.overlapSaid;
-    else this.core.m.overlapSaid = key;
-    this.persist();
-    return o ? shownOverlap(o, this.workspace) : null;
+    return this.workspacePart.overlapToSay();
   }
 
   get openDocSlug(): string | null {
@@ -753,17 +719,12 @@ export class WorkspaceSession {
 
   /** The app's slot data, without its `version` (a copy: change it through `updateApp`). */
   get appSlot(): Record<string, unknown> {
-    const { version: _version, ...data } = this.core.m.app;
-    return structuredClone(data);
+    return this.workspacePart.appSlot;
   }
 
   /** Change the app's slot and persist. The slot is the app's; the `version` key is not. */
   updateApp(change: (slot: Record<string, unknown>) => void): void {
-    const slot = this.appSlot;
-    change(slot);
-    if ("version" in slot) throw new Error("`version` is reserved in the app slot");
-    this.core.m.app = { ...slot, version: this.app.slot.version };
-    this.persist();
+    this.workspacePart.updateApp(change);
   }
 
   /**
@@ -871,7 +832,7 @@ export class WorkspaceSession {
 
   /** Name the app's own folder (`appHome`): guarded as the sessions root is. */
   setAppHome(appHome: string | undefined): void {
-    this.core.appHome = appHome === undefined ? undefined : resolve(appHome);
+    this.workspacePart.setAppHome(appHome);
   }
 
   /**
