@@ -47,7 +47,6 @@ import { NOT_PLACED } from "../document/notPlaced.ts";
 import {
   BUNDLE_INFO,
   type BundleType,
-  bundleDisplayName,
   bundleOf,
   bundleStem,
   bundleTypeOf,
@@ -150,6 +149,7 @@ import type {
   WikiBreak,
 } from "./protocol";
 import { Chats } from "./session/chats.ts";
+import { Documents } from "./session/documents.ts";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
 import {
   IMAGES_DIR,
@@ -173,7 +173,6 @@ import {
   nowIso,
   randHex,
   sideName,
-  slugBase,
   tilde,
   uncopied,
 } from "./session/names.ts";
@@ -317,6 +316,8 @@ export class WorkspaceSession {
   private readonly sidecars: Sidecars;
   /** Tier 2: placing a new thing on disk (free names, adopting what landed). */
   private readonly placing: Placing;
+  /** Tier 3: the documents the session holds, and their versions. */
+  private readonly documents: Documents;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
@@ -329,11 +330,6 @@ export class WorkspaceSession {
   /** Tier 5: the link check (`linkCheckPart`, since `linkCheck()` is a public verb) and the link reports. */
   private readonly linkCheckPart: LinkChecker;
   private readonly linkReports: LinkReports;
-  /** slug to hash of the active version's current text. */
-  private activeHash = new Map<string, string>();
-  /** slug to the active version's text as the daemon last wrote (or adopted) it:
-   *  what an outside write to the active version is reverted to. */
-  private lastActiveText = new Map<string, string>();
   /**
    * Every move and rename this daemon made (`followMove`), oldest first, an
    * undo's way back included: what the link check's `proposed` reads to say
@@ -356,7 +352,9 @@ export class WorkspaceSession {
     this.chats = new Chats(this.core, { persist: () => this.persist() });
     this.viewer = new Viewer(this.core);
     this.media = new Media(this.core, this.places);
-    this.sidecars = new Sidecars(this.core, this.places, { activeText: (d) => this.activeText(d) });
+    this.sidecars = new Sidecars(this.core, this.places, {
+      activeText: (d) => this.documents.activeText(d),
+    });
     this.placing = new Placing(this.core, this.places, {
       listedBundleHolding: (abs) => this.listedBundleHolding(abs),
       rescan: (entryId) => this.rescan(entryId),
@@ -365,13 +363,12 @@ export class WorkspaceSession {
       scanGuard: () => this.scanGuard(),
       relink: () => this.relink(),
     });
+    this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
+      persist: () => this.persist(),
+    });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
-    this.readIndex = new ReadIndex(this.core, this.places, {
-      activeText: (d) => this.activeText(d),
+    this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
       filteredOut: () => this.filteredOut(),
-      mainOf: (abs) => this.mainOf(abs),
-      findDoc: (key) => this.findDoc(key),
-      docOrDie: (slug, opts) => this.docOrDie(slug, opts),
     });
     this.linkResolve = new LinkResolve(
       this.core,
@@ -379,8 +376,8 @@ export class WorkspaceSession {
       this.readIndex,
       this.media,
       this.sidecars,
+      this.documents,
       {
-        docOrDie: (slug, opts) => this.docOrDie(slug, opts),
         docsAfter: (index, world) => this.docsAfter(index, world),
         typedLinks: (index, all) => this.relationsPart.typedLinks(index, all),
         relationPass: (index) => this.relationsPart.relationPass(index),
@@ -413,7 +410,7 @@ export class WorkspaceSession {
       this.linkResolve,
       this.profilesPart,
       this.relationsPart,
-      { findDoc: (key) => this.findDoc(key), versionOrDie: (d, n) => this.versionOrDie(d, n) },
+      this.documents,
     );
   }
 
@@ -587,7 +584,7 @@ export class WorkspaceSession {
     for (const d of s.core.m.docs) {
       const p = s.core.versionPath(d, d.active);
       const text = existsSync(p) ? readFileSync(p, "utf8") : "";
-      s.adoptActive(d, text);
+      s.documents.adoptActive(d, text);
       // An original changed while the session was closed was invisible here, so
       // the next Save overwrote it unannounced. The manifest holds the
       // original's hash as of the last open, save, revert or reload; a
@@ -944,38 +941,6 @@ export class WorkspaceSession {
     }
   }
 
-  private adoptActive(d: Doc, text: string): void {
-    const p = this.core.versionPath(d, d.active);
-    this.writes.own(p, text);
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-  }
-
-  private writeActive(d: Doc, text: string): void {
-    this.writes.writeVersion(this.core.versionPath(d, d.active), text);
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-  }
-
-  /** Keep an outside write to the active version as a new agent version. */
-  private preserveOutside(d: Doc, text: string): Version & { path: string } {
-    const n = this.takeVersion(d);
-    const rec: Version = {
-      n,
-      by: "agent",
-      fromVersion: d.active,
-      createdAt: nowIso(),
-      label: `outside write to v${d.active}`,
-      // Kept from a write the agent did not make through the kit: not a
-      // proposal the link check reads (`Version.outside`).
-      outside: true,
-    };
-    d.versions.push(rec);
-    this.writes.writeVersion(this.core.versionPath(d, n), text);
-    this.persist();
-    return { ...rec, path: this.core.versionPath(d, n) };
-  }
-
   // ── context ────────────────────────────────────────────────────────────
 
   addContext(rawPath: string): { entry: ContextEntry; added: boolean } {
@@ -1202,69 +1167,6 @@ export class WorkspaceSession {
   // ── documents and versions ─────────────────────────────────────────────
 
   /**
-   * `takesPath`: the verb asking takes the absolute path of any document in
-   * the context, open or not (`version-new` and `show` open it; the link
-   * questions read it), so such a path is a choice too.
-   */
-  private docOrDie(slug?: string, opts: { takesPath?: boolean } = {}): Doc {
-    const want = slug ?? this.core.m.openDoc ?? undefined;
-    // A document's alias names it too (`--doc touchstones`), so it is a choice.
-    const opened = this.core.m.docs.flatMap((d) => {
-      const alias = this.docAlias(d);
-      return alias === undefined ? [d.slug] : [d.slug, alias];
-    });
-    // When nothing is open, the opened slugs are an empty list, and an empty
-    // list is not an answer. So an unopened session offers the paths it could
-    // open, and says how: a filename only resolves for a document that is
-    // already open; a path always opens one.
-    const choices =
-      opened.length > 0 ? opened : this.core.m.context.flatMap((e) => docPaths(e)).slice(0, 20);
-    const hint =
-      opened.length > 0
-        ? undefined
-        : "nothing is open yet: pass a PATH from the context (a filename only resolves once a document is open)";
-    if (want === undefined)
-      throw new SessionError("no document is open: name one with --doc", 409, choices, hint);
-    const d = this.findDoc(want);
-    if (!d) {
-      // A filename (or set-relative path) that names a document the context
-      // shows but nothing has opened: the refusal names where it is, since a
-      // filename only resolves once a document is open.
-      const unopened = isAbsolute(want) ? [] : this.unopenedNamed(want);
-      if (unopened.length > 0)
-        throw new SessionError(
-          `no document "${want}" in this session`,
-          404,
-          opts.takesPath ? [...unopened, ...choices.filter((c) => !unopened.includes(c))] : choices,
-          `${want} is in the context but not open, at ${unopened.join(" or ")}: ${
-            opts.takesPath
-              ? "pass that absolute path to --doc"
-              : "open it first (version-new --doc <that path> opens it), then name it here"
-          }`,
-        );
-      throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
-    }
-    return d;
-  }
-
-  /**
-   * The documents the context shows, not held by the session, that a name
-   * given to `--doc` means: by filename, or by the path from its set's root.
-   * At most 20, in context order.
-   */
-  private unopenedNamed(name: string): string[] {
-    const held = new Set(this.core.m.docs.map((d) => d.original));
-    const out: string[] = [];
-    for (const e of this.core.m.context)
-      for (const p of docPaths(e)) {
-        if (held.has(p) || out.includes(p)) continue;
-        if (basename(p) === name || toPosix(relative(e.root, p)) === name) out.push(p);
-        if (out.length >= 20) return out;
-      }
-    return out;
-  }
-
-  /**
    * A doc by slug, by original path, or by a unique original basename. A
    * bundle's folder (with or without a trailing `/`) names its main file, and
    * a bundle's main file also answers to its alias (`docAlias`): the slug of
@@ -1277,78 +1179,11 @@ export class WorkspaceSession {
    * way of naming a document for every one.
    */
   heldPaths(): Map<string, string> {
-    return new Map(this.core.m.docs.map((d) => [d.original, d.slug]));
+    return this.documents.heldPaths();
   }
 
   findDoc(key: string): Doc | undefined {
-    const bySlug = this.core.m.docs.find((d) => d.slug === key);
-    if (bySlug) return bySlug;
-    // Only an absolute key is a path: resolving a relative one here would
-    // resolve it against the daemon's cwd. The CLI resolves against its own cwd
-    // and sends an absolute path.
-    if (isAbsolute(key)) {
-      const path = this.mainOf(key.length > 1 ? key.replace(/\/+$/, "") : key);
-      const byPath = this.core.m.docs.find(
-        (d) => d.original === path || realOr(d.original) === realOr(path),
-      );
-      if (byPath) return byPath;
-    }
-    const byAlias = this.core.m.docs.find((d) => this.docAlias(d) === key);
-    if (byAlias) return byAlias;
-    const byName = this.core.m.docs.filter((d) => basename(d.original) === key || d.rel === key);
-    return byName.length === 1 ? byName[0] : undefined;
-  }
-
-  /**
-   * The second slug a bundle's main file answers to: the slug its bundle's
-   * name now makes (`touchstones`, for a canvas opened as `untitled` and
-   * renamed "touchstones" since). Undefined for any other document, when the
-   * two are the same, and when another document holds that slug or would
-   * answer to it too: a slug names one document or none.
-   */
-  private docAlias(d: Doc): string | undefined {
-    if (!isBundleMain(d.original)) return undefined;
-    const b = bundleOf(d.original);
-    if (!b) return undefined;
-    const alias = slugBase(bundleNameAt(b.root));
-    if (alias === d.slug || this.core.m.docs.some((x) => x.slug === alias)) return undefined;
-    const others = this.core.m.docs.filter(
-      (x) => x !== d && isBundleMain(x.original) && slugBase(this.docName(x)) === alias,
-    );
-    return others.length === 0 ? alias : undefined;
-  }
-
-  /** The next version number, consumed. Numbers are never reused. */
-  private takeVersion(d: Doc): number {
-    const n = d.nextVersion;
-    d.nextVersion = n + 1;
-    return n;
-  }
-
-  private versionOrDie(d: Doc, n: number): Version {
-    const v = d.versions.find((x) => x.n === n);
-    if (!v)
-      throw new SessionError(
-        `${d.slug} has no v${n}`,
-        404,
-        d.versions.map((x) => `v${x.n}`),
-      );
-    return v;
-  }
-
-  /**
-   * A bundle's folder stands for its main file: `x.canvasbundle` opens
-   * `x.canvasbundle/board.canvas`. Any other path is itself.
-   */
-  private mainOf(abs: string): string {
-    const b = bundleOf(abs);
-    return b && b.inner === "" ? join(abs, b.type.main) : abs;
-  }
-
-  /** A document's name as it is shown: a bundle's main file by its bundle's title. */
-  private docName(d: Doc): string {
-    const b = isBundleMain(d.original) ? bundleOf(d.original) : null;
-    return b ? bundleNameAt(b.root) : d.name;
+    return this.documents.findDoc(key);
   }
 
   /**
@@ -1357,28 +1192,12 @@ export class WorkspaceSession {
    * name. `title` stands in for the one on disk (what it was before an act).
    */
   itemName(abs: string, title?: string): string {
-    const b = bundleOf(abs);
-    if (b && b.inner === "")
-      return title !== undefined ? bundleDisplayName(basename(abs), title) : bundleNameAt(abs);
-    return basename(abs);
+    return this.documents.itemName(abs, title);
   }
 
   /** A bundle's title on disk, when its `info.json` has one. */
   bundleTitleAt(abs: string): string | undefined {
-    const title = readBundleInfo(abs)?.title;
-    return typeof title === "string" ? title : undefined;
-  }
-
-  /** A slug for a new document: its stem, made unique within the session. */
-  private slugFor(original: string): string {
-    // A bundle's main file is named for its bundle (`the-well`, not `board`):
-    // every board's main file has the same name.
-    const bundle = bundleOf(original);
-    const named = bundle && bundle.inner === bundle.type.main ? bundleStem(bundle.root) : null;
-    const stem = slugBase(named ?? basename(original, extname(original)));
-    let slug = stem;
-    for (let i = 2; this.core.m.docs.some((d) => d.slug === slug); i++) slug = `${stem}-${i}`;
-    return slug;
+    return this.documents.bundleTitleAt(abs);
   }
 
   /**
@@ -1392,79 +1211,19 @@ export class WorkspaceSession {
    * into a file outside the context.
    */
   openPath(rawPath: string, opts: { focus?: boolean } = {}): { slug: string; created: boolean } {
-    const focus = opts.focus ?? true;
-    // The context's own form of the path: a caller whose cwd is a realpath
-    // (/private/var/... for /var/...) names the same file differently, and it
-    // must land on the same doc. A bundle opens as its main file.
-    const abs = this.places.canonical(this.mainOf(resolve(rawPath)));
-    const existing = this.core.m.docs.find((d) => d.original === abs);
-    if (existing) {
-      if (focus) this.viewer.showDoc(existing.slug);
-      this.persist();
-      return { slug: existing.slug, created: false };
-    }
-    if (!isDocName(abs) && !isBundleMain(abs))
-      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
-    const at = locate(this.core.m.context, abs);
-    if (!at)
-      throw new SessionError(
-        `${abs} is not in this session's context: add it (or its folder) first`,
-        400,
-      );
-    let text: string;
-    try {
-      if (!statSync(abs).isFile()) throw new Error("not a file");
-      text = readFileSync(abs, "utf8");
-    } catch {
-      throw new SessionError(`cannot open ${abs}: no such file`, 404);
-    }
-    const lower = extname(abs).toLowerCase();
-    // A bundle's main file keeps its own extension in its versions (`v1.canvas`).
-    const ext =
-      docExtensions().includes(lower) || (isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower))
-        ? lower
-        : ".md";
-    const d: Doc = {
-      slug: this.slugFor(abs),
-      name: basename(abs),
-      original: abs,
-      entryId: at.entryId,
-      rel: at.rel,
-      ext,
-      versions: [{ n: 1, by: "human", createdAt: nowIso() }],
-      active: 1,
-      nextVersion: 2,
-      notes: [],
-      originalHash: contentHash(text),
-      admitted: true,
-      outsideChanged: false,
-    };
-    this.core.m.docs.push(d);
-    this.writeActive(d, text);
-    if (focus) this.viewer.showDoc(d.slug);
-    this.persist();
-    return { slug: d.slug, created: true };
+    return this.documents.openPath(rawPath, opts);
   }
 
   openSlug(slug: string): void {
-    this.viewer.showDoc(this.docOrDie(slug).slug);
-    this.persist();
+    this.documents.openSlug(slug);
   }
 
   readVersion(slug: string, n: number): { text: string; path: string } {
-    const d = this.docOrDie(slug);
-    this.versionOrDie(d, n);
-    const path = this.core.versionPath(d, n);
-    return { text: readFileSync(path, "utf8"), path };
+    return this.documents.readVersion(slug, n);
   }
 
   activePath(slug?: string): string | null {
-    const d = slug
-      ? this.findDoc(slug)
-      : this.core.m.openDoc
-        ? this.findDoc(this.core.m.openDoc)
-        : undefined;
-    return d ? this.core.versionPath(d, d.active) : null;
+    return this.documents.activePath(slug);
   }
 
   /**
@@ -1484,49 +1243,7 @@ export class WorkspaceSession {
     n: number,
     text: string,
   ): { dirtyChanged: boolean; preserved: (Version & { path: string }) | null } {
-    const d = this.docOrDie(slug);
-    if (n !== d.active)
-      throw new SessionError(
-        `v${n} is not the active version of ${d.slug} (v${d.active} is): only the active version is editable`,
-        409,
-      );
-    const before = this.isDirty(d);
-    const path = this.core.versionPath(d, n);
-    // The edit is staged in a sibling file first, so the check below and the
-    // rename that lands the edit are adjacent syscalls: the window in which an
-    // outside write could slip between them is microseconds, not the length of
-    // a multi-megabyte write, and a write landing after the rename goes to the
-    // new file, where the watcher finds it and preserves it too.
-    // A fresh file under a random name (`stage`): never through a link
-    // planted at a name it could guess.
-    this.places.ownFileOrDie(path);
-    const staged = this.own.stage(path, text, "edit");
-    let preserved: (Version & { path: string }) | null = null;
-    let landed = false;
-    try {
-      let onDisk: string | null = null;
-      try {
-        onDisk = readFileSync(path, "utf8");
-      } catch {
-        onDisk = null;
-      }
-      if (onDisk !== null && !this.isOwnWrite(path, onDisk))
-        preserved = this.preserveOutside(d, onDisk);
-      this.writes.own(path, text);
-      this.own.rename(staged, path);
-      landed = true;
-    } finally {
-      // A failed edit leaves nothing behind: the staged file goes with it.
-      if (!landed)
-        try {
-          this.own.unlink(staged);
-        } catch {
-          /* already gone */
-        }
-    }
-    this.activeHash.set(d.slug, contentHash(text));
-    this.lastActiveText.set(d.slug, text);
-    return { dirtyChanged: before !== this.isDirty(d), preserved };
+    return this.documents.edit(slug, n, text);
   }
 
   /**
@@ -1547,34 +1264,7 @@ export class WorkspaceSession {
     n: number,
     text: string,
   ): { saved: number; kept: null | "changed" | "deleted"; path: string } {
-    const d = this.docOrDie(slug);
-    const was = d.versions.find((v) => v.n === n);
-    if (was) {
-      const path = this.core.versionPath(d, n);
-      let onDisk: string | null = null;
-      try {
-        onDisk = readFileSync(path, "utf8");
-      } catch {
-        onDisk = null;
-      }
-      if (onDisk !== null && (onDisk === text || this.isOwnWrite(path, onDisk))) {
-        this.writes.writeVersion(path, text);
-        return { saved: n, kept: null, path };
-      }
-    }
-    const v = this.takeVersion(d);
-    const rec: Version = {
-      n: v,
-      by: "human",
-      fromVersion: was ? n : d.active,
-      createdAt: nowIso(),
-      label: `edit to v${n} after a switch`,
-    };
-    d.versions.push(rec);
-    const path = this.core.versionPath(d, v);
-    this.writes.writeVersion(path, text);
-    this.persist();
-    return { saved: v, kept: was ? "changed" : "deleted", path };
+    return this.documents.editLeft(slug, n, text);
   }
 
   /**
@@ -1586,22 +1276,7 @@ export class WorkspaceSession {
     slug: string;
     version: Version & { path: string };
   } {
-    const d = this.docOrDie(opts.doc, { takesPath: true });
-    const from = opts.from ?? d.active;
-    this.versionOrDie(d, from);
-    const text = opts.body ?? readFileSync(this.core.versionPath(d, from), "utf8");
-    const n = this.takeVersion(d);
-    const rec: Version = {
-      n,
-      by: opts.by,
-      fromVersion: from,
-      createdAt: nowIso(),
-      ...(opts.label ? { label: opts.label } : {}),
-    };
-    d.versions.push(rec);
-    this.writes.writeVersion(this.core.versionPath(d, n), text);
-    this.persist();
-    return { slug: d.slug, version: { ...rec, path: this.core.versionPath(d, n) } };
+    return this.documents.newVersion(opts);
   }
 
   /**
@@ -1618,14 +1293,7 @@ export class WorkspaceSession {
    */
   /** The refusals a version delete would meet, without deleting: returns the slug. */
   checkDeletable(opts: { doc?: string; version: number }): string {
-    const d = this.docOrDie(opts.doc);
-    this.versionOrDie(d, opts.version);
-    if (opts.version === d.active)
-      throw new SessionError(
-        `v${opts.version} is the active version of ${d.slug}: activate another one first, then delete this`,
-        409,
-      );
-    return d.slug;
+    return this.documents.checkDeletable(opts);
   }
 
   deleteVersion(opts: { doc?: string; version: number }): {
@@ -1634,56 +1302,14 @@ export class WorkspaceSession {
     label?: string;
     remaining: number;
   } {
-    this.checkDeletable(opts);
-    const d = this.docOrDie(opts.doc);
-    const v = this.versionOrDie(d, opts.version);
-    // ⛔ Only a file inside the session's own docs/, as the disk resolves it:
-    // a version folder swapped for a link deletes nothing outside. Refused
-    // before the record changes.
-    const path = this.places.ownFileOrDie(this.core.versionPath(d, opts.version));
-    d.versions = d.versions.filter((x) => x.n !== opts.version);
-    try {
-      this.own.rm(path);
-    } catch (e) {
-      if (e instanceof SessionError) throw e;
-      // The record is what the session believes; a file already gone (a hand
-      // tidy, a crash between write and record) must not block removing it.
-    }
-    this.writes.disown(path);
-    this.persist();
-    return {
-      slug: d.slug,
-      version: opts.version,
-      ...(v.label ? { label: v.label } : {}),
-      remaining: d.versions.length,
-    };
+    return this.documents.deleteVersion(opts);
   }
 
   activate(opts: { doc?: string; version: number; json?: "refuse" }): {
     slug: string;
     previous: number;
   } {
-    const d = this.docOrDie(opts.doc);
-    this.versionOrDie(d, opts.version);
-    // The agent may not put a JSON text that does not parse in front of the
-    // human; the human may activate anything, and fix it there.
-    if (opts.json === "refuse")
-      this.refuseInvalidJson(
-        d,
-        opts.version,
-        readFileSync(this.core.versionPath(d, opts.version), "utf8"),
-        "activated",
-      );
-    const previous = d.active;
-    // Both have now been active (`Version.activated`): neither is a proposal
-    // the link check reads, whoever wrote it.
-    for (const v of d.versions) if (v.n === previous || v.n === opts.version) v.activated = true;
-    d.active = opts.version;
-    // The new active version's text as it is now is the baseline the next
-    // check-before-write compares against.
-    this.adoptActive(d, readFileSync(this.core.versionPath(d, d.active), "utf8"));
-    this.persist();
-    return { slug: d.slug, previous };
+    return this.documents.activate(opts);
   }
 
   // ── comparing and merging ──────────────────────────────────────────────
@@ -1696,7 +1322,7 @@ export class WorkspaceSession {
    */
   private sideText(d: Doc, side: DiffSide): string {
     if (side === "original") return readFileSync(d.original, "utf8");
-    this.versionOrDie(d, side);
+    this.documents.versionOrDie(d, side);
     return readFileSync(this.core.versionPath(d, side), "utf8");
   }
 
@@ -1710,7 +1336,7 @@ export class WorkspaceSession {
    * differs it is `against`, and the payload says `everyMatches`.
    */
   compare(opts: { doc?: string; against: DiffSide; pick?: boolean }): DiffPayload {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const left = readFileSync(this.core.versionPath(d, d.active), "utf8");
     if (opts.pick) {
       const sides: DiffSide[] = [
@@ -1767,7 +1393,7 @@ export class WorkspaceSession {
     applied: number;
     preserved: (Version & { path: string }) | null;
   } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const payload = this.compare({ doc: d.slug, against: opts.against });
     const known = new Set(payload.diff.hunks.map((h) => h.id));
     const missing = opts.hunks.filter((id) => !known.has(id));
@@ -1792,7 +1418,7 @@ export class WorkspaceSession {
         );
       }
     }
-    const { preserved } = this.edit(d.slug, d.active, text);
+    const { preserved } = this.documents.edit(d.slug, d.active, text);
     return {
       slug: d.slug,
       version: d.active,
@@ -1804,15 +1430,10 @@ export class WorkspaceSession {
 
   // ── notes ──────────────────────────────────────────────────────────────
 
-  /** The active version's text: what every note is anchored against. */
-  private activeText(d: Doc): string {
-    return readFileSync(this.core.versionPath(d, d.active), "utf8");
-  }
-
   /** Place every note in the active text as it stands now (re-anchoring after edits). */
   private placedNotes(d: Doc): PlacedNote[] {
     if (d.notes.length === 0) return [];
-    const text = this.activeText(d);
+    const text = this.documents.activeText(d);
     return d.notes.map((n) => placeNote(text, n));
   }
 
@@ -1832,10 +1453,10 @@ export class WorkspaceSession {
     seen?: string;
     quote?: string;
   }): { slug: string; note: Note; how: "selection" | "quote" } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const body = opts.body.trim();
     if (!body) throw new SessionError("a note needs something written in it", 400);
-    const text = this.activeText(d);
+    const text = this.documents.activeText(d);
 
     let anchor: Anchor;
     if (opts.range) {
@@ -1890,8 +1511,8 @@ export class WorkspaceSession {
    * gone. Placed, not remembered, for the reason notes are.
    */
   noteLines(doc: string, note: Note): { from: number; to: number } | null {
-    const d = this.docOrDie(doc);
-    const text = this.activeText(d);
+    const d = this.documents.docOrDie(doc);
+    const text = this.documents.activeText(d);
     const at = findAnchor(text, note);
     return at.from === null ? null : linesOf(text, at.from, at.to);
   }
@@ -1903,7 +1524,7 @@ export class WorkspaceSession {
 
   /** Notes on a document, placed; `all` includes the resolved ones. */
   notesOf(opts: { doc?: string; all?: boolean }): { slug: string; notes: PlacedNote[] } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const placed = this.placedNotes(d);
     return { slug: d.slug, notes: opts.all ? placed : placed.filter((n) => !n.resolved) };
   }
@@ -1947,7 +1568,7 @@ export class WorkspaceSession {
     note: Note;
     changed: boolean;
   } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     if (opts.by === "agent" && (note.by === "human" || note.editedBy === "human"))
       throw new SessionError(
@@ -1981,7 +1602,7 @@ export class WorkspaceSession {
     note: Note;
     message: Message;
   } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     const text = opts.text.trim();
     if (!text) throw new SessionError("a reply needs something written in it", 400);
@@ -1993,7 +1614,7 @@ export class WorkspaceSession {
     slug: string;
     note: Note;
   } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     // A reopen is a write: the human reopening asks again, timed from here; the
     // agent reopening is an act on the note.
@@ -2009,7 +1630,7 @@ export class WorkspaceSession {
   }
 
   removeNote(opts: { doc?: string; id: string }): { slug: string; note: Note } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.documents.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     d.notes = d.notes.filter((n) => n.id !== opts.id);
     this.persist();
@@ -2023,23 +1644,7 @@ export class WorkspaceSession {
    * or the document is not JSON (markdown is never checked).
    */
   jsonProblemOf(slug: string, version: number): JsonProblem | null {
-    const d = this.docOrDie(slug);
-    if (docFormat(d.original) !== "json") return null;
-    this.versionOrDie(d, version);
-    return jsonProblem(readFileSync(this.core.versionPath(d, version), "utf8"));
-  }
-
-  /** Refuse, saying where and why, when `text` (a JSON document's) does not parse. */
-  private refuseInvalidJson(d: Doc, version: number, text: string, what: string): void {
-    if (docFormat(d.original) !== "json") return;
-    const p = jsonProblem(text);
-    if (!p) return;
-    throw new SessionError(
-      `v${version} of ${d.name} is not valid JSON, so it was not ${what}: ${describeJsonProblem(p)}`,
-      409,
-      undefined,
-      `fix the JSON in v${version} first; nothing was written`,
-    );
+    return this.documents.jsonProblemOf(slug, version);
   }
 
   /**
@@ -2053,7 +1658,7 @@ export class WorkspaceSession {
     slug: string,
     opts: { recreate?: "file" | "folder" } = {},
   ): { original: string; version: number; recreated?: "file" | "folder"; unchanged?: true } {
-    const d = this.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     // Save writes only an original admitted by `openPath` (a document-type file
     // inside a context entry). Checked again here so no other path into the
     // manifest (a hand-edited one, a future verb) can turn Save into "write
@@ -2085,7 +1690,7 @@ export class WorkspaceSession {
     const text = readFileSync(this.core.versionPath(d, d.active), "utf8");
     // A JSON document is a contract other things read: one that does not parse
     // never reaches the file. The text stays in the version, to be fixed there.
-    this.refuseInvalidJson(d, d.active, text, "saved");
+    this.documents.refuseInvalidJson(d, d.active, text, "saved");
     // The file's text is asked of the disk too, not of the watcher: a change it
     // never reported would be overwritten unseen. Once the flag is up the human
     // has been asked, and Save is their "Keep mine", a deliberate overwrite of
@@ -2153,7 +1758,7 @@ export class WorkspaceSession {
    * finds them.
    */
   closeDoc(slug: string): { slug: string } {
-    const d = this.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     this.viewer.closeDoc(d.slug);
     this.persist();
     return { slug: d.slug };
@@ -2168,7 +1773,7 @@ export class WorkspaceSession {
    * is gone, and removing them would be a second deletion nobody asked for.
    */
   forgetDoc(ref?: string): { slug: string; name: string; original: string; versions: number } {
-    const d = this.docOrDie(ref);
+    const d = this.documents.docOrDie(ref);
     if (existsSync(d.original))
       throw new SessionError(
         `${this.display(d.original)} is still on disk: forget is for a document whose file is gone`,
@@ -2176,7 +1781,7 @@ export class WorkspaceSession {
       );
     const forgotten = {
       slug: d.slug,
-      name: this.docName(d),
+      name: this.documents.docName(d),
       original: d.original,
       versions: d.versions.length,
     };
@@ -2386,7 +1991,7 @@ export class WorkspaceSession {
     const held = this.core.m.docs.find(
       (d) => (d.original === path || d.original.startsWith(path + sep)) && !d.missing,
     );
-    if (held && this.isDirty(held))
+    if (held && this.documents.isDirty(held))
       throw new SessionError(
         `${this.display(path)} has unsaved edits, so undo leaves it: delete it from the sidebar if it should go`,
         409,
@@ -2988,8 +2593,8 @@ export class WorkspaceSession {
       .filter((d) => inside(d.original) && !d.missing)
       .map((d) => ({
         slug: d.slug,
-        name: this.docName(d),
-        unsaved: this.isDirty(d),
+        name: this.documents.docName(d),
+        unsaved: this.documents.isDirty(d),
         versions: d.versions.length,
         open: this.core.m.openDoc === d.slug,
       }));
@@ -3103,7 +2708,7 @@ export class WorkspaceSession {
 
   /** Revert: the original's text back over the active version. */
   revert(slug: string): { version: number; text: string } {
-    const d = this.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     let text: string;
     try {
       text = readFileSync(d.original, "utf8");
@@ -3113,13 +2718,9 @@ export class WorkspaceSession {
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
-    this.writeActive(d, text);
+    this.documents.writeActive(d, text);
     this.persist();
     return { version: d.active, text };
-  }
-
-  private isDirty(d: Doc): boolean {
-    return (this.activeHash.get(d.slug) ?? "") !== d.originalHash;
   }
 
   // ── the watcher's question: whose write was that? ──────────────────────
@@ -3169,7 +2770,7 @@ export class WorkspaceSession {
         // reusing it would make a "v2" named in a chat message or an agent's
         // notes point at a different document, so the file is renumbered.
         if (n < d.nextVersion) {
-          const next = this.takeVersion(d);
+          const next = this.documents.takeVersion(d);
           const to = this.core.versionPath(d, next);
           this.writes.own(to, text);
           this.own.rename(abs, this.places.ownFileOrDie(to));
@@ -3189,8 +2790,8 @@ export class WorkspaceSession {
         // The outside text becomes a new agent version, and the active version
         // goes back to the daemon's own last text, so the active version only
         // ever holds what the human typed, and nothing anyone wrote is lost.
-        const kept = this.preserveOutside(d, text);
-        this.writeActive(d, this.lastActiveText.get(d.slug) ?? text);
+        const kept = this.documents.preserveOutside(d, text);
+        this.documents.writeActive(d, this.documents.lastActiveText.get(d.slug) ?? text);
         return {
           kind: "active.outside",
           doc: d.slug,
@@ -3234,10 +2835,10 @@ export class WorkspaceSession {
         return { kind: "original.back", doc: d.slug, original: d.original };
       }
       if (h === d.originalHash) return null; // our own save, or no change
-      const clean = !this.isDirty(d);
+      const clean = !this.documents.isDirty(d);
       if (clean) {
         d.originalHash = h;
-        this.writeActive(d, text);
+        this.documents.writeActive(d, text);
         this.persist();
         return {
           kind: "original.reloaded",
@@ -4067,10 +3668,10 @@ export class WorkspaceSession {
     }
     const text = "{}\n";
     const d = this.core.m.docs.find((x) => x.original === to);
-    if (d && this.activeText(d) !== "") return null;
+    if (d && this.documents.activeText(d) !== "") return null;
     this.writes.writeOwned(to, text, this.places.world);
     if (!d) return null;
-    this.edit(d.slug, d.active, text);
+    this.documents.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     delete d.outsideHash;
@@ -4377,11 +3978,11 @@ export class WorkspaceSession {
         }
         let activeCount = heldCount ?? 0;
         if (heldCount === undefined) {
-          const was = this.activeText(d);
+          const was = this.documents.activeText(d);
           const active = swapIn(was);
           activeCount = active.count;
           if (active.count > 0) {
-            this.writeActive(d, active.text);
+            this.documents.writeActive(d, active.text);
             texts.push({ doc: d.slug, version: d.active, text: active.text, was });
           }
         }
@@ -4824,13 +4425,13 @@ export class WorkspaceSession {
     } catch {
       hash = "";
     }
-    const alias = this.docAlias(d);
+    const alias = this.documents.docAlias(d);
     return {
       slug: d.slug,
       ...(alias !== undefined ? { alias } : {}),
       // A bundle's main file is shown as its bundle: by its title, never as
       // the name every main file of its type shares.
-      name: this.docName(d),
+      name: this.documents.docName(d),
       original: d.original,
       entryId: d.entryId,
       rel: d.rel,
@@ -4838,7 +4439,7 @@ export class WorkspaceSession {
       versions: d.versions.map((v) => ({ ...v, path: this.core.versionPath(d, v.n) })),
       active: d.active,
       hash,
-      dirty: !d.missing && this.isDirty(d),
+      dirty: !d.missing && this.documents.isDirty(d),
       outsideChanged: d.outsideChanged,
       ...(d.outsideChanged && d.outsideHash ? { outsideHash: d.outsideHash } : {}),
       ...(d.missing ? { missing: existsSync(dirname(d.original)) ? "file" : "folder" } : {}),
@@ -4848,7 +4449,7 @@ export class WorkspaceSession {
 
   /** `takesPath`: as `docOrDie`'s, for a verb that takes an absolute path (`show`). */
   doc(slug: string, opts: { takesPath?: boolean } = {}): DocView {
-    return this.docView(this.docOrDie(slug, opts));
+    return this.docView(this.documents.docOrDie(slug, opts));
   }
 
   /**

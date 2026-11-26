@@ -5,8 +5,8 @@
  * (`droppedLinks`, `embeds`), and which paths are documents in the context
  * (`contextDocs`). Tier 4 of the session parts
  * (docs/architecture/workspace-session.md); it takes the core, `places`, the
- * read index, `media` and `sidecars`, and the facade's members it needs as
- * hooks. `linkTargets`
+ * read index, `media`, `sidecars` and the `documents`, and the facade's
+ * members it needs as hooks. `linkTargets`
  * reads the relations (`typedLinks`, `relationPass`), a part that itself
  * resolves through this one, so those two are hooks too, not an import.
  */
@@ -37,7 +37,6 @@ import {
 } from "../links";
 import type {
   ContextEntry,
-  Doc,
   DroppedLink,
   EmbedView,
   HeadingOffer,
@@ -48,6 +47,7 @@ import type {
 import { type RelationsLookup, relationOffers, type Vocabulary } from "../relations";
 import type { Candidate } from "../search";
 import { imagePaths, toPosix } from "../tree";
+import type { Documents } from "./documents.ts";
 import { docFacts, EMBED_CAP, oneLine, relationUses } from "./facts.ts";
 import type { Media } from "./media.ts";
 import type { Places } from "./places.ts";
@@ -63,8 +63,8 @@ export class LinkResolve {
     private readonly readIndex: ReadIndex,
     private readonly media: Media,
     private readonly sidecars: Sidecars,
+    private readonly documents: Documents,
     private readonly hooks: {
-      docOrDie: (slug?: string, opts?: { takesPath?: boolean }) => Doc;
       docsAfter: (index: ContextIndex, world: PlanWorld) => readonly ResolvableDocument[];
       typedLinks: (
         index: ContextIndex,
@@ -87,7 +87,7 @@ export class LinkResolve {
    * document in the context is read; anything else has no headings to offer.
    */
   linkHeadings(slug: string, path: string): LinkHeadings {
-    this.hooks.docOrDie(slug);
+    this.documents.docOrDie(slug);
     const index = this.places.contextIndex();
     const own = this.places.canonical(path, index);
     const listed = index.entryOf.has(own) || this.core.m.docs.some((d) => d.original === own);
@@ -110,7 +110,7 @@ export class LinkResolve {
    * into the editor by the human like any other text.
    */
   linkTargets(slug: string): LinkTargets {
-    const from = this.hooks.docOrDie(slug).original;
+    const from = this.documents.docOrDie(slug).original;
     const all = this.readIndex.markdownCandidates();
     const shownOf = (path: string) => {
       const entry = this.core.m.context.find((e) => path.startsWith(e.root + sep));
@@ -174,7 +174,7 @@ export class LinkResolve {
    * target, and nothing is ever added to the context.
    */
   resolveLink(target: string, from: string | null, origin: LinkOrigin = "document"): Resolution {
-    const d = from === null ? undefined : this.hooks.docOrDie(from);
+    const d = from === null ? undefined : this.documents.docOrDie(from);
     const src = d?.original ?? null;
     const entry =
       (d?.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??
@@ -213,7 +213,7 @@ export class LinkResolve {
    * collapsed, so a multi-line title cannot split the link.
    */
   droppedLinks(slug: string, paths: readonly string[]): DroppedLink[] {
-    const d = this.hooks.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     const from = d.original;
     const index = this.places.contextIndex();
     // The entry the document is read in: its own, else the first that holds it.
@@ -258,7 +258,7 @@ export class LinkResolve {
    * guard sniffs; distinct targets only, at most EMBED_CAP.
    */
   embeds(slug: string, targets: readonly string[]): EmbedView[] {
-    const d = this.hooks.docOrDie(slug);
+    const d = this.documents.docOrDie(slug);
     const src = d.original;
     const entry =
       (d.entryId ? this.core.m.context.find((e) => e.id === d.entryId) : undefined) ??

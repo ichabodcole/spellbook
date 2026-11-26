@@ -57,7 +57,9 @@ export const TIERS: Record<string, number> = {
   sidecars: 2,
   placing: 2,
   viewer: 2,
-  // Tier 3: documents (S4 built `tasks`, which needs only the core).
+  // Tier 3: documents (S4 built `tasks`, which needs only the core; S7 built
+  // `documents`).
+  documents: 3,
   tasks: 3,
   // Tier 4: what reads across documents (S5 built the read side).
   // Within it, one way: `linkResolve`, `profiles` and `search` take

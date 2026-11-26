@@ -4,8 +4,7 @@
  * links among its cards (`summaries`, `cardSummaries`, `linksAmong`), and one
  * document's text (`documentText`). Tier 5 of the session parts
  * (docs/architecture/workspace-session.md); it takes the core, `places`, the
- * read index, `linkResolve`, `profiles` and `relations`, and `findDoc` and
- * `versionOrDie` from the facade as hooks.
+ * read index, `linkResolve`, `profiles`, `relations` and the `documents`.
  */
 
 import { readFileSync } from "node:fs";
@@ -25,7 +24,6 @@ import {
 import type {
   Backlinks,
   BacklinkView,
-  Doc,
   DocCardSummary,
   DocSummary,
   DocText,
@@ -37,10 +35,10 @@ import type {
   OutlinkView,
   ReferenceBacklinkView,
   ReferenceView,
-  Version,
 } from "../protocol";
 import { readsBack } from "../relations";
 import { toPosix } from "../tree";
+import type { Documents } from "./documents.ts";
 import { SessionError } from "./errors.ts";
 import { BACKLINK_CAP, cardFacts, type DocFacts, GRAPH_CAP, NO_FACTS, OUTWARD } from "./facts.ts";
 import type { LinkResolve } from "./linkResolve.ts";
@@ -59,10 +57,7 @@ export class LinkReports {
     private readonly linkResolve: LinkResolve,
     private readonly profiles: Profiles,
     private readonly relations: Relations,
-    private readonly hooks: {
-      findDoc: (key: string) => Doc | undefined;
-      versionOrDie: (d: Doc, n: number) => Version;
-    },
+    private readonly documents: Documents,
   ) {}
 
   /**
@@ -486,13 +481,13 @@ export class LinkReports {
     version: number | undefined,
   ): { text: string; version: number | null } {
     if (version !== undefined) {
-      const d = subject.doc === null ? undefined : this.hooks.findDoc(subject.doc);
+      const d = subject.doc === null ? undefined : this.documents.findDoc(subject.doc);
       if (!d)
         throw new SessionError(
           `${this.places.display(subject.path)} is not open in the session, so it has no v${version}`,
           404,
         );
-      this.hooks.versionOrDie(d, version);
+      this.documents.versionOrDie(d, version);
       return { text: readFileSync(this.core.versionPath(d, version), "utf8"), version };
     }
     const c = this.readIndex.candidates().find((x) => x.path === subject.path);

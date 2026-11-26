@@ -6,9 +6,9 @@
  * the document a question is about (`linkSubject`), a bundle's references
  * (kit-canvas-references), and the app's link slot (`linkSlot`,
  * `linkCheckOpts`, `resolvable`). Tier 4 of the session parts
- * (docs/architecture/workspace-session.md); it takes the core (`state`) and
- * `places`, and the facade's members it needs as hooks (`activeText`,
- * `filteredOut`, `mainOf`, `findDoc`, `docOrDie`).
+ * (docs/architecture/workspace-session.md); it takes the core (`state`),
+ * `places` and the `documents`, and the facade's `filteredOut` (the scan
+ * filter) as a hook.
  *
  * Each cache is one instance, held here: the other read parts read through
  * this one, and only after a pass that read every candidate is a cache pruned
@@ -45,6 +45,7 @@ import type {
 } from "../protocol";
 import type { Candidate } from "../search";
 import { docPaths, isDocName, toPosix } from "../tree";
+import type { Documents } from "./documents.ts";
 import { type DocFacts, docFacts, NO_FACTS } from "./facts.ts";
 import { bundleNameAt } from "./names.ts";
 import type { Places } from "./places.ts";
@@ -55,12 +56,9 @@ export class ReadIndex {
   constructor(
     private readonly core: State,
     private readonly places: Places,
+    private readonly documents: Documents,
     private readonly hooks: {
-      activeText: (d: Doc) => string;
       filteredOut: () => (abs: string) => boolean;
-      mainOf: (abs: string) => string;
-      findDoc: (key: string) => Doc | undefined;
-      docOrDie: (slug?: string, opts?: { takesPath?: boolean }) => Doc;
     },
   ) {}
 
@@ -185,7 +183,7 @@ export class ReadIndex {
   /** A candidate's text: its ACTIVE VERSION when the session holds it, else the file. */
   candidateText(c: Candidate): string {
     const d = c.slug === null ? undefined : this.core.m.docs.find((x) => x.slug === c.slug);
-    return d ? this.hooks.activeText(d) : readFileSync(c.path, "utf8");
+    return d ? this.documents.activeText(d) : readFileSync(c.path, "utf8");
   }
 
   /**
@@ -306,7 +304,7 @@ export class ReadIndex {
       } catch {
         continue;
       }
-      const target = dir ? this.hooks.mainOf(c) : c;
+      const target = dir ? this.documents.mainOf(c) : c;
       const own = this.inContextAt(target, index);
       if (own !== null) return { state: "in-context", path: own };
       if (dir && target === c) return { state: "folder", path: c };
@@ -468,14 +466,14 @@ export class ReadIndex {
     index: ContextIndex,
     opts: { images?: boolean } = {},
   ): { doc: string | null; path: string } {
-    if (key !== undefined && isAbsolute(key) && !this.hooks.findDoc(key)) {
+    if (key !== undefined && isAbsolute(key) && !this.documents.findDoc(key)) {
       const own = this.places.canonical(key, index);
       if (index.entryOf.has(own)) return { doc: null, path: own };
       // An image is a link target and nothing more: backlinks ask about one,
       // the graph and the profile never do (they read text).
       if (opts.images && index.images.has(own)) return { doc: null, path: own };
     }
-    const d = this.hooks.docOrDie(key, { takesPath: true });
+    const d = this.documents.docOrDie(key, { takesPath: true });
     return { doc: d.slug, path: this.places.canonical(d.original, index) };
   }
 }
