@@ -280,6 +280,7 @@ this.viewer = new Viewer(this.core);
 this.media = new Media(this.core, this.places);
 this.sidecars = new Sidecars(this.core, this.places, { activeText });
 this.placing = new Placing(this.core, this.places, {
+  // S8: these six went; it takes `context`
   listedBundleHolding,
   rescan,
   refreshListed,
@@ -349,6 +350,7 @@ this.documents = new Documents(this.core, this.places, this.writes, this.viewer,
   persist,
 });
 this.follow = new Follow(this.core, this.places, this.viewer, {
+  // S8: rescan, refreshListedContents and relink went; it takes `context`
   rescan,
   refreshListedContents,
   relink,
@@ -358,10 +360,11 @@ this.comparePart = new Compare(this.core, this.documents);
 this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
   persist,
   onFileEvent,
-  rescanAround,
+  rescanAround, // S8: these two went; it takes `context`
   relink,
 });
 this.notes = new Notes(this.core, this.chats, this.documents, { persist });
+// S8: filteredOut went; it takes `context`
 this.readIndex = new ReadIndex(this.core, this.places, this.documents, { filteredOut });
 // …
 this.linkResolve = new LinkResolve(
@@ -806,6 +809,12 @@ that finds the same in our code records our instance under it.
   the viewer's nine transitions for the 17 writes, the S5 hooks that became
   parts, and where S6 left the write-up's map; the tier test lists them, and
   `session.ts`'s override went from 4,649 to 4,462.
+- **2026-11-25**: S7 built `documents` and `follow` (tier 3) and `compare`,
+  `saving` and `notes` (tier 4), the note guard still loaded lazily: the helpers
+  rehomed with `documents`, the S5 and S6 hooks that became parts (`readIndex`,
+  `linkResolve`, `linkReports`, the link check), the facade no longer a point of
+  interception for them, and where S7 left the write-up's map; the tier test
+  lists them, and `session.ts`'s override went from 4,462 to 3,671.
 - **2026-11-25**: S8 built `workspace` and `context` (tier 2): what each owns,
   how the facade builds them, `relink` and the rescans in their order, the hooks
   from S6 and S7 that became the part (`placing`, `follow`, `saving`,
