@@ -100,4 +100,4 @@ _Written at close._
 - chore/kit-split-s8 (landed 2026-11-26)
 - chore/kit-split-s9 (landed 2026-11-26)
 - chore/kit-split-v1 (landed 2026-11-26)
-- chore/kit-split-r1 (open)
+- chore/kit-split-r1 (landed 2026-11-26)
