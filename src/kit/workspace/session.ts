@@ -69,7 +69,6 @@ import {
   sniffImage,
 } from "../lib/docFormat.ts";
 import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
-import { splitTarget } from "../lib/linkTarget.ts";
 import {
   type ImageDescription,
   type ImageSource,
@@ -151,13 +150,8 @@ import type {
 import { Chats } from "./session/chats.ts";
 import { Documents } from "./session/documents.ts";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
-import {
-  IMAGES_DIR,
-  IMPORT_NAMES_MAX,
-  IMPORTED_DIR,
-  MANIFEST_FORMAT,
-  MOVES_KEPT,
-} from "./session/facts.ts";
+import { IMAGES_DIR, IMPORT_NAMES_MAX, IMPORTED_DIR, MANIFEST_FORMAT } from "./session/facts.ts";
+import { Follow } from "./session/follow.ts";
 import { LinkChecker } from "./session/linkCheck.ts";
 import { LinkReports } from "./session/linkReports.ts";
 import { LinkResolve } from "./session/linkResolve.ts";
@@ -318,6 +312,8 @@ export class WorkspaceSession {
   private readonly placing: Placing;
   /** Tier 3: the documents the session holds, and their versions. */
   private readonly documents: Documents;
+  /** Tier 3: following a move, and the moves this daemon made. */
+  private readonly follow: Follow;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
@@ -330,13 +326,6 @@ export class WorkspaceSession {
   /** Tier 5: the link check (`linkCheckPart`, since `linkCheck()` is a public verb) and the link reports. */
   private readonly linkCheckPart: LinkChecker;
   private readonly linkReports: LinkReports;
-  /**
-   * Every move and rename this daemon made (`followMove`), oldest first, an
-   * undo's way back included: what the link check's `proposed` reads to say
-   * where a proposal's old target went. Memory only, so a restart forgets it
-   * and a proposal's broken link is then reported with no `suggest`.
-   */
-  private moves: [from: string, to: string][] = [];
   /** What a restore found changed while no daemon was watching. */
   restoreReport: RestoreReport = { outside: [], tasks: [] };
 
@@ -365,6 +354,13 @@ export class WorkspaceSession {
     });
     this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
       persist: () => this.persist(),
+    });
+    this.follow = new Follow(this.core, this.places, this.viewer, {
+      rescan: (entryId) => this.rescan(entryId),
+      refreshListedContents: () => this.refreshListedContents(),
+      relink: () => this.relink(),
+      resolveFrom: (target, src, entry, origin, index, kind) =>
+        this.linkResolve.resolveFrom(target, src, entry, origin, index, kind),
     });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
@@ -397,11 +393,7 @@ export class WorkspaceSession {
       this.readIndex,
       this.linkResolve,
       this.relationsPart,
-      {
-        movedFrom: (path) => this.movedFrom(path),
-        movedTarget: (raw, src, wasAt, tried, entry, index) =>
-          this.movedTarget(raw, src, wasAt, tried, entry, index),
-      },
+      this.follow,
     );
     this.linkReports = new LinkReports(
       this.core,
@@ -2904,76 +2896,6 @@ export class WorkspaceSession {
   //   name) or given a free name (a default one, a drop); files are created with
   //   the exclusive flag, so a race cannot clobber either.
 
-  /**
-   * After something moved on disk from `from` to `to`, bring the model with it:
-   * opened documents keep their versions under the new path, entries rooted at
-   * or holding the moved thing follow it, and every mirror is re-read. An entry
-   * that now sits inside another set is dropped: the set shows it already.
-   */
-  private followMove(from: string, to: string): void {
-    // Kept for the link check's `proposed`: where a proposal's old target went.
-    this.moves.push([from, to]);
-    if (this.moves.length > MOVES_KEPT) this.moves.splice(0, this.moves.length - MOVES_KEPT);
-    const moved = (p: string): string | null =>
-      p === from ? to : p.startsWith(from + sep) ? to + p.slice(from.length) : null;
-    for (const d of this.core.m.docs) {
-      const now = moved(d.original);
-      if (now) {
-        d.original = now;
-        d.name = basename(now);
-      }
-    }
-    // The open image follows a rename or a move, as an open document does.
-    this.viewer.followMove(moved);
-    // A converted image's remembered name follows it; one left by a file that
-    // was where the moved thing now is goes.
-    if (this.core.m.importedAs) {
-      const names: Record<string, string> = {};
-      for (const [p, n] of Object.entries(this.core.m.importedAs)) {
-        const now = moved(p);
-        if (now) names[now] = n;
-        else if (p !== to && !p.startsWith(to + sep)) names[p] = n;
-      }
-      this.core.m.importedAs = names;
-    }
-    const drop = new Set<string>();
-    for (const e of this.core.m.context) {
-      if (e.membership === "listed") {
-        const only = listedFile(e);
-        if (!only) continue;
-        const now = moved(only.abs);
-        if (!now) continue;
-        if (this.places.coveringEntry(now, e.id)) drop.add(e.id);
-        else {
-          e.root = dirname(now);
-          e.realRoot = realOr(e.root);
-          e.label = basename(now);
-          const bundle = only.kind === "bundle" ? bundleTypeOf(now) : null;
-          e.nodes = [
-            only.kind === "image"
-              ? { kind: "image", rel: basename(now) }
-              : bundle
-                ? bundleNode(basename(now), now, bundle)
-                : docNode(basename(now), now),
-          ];
-        }
-      } else {
-        const now = moved(e.root);
-        if (!now) continue;
-        if (this.places.coveringEntry(now, e.id)) drop.add(e.id);
-        else {
-          e.root = now;
-          e.realRoot = realOr(now);
-          e.label = basename(now) || now;
-        }
-      }
-    }
-    this.core.m.context = this.core.m.context.filter((e) => !drop.has(e.id));
-    for (const e of this.core.m.context) if (e.membership === "mirrored") this.rescan(e.id);
-    this.refreshListedContents();
-    this.relink();
-  }
-
   /** The folder of a bundle listed on its own (no set shows it) that `abs` is inside, else null. */
   private listedBundleHolding(abs: string): string | null {
     const b = bundleOf(abs);
@@ -3238,8 +3160,8 @@ export class WorkspaceSession {
         : null;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
-    this.followMove(item.abs, to);
-    if (sidecar && sidecarTo) this.followMove(sidecar, sidecarTo);
+    this.follow.followMove(item.abs, to);
+    if (sidecar && sidecarTo) this.follow.followMove(sidecar, sidecarTo);
     if (!this.places.itemAt(to)) this.placing.adoptNew(to);
     if (sidecarTo && sidecarShown && !this.places.itemAt(sidecarTo))
       this.placing.adoptNew(sidecarTo);
@@ -3540,8 +3462,8 @@ export class WorkspaceSession {
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
-    this.followMove(item.abs, to);
-    if (sidecar && sidecarTo) this.followMove(sidecar, sidecarTo);
+    this.follow.followMove(item.abs, to);
+    if (sidecar && sidecarTo) this.follow.followMove(sidecar, sidecarTo);
     const seeded = item.dir ? undefined : this.seedJson(item.abs, to);
     this.persist();
     const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, sidecar, sidecarTo)) : null;
@@ -3592,7 +3514,7 @@ export class WorkspaceSession {
     if (to !== from) {
       this.renameOrDie(from, to);
       this.writes.wroteBundle(to);
-      this.followMove(from, to);
+      this.follow.followMove(from, to);
     }
     if (titleTo !== titleFrom) {
       this.writes.wroteBundle(to);
@@ -4182,7 +4104,7 @@ export class WorkspaceSession {
     e.label = basename(folder);
     e.nodes = [];
     delete e.truncated;
-    this.followMove(item.abs, to);
+    this.follow.followMove(item.abs, to);
     this.persist();
     const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, null, null)) : null;
     return {
@@ -4237,7 +4159,7 @@ export class WorkspaceSession {
     e.label = basename(to);
     e.nodes = [docNode(basename(to), to)];
     delete e.truncated;
-    this.followMove(abs, to);
+    this.follow.followMove(abs, to);
     this.persist();
     return { path: to, from: abs, folder, entry: e.id };
   }
@@ -4588,62 +4510,6 @@ export class WorkspaceSession {
    */
   profileCheck(): ProfileCheck {
     return this.profilesPart.profileCheck();
-  }
-
-  /** Where `path` is now, after the moves this daemon made, in order. */
-  private movedTo(path: string): string {
-    let p = path;
-    for (const [from, to] of this.moves)
-      if (p === from) p = to;
-      else if (p.startsWith(from + sep)) p = to + p.slice(from.length);
-    return p;
-  }
-
-  /** Where `path` was before the moves this daemon made: `movedTo` run back. */
-  private movedFrom(path: string): string {
-    let p = path;
-    for (let i = this.moves.length - 1; i >= 0; i--) {
-      const [from, to] = this.moves[i] as [string, string];
-      if (p === to) p = from;
-      else if (p.startsWith(to + sep)) p = from + p.slice(to.length);
-    }
-    return p;
-  }
-
-  /**
-   * A broken link's target as a move left it: each place the link was looked
-   * for (`tried`, and the same places from where its document was, `wasAt`),
-   * followed through the moves this daemon made; the first that moved (or
-   * whose document did) and lands, rewritten from where the document is now
-   * as relink writes it. Undefined when no move explains it: no guess.
-   */
-  private movedTarget(
-    raw: string,
-    src: string,
-    wasAt: string,
-    tried: readonly string[],
-    entry: ContextEntry | undefined,
-    index: ContextIndex,
-  ): string | undefined {
-    if (this.moves.length === 0) return undefined;
-    // Every place in `tried` is missing, so one that exists once followed
-    // through the moves is one a move explains. From where the document was,
-    // the same places (a relative link only) explain a move of the document.
-    const looked = [...tried];
-    if (wasAt !== src && !raw.startsWith("/"))
-      for (const t of tried) looked.push(join(dirname(wasAt), relative(dirname(src), t)));
-    for (const at of looked) {
-      const now = this.movedTo(at);
-      if (!existsSync(now)) continue;
-      const written = retarget(raw, src, now, entry?.root ?? null);
-      // ⛔ Offered only when it is sure to land, as relink's own offer is,
-      // and lands as what it named: a link to a file never lands on a folder
-      // (a file moved away and a folder made in its place).
-      const r = this.linkResolve.resolveFrom(written, src, entry, "document", index, "markdown");
-      const folderLink = splitTarget(raw).path.endsWith("/");
-      if (r.state !== "missing" && (folderLink || r.state !== "folder")) return written;
-    }
-    return undefined;
   }
 
   /**

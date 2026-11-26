@@ -2,8 +2,8 @@
  * The link check: every link in the session's documents that nothing answers,
  * and what else the status bar's mark reports (`linkCheck`). Tier 5 of the
  * session parts (docs/architecture/workspace-session.md); it takes the core,
- * `places`, the read index, `linkResolve` and `relations`, and the facade's
- * move history (`movedFrom`, `movedTarget`) as hooks until `follow` is built.
+ * `places`, the read index, `linkResolve`, `relations`, and `follow` for the
+ * move history (`movedFrom`, `movedTarget`).
  */
 
 import { existsSync } from "node:fs";
@@ -34,13 +34,13 @@ import type {
 import { oneWaySymmetric, type TypedEdge } from "../relations";
 import { toPosix } from "../tree";
 import { type DocFacts, IMAGES_DIR, keptOutside, LINK_CHECK_CAP, NO_FACTS } from "./facts.ts";
+import type { Follow } from "./follow.ts";
 import type { LinkResolve } from "./linkResolve.ts";
 import { caseInsensitiveAt } from "./names.ts";
 import type { Places } from "./places.ts";
 import type { ReadIndex } from "./readIndex.ts";
 import type { Relations } from "./relations.ts";
 import type { State } from "./state.ts";
-import type { ContextIndex } from "./types.ts";
 
 export class LinkChecker {
   constructor(
@@ -49,17 +49,7 @@ export class LinkChecker {
     private readonly readIndex: ReadIndex,
     private readonly linkResolve: LinkResolve,
     private readonly relations: Relations,
-    private readonly hooks: {
-      movedFrom: (path: string) => string;
-      movedTarget: (
-        raw: string,
-        src: string,
-        wasAt: string,
-        tried: readonly string[],
-        entry: ContextEntry | undefined,
-        index: ContextIndex,
-      ) => string | undefined;
-    },
+    private readonly follow: Follow,
   ) {}
 
   /**
@@ -295,7 +285,7 @@ export class LinkChecker {
         const entry = entryOf(c.path);
         // Where the document was before the moves this daemon made: a link
         // written there reads from there.
-        const wasAt = this.hooks.movedFrom(c.path);
+        const wasAt = this.follow.movedFrom(c.path);
         for (const v of d.versions) {
           if (v.n === d.active || v.by !== "agent" || v.activated || keptOutside(v)) continue;
           const got = this.readIndex.readOf(c, read, v.n);
@@ -317,7 +307,7 @@ export class LinkChecker {
             if (r.state !== "missing") continue;
             const suggest =
               link.kind === "markdown"
-                ? this.hooks.movedTarget(link.raw, c.path, wasAt, r.tried, entry, index)
+                ? this.follow.movedTarget(link.raw, c.path, wasAt, r.tried, entry, index)
                 : undefined;
             mine.push({
               source: c.path,
