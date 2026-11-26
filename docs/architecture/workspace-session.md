@@ -44,9 +44,10 @@ chat and the tasks"). **S5 built the read side**: `readIndex`, `linkResolve`,
 **S7 built the documents**: `documents` and `follow` (tier 3), `compare`,
 `saving` and `notes` (tier 4) (below, "The documents, and what saves, compares
 and notes them"). **S8 built the tree**: `workspace` and `context` (tier 2)
-(below, "The tree: the context and the workspace"). The other parts are still
-planned. When a step builds a part, it adds the part's row here and in the tier
-test, in the same change.
+(below, "The tree: the context and the workspace"). **S9 built the watcher's
+side**: `reconcile` (tier 4) (below, "The watcher's question: reconcile"). The
+other parts are still planned. When a step builds a part, it adds the part's row
+here and in the tier test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -71,14 +72,14 @@ folder says which is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6, `documents`, `follow`, `compare`, `saving` and `notes` at S7, `workspace` and `context` at S8; the rest planned) | Story Studio's, not ours                 |
-| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                                                                                                                   |                                          |
-| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                                                                                                                |                                          |
-| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                                                                                                                         | `bundleStamps`, `top`, `copyIn`          |
-| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                                                                                                                     | `unseen`, `audio`, `orders`              |
-| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                                                                                                               | `markers`, `copyRecords`, `libraryLinks` |
-| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                                                                                                                      | `copySource`, `projectMeta`              |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6, `documents`, `follow`, `compare`, `saving` and `notes` at S7, `workspace` and `context` at S8, `reconcile` at S9; the rest planned) | Story Studio's, not ours                 |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                                                                                                                                      |                                          |
+| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                                                                                                                                   |                                          |
+| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                                                                                                                                            | `bundleStamps`, `top`, `copyIn`          |
+| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                                                                                                                                        | `unseen`, `audio`, `orders`              |
+| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                                                                                                                                  | `markers`, `copyRecords`, `libraryLinks` |
+| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                                                                                                                                         | `copySource`, `projectMeta`              |
 
 What each part owns, member by member, is in the write-up's
 [module map](../items/kit-split-oversized-modules/write-up.md#the-proposed-module-map-sessionts).
@@ -359,7 +360,7 @@ this.follow = new Follow(this.core, this.places, this.viewer, {
 this.comparePart = new Compare(this.core, this.documents);
 this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
   persist,
-  onFileEvent,
+  onFileEvent, // S9: went; it takes `reconcile`
   rescanAround, // S8: these two went; it takes `context`
   relink,
 });
@@ -488,7 +489,7 @@ this.saving = new Saving(
   this.viewer,
   this.documents,
   this.contextPart,
-  { persist, onFileEvent }
+  { persist, onFileEvent } // S9: onFileEvent went; it takes `reconcile`
 );
 // …
 this.readIndex = new ReadIndex(
@@ -551,6 +552,75 @@ Where S8 left the write-up's map, by dependency direction:
   the two restore passes above, and the structure and set verbs still in the
   facade (`forgetPath`, `makeSet`, `unmakeSet`). They move at S10, where the
   write-up puts them.
+
+### The watcher's question: reconcile (tier 4, built at S9)
+
+The facade builds `reconcile` after `documents` and the context, and before
+`saving`, which now takes it:
+
+```ts
+this.comparePart = new Compare(this.core, this.documents);
+this.reconcile = new Reconcile(
+  this.core,
+  this.places,
+  this.writes,
+  this.viewer,
+  this.documents,
+  this.contextPart,
+  { persist }
+);
+this.saving = new Saving(
+  this.core,
+  this.places,
+  this.writes,
+  this.viewer,
+  this.documents,
+  this.contextPart,
+  this.reconcile,
+  { persist }
+);
+```
+
+| Part           | Tier | Owns                                                                                                                     |
+| -------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `reconcile.ts` | 4    | `onFileEvents`, `onFileEvent`, `shownBundleOf`, `markMissing`, `originalsUnder`, `refreshBundle`, `revert`, `forgetDoc`. |
+
+It moved verbatim: the only changes are `this.` to the part, the hook or the
+core (`this.isOwnWrite` became `writes.isOwnWrite`, `this.own` `core.own`,
+`this.docsDir` `core.docsDir`, `this.display` `places.display`), and dropping
+`private` from `markMissing`, which the facade's `rewriteLinks` still calls. Its
+public members keep one-line delegates with their comments; the facade's own
+calls (`rewriteLinks`' `markMissing` and `onFileEvent`) go to the part. It
+writes the record through the facade's `persist` hook, so a test that replaces
+`persist` on a session still sees every write. The daemon's side of the watcher
+(the watches, the coalescing, asking again with `originalsUnder` a moment after
+a gap) stays in `server.ts`, and calls the facade's delegates.
+
+**Whose write was that, unchanged.** The ledger stays in `writes` (tier 1):
+`reconcile` asks `isOwnWrite` of a version file before anything else, `own`s a
+version it adopts or renumbers before the rename lands, and asks
+`isOwnBundleEcho` after re-reading a bundle's row. An original is the daemon's
+own when its hash is the one recorded (`originalHash`), as before. Every
+`persist`, `rescanAround`, `refreshListed`, `rescan`, `relink`, `own`,
+`isOwnWrite`, `writeActive` and `preserveOutside` call of the eight members is
+the same call in the same place and order, and nothing in them branches on the
+platform: the realpath match for a symlinked original (FSEvents reports real
+paths) and the quiet `null` for an original that is unreadable for a moment are
+the same lines.
+
+Where S9 left the write-up's map, by dependency direction:
+
+- **The S7 hook, now the part.** `saving` took the facade's `onFileEvent` as a
+  hook while `reconcile` was not built. Both are tier 4, and `reconcile` takes
+  nothing that takes `saving`, so `saving` takes `reconcile` directly, one way
+  within the tier as `linkResolve` takes `readIndex`; its hooks object keeps
+  only `persist`. Nothing in `src`, the tests or the plugins replaces
+  `onFileEvent` on a session, so no interception was lost.
+- **Still in the facade, calling the part**: `rewriteLinks` (`relinkOnMove`,
+  S10) marks a rewritten original gone, or classifies it, through
+  `reconcile.markMissing` and `reconcile.onFileEvent`.
+- **Rehomed beside the map**: none. `forgetDoc`, filed under reconcile though it
+  is a verb, sat beside `closeDoc` and moved as the map says.
 
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
@@ -823,3 +893,7 @@ that finds the same in our code records our instance under it.
 - **2026-11-25**: D1 built the daemon's tier 0 (`types`, `rules`, `landings`)
   and where it left the write-up's map; `DAEMON_TIERS` lists them, and
   `server.ts`'s override went from 4,876 to 4,367.
+- **2026-11-26**: S9 built `reconcile` (tier 4): what it owns, how the facade
+  builds it, whose write was that in its order, `saving`'s `onFileEvent` hook
+  that became the part, and where S9 left the write-up's map; the tier test
+  lists it, and `session.ts`'s override went from 3,386 to 3,189.
