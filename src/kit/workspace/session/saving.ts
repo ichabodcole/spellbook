@@ -2,15 +2,16 @@
  * Saving: the active version's text over the original, the only write to it
  * (`save`), and putting a document away (`closeDoc`). Tier 4 of the session
  * parts (docs/architecture/workspace-session.md); it takes the core,
- * `places`, `writes`, the `viewer` and the `documents`, and as hooks the
- * facade's `persist`, the watcher's `onFileEvent` (reconcile, not built) and
- * the context's `rescanAround` and `relink`, still on the facade.
+ * `places`, `writes`, the `viewer`, the `documents` and the `context` (its
+ * `rescanAround` and `relink`), and as hooks the facade's `persist` and the
+ * watcher's `onFileEvent` (reconcile, not built).
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { isBundleMain } from "../../lib/bundles.ts";
 import { isDocName } from "../tree";
+import type { Context } from "./context.ts";
 import type { Documents } from "./documents.ts";
 import { SessionError, UnseenChangeError } from "./errors.ts";
 import { contentHash } from "./names.ts";
@@ -27,11 +28,10 @@ export class Saving {
     private readonly writes: Writes,
     private readonly viewer: Viewer,
     private readonly documents: Documents,
+    private readonly context: Context,
     private readonly hooks: {
       persist: () => void;
       onFileEvent: (abs: string) => FileEvent | null;
-      rescanAround: (abs: string) => void;
-      relink: () => void;
     },
   ) {}
 
@@ -128,8 +128,8 @@ export class Saving {
     const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
     if (!fileThere) {
       delete d.missing;
-      this.hooks.rescanAround(d.original);
-      this.hooks.relink();
+      this.context.rescanAround(d.original);
+      this.context.relink();
     }
     this.hooks.persist();
     return {

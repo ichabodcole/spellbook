@@ -323,38 +323,32 @@ export class WorkspaceSession {
       this.workspacePart,
       { persist: () => this.persist(), closeImage: () => this.closeImage() },
     );
-    this.placing = new Placing(this.core, this.places, {
-      listedBundleHolding: (abs) => this.contextPart.listedBundleHolding(abs),
-      rescan: (entryId) => this.contextPart.rescan(entryId),
-      refreshListed: (abs) => this.contextPart.refreshListed(abs),
-      scanSkip: (entryId, root) => this.contextPart.scanSkip(entryId, root),
-      scanGuard: () => this.contextPart.scanGuard(),
-      relink: () => this.contextPart.relink(),
-    });
+    this.placing = new Placing(this.core, this.places, this.contextPart);
     this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
       persist: () => this.persist(),
     });
-    this.follow = new Follow(this.core, this.places, this.viewer, {
-      rescan: (entryId) => this.contextPart.rescan(entryId),
-      refreshListedContents: () => this.contextPart.refreshListedContents(),
-      relink: () => this.contextPart.relink(),
+    this.follow = new Follow(this.core, this.places, this.viewer, this.contextPart, {
       resolveFrom: (target, src, entry, origin, index, kind) =>
         this.linkResolve.resolveFrom(target, src, entry, origin, index, kind),
     });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
     this.comparePart = new Compare(this.core, this.documents);
-    this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
-      persist: () => this.persist(),
-      onFileEvent: (abs) => this.onFileEvent(abs),
-      rescanAround: (abs) => this.contextPart.rescanAround(abs),
-      relink: () => this.contextPart.relink(),
-    });
+    this.saving = new Saving(
+      this.core,
+      this.places,
+      this.writes,
+      this.viewer,
+      this.documents,
+      this.contextPart,
+      {
+        persist: () => this.persist(),
+        onFileEvent: (abs) => this.onFileEvent(abs),
+      },
+    );
     this.notes = new Notes(this.core, this.chats, this.documents, {
       persist: () => this.persist(),
     });
-    this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
-      filteredOut: () => this.contextPart.filteredOut(),
-    });
+    this.readIndex = new ReadIndex(this.core, this.places, this.documents, this.contextPart);
     this.linkResolve = new LinkResolve(
       this.core,
       this.places,

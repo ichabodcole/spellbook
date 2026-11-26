@@ -7,8 +7,8 @@
  * (kit-canvas-references), and the app's link slot (`linkSlot`,
  * `linkCheckOpts`, `resolvable`). Tier 4 of the session parts
  * (docs/architecture/workspace-session.md); it takes the core (`state`),
- * `places` and the `documents`, and the facade's `filteredOut` (the scan
- * filter) as a hook.
+ * `places`, the `documents` and the `context` (its `filteredOut`, the scan
+ * filter).
  *
  * Each cache is one instance, held here: the other read parts read through
  * this one, and only after a pass that read every candidate is a cache pruned
@@ -45,6 +45,7 @@ import type {
 } from "../protocol";
 import type { Candidate } from "../search";
 import { docPaths, isDocName, toPosix } from "../tree";
+import type { Context } from "./context.ts";
 import type { Documents } from "./documents.ts";
 import { type DocFacts, docFacts, NO_FACTS } from "./facts.ts";
 import { bundleNameAt } from "./names.ts";
@@ -57,9 +58,7 @@ export class ReadIndex {
     private readonly core: State,
     private readonly places: Places,
     private readonly documents: Documents,
-    private readonly hooks: {
-      filteredOut: () => (abs: string) => boolean;
-    },
+    private readonly context: Context,
   ) {}
 
   /**
@@ -162,7 +161,7 @@ export class ReadIndex {
     // app's filter leaves it out there (`ScanRule.skip`): then it is out of
     // search and links as it is out of the tree. Its record stays, versions
     // and unsaved text, for when the filter lets it back.
-    const filtered = this.hooks.filteredOut();
+    const filtered = this.context.filteredOut();
     for (const d of this.core.m.docs)
       if (!(d.entryId === null && filtered(d.original))) add(d.original, d);
     return candidates;

@@ -3,10 +3,10 @@
  * (`followMove`), and the moves this daemon made (`moves`), which the link
  * check reads to say where a broken link's target went (`movedFrom`,
  * `movedTarget`). Tier 3 of the session parts
- * (docs/architecture/workspace-session.md); it takes the core, `places` and
- * the `viewer`, and as hooks the context's members still on the facade
- * (`rescan`, `refreshListedContents`, `relink`) and `linkResolve.resolveFrom`
- * (tier 4), which `movedTarget` asks whether a moved target lands.
+ * (docs/architecture/workspace-session.md); it takes the core, `places`, the
+ * `viewer` and the `context` (`rescan`, `refreshListedContents`, `relink`),
+ * and as a hook `linkResolve.resolveFrom` (tier 4), which `movedTarget` asks
+ * whether a moved target lands.
  */
 
 import { existsSync } from "node:fs";
@@ -16,6 +16,7 @@ import { splitTarget } from "../../lib/linkTarget.ts";
 import { type LinkKind, type LinkOrigin, type Resolution, retarget } from "../links";
 import type { ContextEntry } from "../protocol";
 import { bundleNode, docNode, listedFile } from "../tree";
+import type { Context } from "./context.ts";
 import { MOVES_KEPT } from "./facts.ts";
 import { realOr } from "./paths.ts";
 import type { Places } from "./places.ts";
@@ -28,10 +29,8 @@ export class Follow {
     private readonly core: State,
     private readonly places: Places,
     private readonly viewer: Viewer,
+    private readonly context: Context,
     private readonly hooks: {
-      rescan: (entryId: string) => boolean;
-      refreshListedContents: () => void;
-      relink: () => void;
       resolveFrom: (
         target: string,
         src: string | null,
@@ -116,9 +115,9 @@ export class Follow {
       }
     }
     this.core.m.context = this.core.m.context.filter((e) => !drop.has(e.id));
-    for (const e of this.core.m.context) if (e.membership === "mirrored") this.hooks.rescan(e.id);
-    this.hooks.refreshListedContents();
-    this.hooks.relink();
+    for (const e of this.core.m.context) if (e.membership === "mirrored") this.context.rescan(e.id);
+    this.context.refreshListedContents();
+    this.context.relink();
   }
 
   /** Where `path` is now, after the moves this daemon made, in order. */
