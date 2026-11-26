@@ -43,7 +43,6 @@ import {
   statSync,
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { NOT_PLACED } from "../document/notPlaced.ts";
 import {
   BUNDLE_INFO,
   type BundleType,
@@ -75,7 +74,6 @@ import {
   sidecarOf,
   sidecarSkeleton,
 } from "../lib/sidecar.ts";
-import { type Anchor, anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
 import type { Disk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
@@ -168,6 +166,7 @@ import {
   tilde,
   uncopied,
 } from "./session/names.ts";
+import { Notes } from "./session/notes.ts";
 import {
   bundleHolding,
   isFolder,
@@ -254,6 +253,9 @@ export {
   tilde,
   uncopied,
 } from "./session/names.ts";
+// The note guard lives with the notes (`session/notes.ts`), loaded lazily
+// there; re-exported so the daemon and its tests import it from here.
+export { loadNoteGuard } from "./session/notes.ts";
 export { bundleHolding, overlapOf, realOr, treeHash } from "./session/paths.ts";
 export {
   type AppDeclaration,
@@ -267,31 +269,6 @@ export {
   type ScanAt,
   type ScanRule,
 } from "./session/types.ts";
-
-/**
- * The note guard (`showsSelection`), loaded the first time a note arrives with
- * what the human selected. ⛔ NEVER A STATIC IMPORT: it pulls in the markdown
- * parser, and every daemon and CLI start loads this file; 31 more modules made
- * each spawn about 10% slower, and a test of 21 spawns ran out of time.
- */
-let noteGuard: typeof import("../document/projection.ts").showsSelection | null = null;
-/** Load the note guard; `addNote` with `seen` needs it. Cheap once loaded. */
-export async function loadNoteGuard(): Promise<void> {
-  noteGuard ??= (await import("../document/projection.ts")).showsSelection;
-}
-
-/**
- * The loaded guard. ⛔ Not loaded is a caller's mistake (`loadNoteGuard` first),
- * and it is said, never taken as a pass: an unchecked note is the bug the guard
- * is for.
- */
-function guardLoaded(): NonNullable<typeof noteGuard> {
-  if (!noteGuard)
-    throw new Error(
-      "addNote: a note with `seen` needs the note guard: await loadNoteGuard() first",
-    );
-  return noteGuard;
-}
 
 export class WorkspaceSession {
   readonly dir: string;
@@ -319,6 +296,8 @@ export class WorkspaceSession {
   private readonly comparePart: Compare;
   /** Tier 4: saving, the one write to an original. */
   private readonly saving: Saving;
+  /** Tier 4: the notes on a document. */
+  private readonly notes: Notes;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
   private readonly readIndex: ReadIndex;
   private readonly linkResolve: LinkResolve;
@@ -372,6 +351,9 @@ export class WorkspaceSession {
       onFileEvent: (abs) => this.onFileEvent(abs),
       rescanAround: (abs) => this.rescanAround(abs),
       relink: () => this.relink(),
+    });
+    this.notes = new Notes(this.core, this.chats, this.documents, {
+      persist: () => this.persist(),
     });
     this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
       filteredOut: () => this.filteredOut(),
@@ -1350,13 +1332,6 @@ export class WorkspaceSession {
 
   // ── notes ──────────────────────────────────────────────────────────────
 
-  /** Place every note in the active text as it stands now (re-anchoring after edits). */
-  private placedNotes(d: Doc): PlacedNote[] {
-    if (d.notes.length === 0) return [];
-    const text = this.documents.activeText(d);
-    return d.notes.map((n) => placeNote(text, n));
-  }
-
   /**
    * Note a range of the active version's text (the human selects) or a quote
    * found in it (the agent quotes: it has no offsets).
@@ -1373,57 +1348,7 @@ export class WorkspaceSession {
     seen?: string;
     quote?: string;
   }): { slug: string; note: Note; how: "selection" | "quote" } {
-    const d = this.documents.docOrDie(opts.doc);
-    const body = opts.body.trim();
-    if (!body) throw new SessionError("a note needs something written in it", 400);
-    const text = this.documents.activeText(d);
-
-    let anchor: Anchor;
-    if (opts.range) {
-      const { from, to } = opts.range;
-      if (from < 0 || to > text.length || from >= to)
-        throw new SessionError(
-          `${from}..${to} is not a range in v${d.active} of ${d.slug} (${text.length} characters)`,
-          400,
-        );
-      // ⛔ NEVER A NOTE OVER TEXT THE HUMAN DID NOT SELECT. The page turns a
-      // selection into offsets; when that goes wrong (a file whose line endings
-      // the rendered view could not place), the range can cover far more than
-      // was chosen, and a note stored there is wrong without anyone seeing it.
-      // Refused, with the act that answers it.
-      if (opts.seen !== undefined && !guardLoaded()(text, from, to, opts.seen))
-        throw new SessionError(
-          `The note on ${JSON.stringify(quoteLabel(opts.seen, 40))} was not added. ${NOT_PLACED}`,
-          409,
-        );
-      anchor = anchorOf(text, from, to);
-    } else {
-      const quote = opts.quote ?? "";
-      if (!quote) throw new SessionError("a note needs a selection or a quote", 400);
-      const at = text.indexOf(quote);
-      // Refused, not anchored hopefully. A quote the active version does not
-      // contain would become an orphan the moment it was made, which reads as
-      // "the text changed" when the truth is "you quoted something else".
-      if (at === -1)
-        throw new SessionError(
-          `v${d.active} of ${d.slug} does not contain that text: quote it exactly as it appears`,
-          404,
-        );
-      anchor = anchorOf(text, at, at + quote.length);
-    }
-
-    const note: Note = {
-      id: `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      version: d.active,
-      ...anchor,
-      body,
-      by: opts.by,
-      createdAt: nowIso(),
-      resolved: false,
-    };
-    d.notes = [...d.notes, note];
-    this.persist();
-    return { slug: d.slug, note, how: opts.range ? "selection" : "quote" };
+    return this.notes.addNote(opts);
   }
 
   /**
@@ -1431,33 +1356,17 @@ export class WorkspaceSession {
    * gone. Placed, not remembered, for the reason notes are.
    */
   noteLines(doc: string, note: Note): { from: number; to: number } | null {
-    const d = this.documents.docOrDie(doc);
-    const text = this.documents.activeText(d);
-    const at = findAnchor(text, note);
-    return at.from === null ? null : linesOf(text, at.from, at.to);
+    return this.notes.noteLines(doc, note);
   }
 
   /** The slug of the document that holds note `id`, or undefined when no document does. */
   noteDoc(id: string): string | undefined {
-    return this.core.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
+    return this.notes.noteDoc(id);
   }
 
   /** Notes on a document, placed; `all` includes the resolved ones. */
   notesOf(opts: { doc?: string; all?: boolean }): { slug: string; notes: PlacedNote[] } {
-    const d = this.documents.docOrDie(opts.doc);
-    const placed = this.placedNotes(d);
-    return { slug: d.slug, notes: opts.all ? placed : placed.filter((n) => !n.resolved) };
-  }
-
-  private noteOrDie(d: Doc, id: string): Note {
-    const note = d.notes.find((n) => n.id === id);
-    if (!note)
-      throw new SessionError(
-        `${d.slug} has no note ${id}`,
-        404,
-        d.notes.map((n) => n.id),
-      );
-    return note;
+    return this.notes.notesOf(opts);
   }
 
   /**
@@ -1465,7 +1374,7 @@ export class WorkspaceSession {
    * attention tick asks this every second, and `view()` would place every note.
    */
   noteFacts(): { slug: string; notes: readonly Note[] }[] {
-    return this.core.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
+    return this.notes.noteFacts();
   }
 
   /**
@@ -1488,27 +1397,7 @@ export class WorkspaceSession {
     note: Note;
     changed: boolean;
   } {
-    const d = this.documents.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    if (opts.by === "agent" && (note.by === "human" || note.editedBy === "human"))
-      throw new SessionError(
-        `note ${note.id} on ${d.slug} holds the human's words, and the agent does not rewrite them: reply to it instead`,
-        409,
-        ["note-reply", "note-resolve"],
-        `run: note-reply ${note.id} --doc ${d.slug} <your answer> (the note keeps its words), or note-resolve ${note.id} --doc ${d.slug} when it is dealt with`,
-      );
-    const body = opts.body.trim();
-    if (!body) throw new SessionError("a note needs something written in it", 400);
-    if (body === note.body) return { slug: d.slug, note, changed: false };
-    // An agent rewrite back to the words it replaced leaves nothing to put back.
-    if (opts.by === "agent" && body !== (note.replacedBody ?? note.body))
-      note.replacedBody ??= note.body;
-    else delete note.replacedBody;
-    note.body = body;
-    note.editedAt = nowIso();
-    note.editedBy = opts.by;
-    this.persist();
-    return { slug: d.slug, note, changed: true };
+    return this.notes.editNote(opts);
   }
 
   /**
@@ -1522,39 +1411,18 @@ export class WorkspaceSession {
     note: Note;
     message: Message;
   } {
-    const d = this.documents.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    const text = opts.text.trim();
-    if (!text) throw new SessionError("a reply needs something written in it", 400);
-    const message = this.addMessage({ from: "agent", text, about: { noteId: note.id } });
-    return { slug: d.slug, note, message };
+    return this.notes.replyToNote(opts);
   }
 
   resolveNote(opts: { doc?: string; id: string; resolved: boolean; by: Author }): {
     slug: string;
     note: Note;
   } {
-    const d = this.documents.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    // A reopen is a write: the human reopening asks again, timed from here; the
-    // agent reopening is an act on the note.
-    if (note.resolved && !opts.resolved) {
-      note.reopenedAt = nowIso();
-      note.reopenedBy = opts.by;
-    }
-    note.resolved = opts.resolved;
-    if (opts.resolved) note.resolvedAt = nowIso();
-    else delete note.resolvedAt;
-    this.persist();
-    return { slug: d.slug, note };
+    return this.notes.resolveNote(opts);
   }
 
   removeNote(opts: { doc?: string; id: string }): { slug: string; note: Note } {
-    const d = this.documents.docOrDie(opts.doc);
-    const note = this.noteOrDie(d, opts.id);
-    d.notes = d.notes.filter((n) => n.id !== opts.id);
-    this.persist();
-    return { slug: d.slug, note };
+    return this.notes.removeNote(opts);
   }
 
   // ── save and revert ────────────────────────────────────────────────────
@@ -4199,7 +4067,7 @@ export class WorkspaceSession {
       outsideChanged: d.outsideChanged,
       ...(d.outsideChanged && d.outsideHash ? { outsideHash: d.outsideHash } : {}),
       ...(d.missing ? { missing: existsSync(dirname(d.original)) ? "file" : "folder" } : {}),
-      notes: this.placedNotes(d),
+      notes: this.notes.placedNotes(d),
     };
   }
 
@@ -4558,12 +4426,4 @@ export class WorkspaceSession {
       tasks: this.tasks(),
     };
   }
-}
-
-/** A note placed in `text`: where it is now, how sure we are, and its lines for display. */
-function placeNote(text: string, note: Note): PlacedNote {
-  const at = findAnchor(text, note);
-  if (at.from === null) return { ...note, ...at, fromLine: null, toLine: null };
-  const lines = linesOf(text, at.from, at.to);
-  return { ...note, ...at, fromLine: lines.from, toLine: lines.to };
 }
