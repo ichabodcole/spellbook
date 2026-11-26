@@ -52,7 +52,9 @@ export const TIERS: Record<string, number> = {
   writes: 1,
   // Tier 2: the tree, what is on screen, the conversation (S4 built `chats`;
   // S6 built `media`, `sidecars`, `placing` and `viewer`; S8 built
-  // `workspace`).
+  // `workspace` and `context`). Within it, one way: `context` takes `viewer`,
+  // `media`, `sidecars` and `workspace`.
+  context: 2,
   chats: 2,
   media: 2,
   sidecars: 2,

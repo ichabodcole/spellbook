@@ -93,15 +93,7 @@ import {
   runManifestMigrate,
 } from "./manifestMigrate";
 import { type EdgeBreak, type MovedWorld, type MovePlan, movedWorld, treeOrder } from "./movePlan";
-import {
-  hasHomeWorkspace,
-  holdsOwnPlaces,
-  inOwnPlaces,
-  notAddedWhole,
-  notASet,
-  ownPlaceGuard,
-} from "./noHome";
-import { PROFILES_DIR } from "./profiles";
+import { hasHomeWorkspace, holdsOwnPlaces, inOwnPlaces, notAddedWhole, notASet } from "./noHome";
 import type {
   Author,
   Backlinks,
@@ -143,6 +135,7 @@ import type {
 } from "./protocol";
 import { Chats } from "./session/chats.ts";
 import { Compare } from "./session/compare.ts";
+import { Context } from "./session/context.ts";
 import { Documents } from "./session/documents.ts";
 import { GoneError, SessionError } from "./session/errors.ts";
 import { IMAGES_DIR, IMPORT_NAMES_MAX, IMPORTED_DIR, MANIFEST_FORMAT } from "./session/facts.ts";
@@ -167,7 +160,6 @@ import {
 import { Notes } from "./session/notes.ts";
 import {
   bundleHolding,
-  isFolder,
   movedPairs,
   outsideMembers,
   overlapOf,
@@ -202,7 +194,6 @@ import { Viewer } from "./session/viewer.ts";
 import { Workspace } from "./session/workspace.ts";
 import { Writes } from "./session/writes.ts";
 import {
-  bundleNode,
   bundlesIn,
   docExtensions,
   docNode,
@@ -211,13 +202,7 @@ import {
   findNode,
   isDocName,
   listedFile,
-  locate,
-  MIRROR_NODE_CAP,
-  PathError,
   readBundleInfo,
-  type ScanGuard,
-  type ScanSkip,
-  scanTree,
   sidecarFile,
   toPosix,
 } from "./tree";
@@ -276,6 +261,8 @@ export class WorkspaceSession {
   private readonly writes: Writes;
   /** Tier 2: the chat. */
   private readonly chats: Chats;
+  /** Tier 2: the context and its scan filter (`contextPart`, since `context` is a public getter). */
+  private readonly contextPart: Context;
   /** Tier 2: our own workspace and no home (`workspacePart`, since `workspace` is a public getter). */
   private readonly workspacePart: Workspace;
   /** Tier 2: what is on screen, the only writer of `openDoc`, `openImage` and `docAside`. */
@@ -327,21 +314,30 @@ export class WorkspaceSession {
     this.sidecars = new Sidecars(this.core, this.places, {
       activeText: (d) => this.documents.activeText(d),
     });
+    this.contextPart = new Context(
+      this.core,
+      this.places,
+      this.viewer,
+      this.media,
+      this.sidecars,
+      this.workspacePart,
+      { persist: () => this.persist(), closeImage: () => this.closeImage() },
+    );
     this.placing = new Placing(this.core, this.places, {
-      listedBundleHolding: (abs) => this.listedBundleHolding(abs),
-      rescan: (entryId) => this.rescan(entryId),
-      refreshListed: (abs) => this.refreshListed(abs),
-      scanSkip: (entryId, root) => this.scanSkip(entryId, root),
-      scanGuard: () => this.scanGuard(),
-      relink: () => this.relink(),
+      listedBundleHolding: (abs) => this.contextPart.listedBundleHolding(abs),
+      rescan: (entryId) => this.contextPart.rescan(entryId),
+      refreshListed: (abs) => this.contextPart.refreshListed(abs),
+      scanSkip: (entryId, root) => this.contextPart.scanSkip(entryId, root),
+      scanGuard: () => this.contextPart.scanGuard(),
+      relink: () => this.contextPart.relink(),
     });
     this.documents = new Documents(this.core, this.places, this.writes, this.viewer, {
       persist: () => this.persist(),
     });
     this.follow = new Follow(this.core, this.places, this.viewer, {
-      rescan: (entryId) => this.rescan(entryId),
-      refreshListedContents: () => this.refreshListedContents(),
-      relink: () => this.relink(),
+      rescan: (entryId) => this.contextPart.rescan(entryId),
+      refreshListedContents: () => this.contextPart.refreshListedContents(),
+      relink: () => this.contextPart.relink(),
       resolveFrom: (target, src, entry, origin, index, kind) =>
         this.linkResolve.resolveFrom(target, src, entry, origin, index, kind),
     });
@@ -350,14 +346,14 @@ export class WorkspaceSession {
     this.saving = new Saving(this.core, this.places, this.writes, this.viewer, this.documents, {
       persist: () => this.persist(),
       onFileEvent: (abs) => this.onFileEvent(abs),
-      rescanAround: (abs) => this.rescanAround(abs),
-      relink: () => this.relink(),
+      rescanAround: (abs) => this.contextPart.rescanAround(abs),
+      relink: () => this.contextPart.relink(),
     });
     this.notes = new Notes(this.core, this.chats, this.documents, {
       persist: () => this.persist(),
     });
     this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
-      filteredOut: () => this.filteredOut(),
+      filteredOut: () => this.contextPart.filteredOut(),
     });
     this.linkResolve = new LinkResolve(
       this.core,
@@ -559,7 +555,7 @@ export class WorkspaceSession {
     s.settleOwnPlaceSets(report);
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
-    for (const e of s.core.m.context) if (e.membership === "mirrored") s.rescan(e.id);
+    for (const e of s.core.m.context) if (e.membership === "mirrored") s.contextPart.rescan(e.id);
     // A manifest from before entries kept their root's realpath: taken now.
     for (const e of s.core.m.context) if (!e.realRoot) e.realRoot = realOr(e.root);
     if (storedWorkspace !== undefined) {
@@ -677,12 +673,12 @@ export class WorkspaceSession {
     const entry = entryForPath(
       resolve(folder),
       id,
-      (root) => this.scanSkip(id, root),
-      this.scanGuard(),
+      (root) => this.contextPart.scanSkip(id, root),
+      this.contextPart.scanGuard(),
     );
     if (entry.membership !== "mirrored") return undefined;
     this.core.m.context.push(entry);
-    this.relink();
+    this.contextPart.relink();
     return folder;
   }
 
@@ -737,40 +733,7 @@ export class WorkspaceSession {
    * is matched back to its doc by realpath in `onFileEvent`.
    */
   watchRoots(): { path: string; watch: string; recursive: boolean; entryId?: string }[] {
-    const roots: { path: string; watch: string; recursive: boolean; entryId?: string }[] = [
-      { path: this.docsDir, watch: realOr(this.docsDir), recursive: true },
-    ];
-    for (const e of this.core.m.context) {
-      roots.push({
-        path: e.root,
-        watch: realOr(e.root),
-        recursive: e.membership === "mirrored",
-        entryId: e.id,
-      });
-      // A listed bundle's folder is watched whole, as a set's is: a change
-      // anywhere inside it is a change to the bundle.
-      const only = listedFile(e);
-      if (only?.kind === "bundle")
-        roots.push({ path: only.abs, watch: realOr(only.abs), recursive: true, entryId: e.id });
-      // A mirrored folder's watch is recursive, so its profile files are
-      // watched with its documents. A listed document's folder is watched
-      // alone, so its `_meta/profiles/` (the only one its lookup can reach) is
-      // watched beside it: a profile edited outside cues `context.changed`.
-      const profiles = join(e.root, PROFILES_DIR);
-      if (e.membership !== "mirrored" && isFolder(profiles))
-        roots.push({ path: profiles, watch: realOr(profiles), recursive: false });
-    }
-    for (const d of this.core.m.docs) {
-      const realDir = dirname(realOr(d.original));
-      if (
-        !roots.some((r) => r.watch === realDir && r.recursive === false) &&
-        !roots.some(
-          (r) => r.recursive && (realDir === r.watch || realDir.startsWith(r.watch + sep)),
-        )
-      )
-        roots.push({ path: realDir, watch: realDir, recursive: false });
-    }
-    return roots;
+    return this.contextPart.watchRoots();
   }
 
   // ── persistence ────────────────────────────────────────────────────────
@@ -843,7 +806,7 @@ export class WorkspaceSession {
    * any write to an opened original.
    */
   writeShown(rawPath: string, text: string): string {
-    const { abs } = this.shownAt(rawPath);
+    const { abs } = this.contextPart.shownAt(rawPath);
     this.places.world.writeFile(abs, text);
     return abs;
   }
@@ -889,38 +852,7 @@ export class WorkspaceSession {
   // ── context ────────────────────────────────────────────────────────────
 
   addContext(rawPath: string): { entry: ContextEntry; added: boolean } {
-    const abs = resolve(rawPath);
-    this.places.mayBeASetOrDie(abs);
-    const id = `c-${randHex(3)}`;
-    // The app's filter sees a new set from its first scan.
-    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
-    const same = this.core.m.context.find(
-      (e) =>
-        e.root === probe.root &&
-        e.membership === probe.membership &&
-        (probe.membership === "mirrored" ||
-          JSON.stringify(e.nodes) === JSON.stringify(probe.nodes)),
-    );
-    if (same) return { entry: same, added: false };
-    // A set whose folder is the workspace, or holds it, would make a file in the
-    // workspace belong to both: refused, with the way round it.
-    if (probe.membership === "mirrored" && this.hasHome && overlapOf(this.workspace, [probe]))
-      throw new SessionError(
-        `${probe.label} cannot be added as a set: its folder ${
-          realOr(this.workspace) === realOr(probe.root) ? "is" : "holds"
-        } the workspace folder (${tilde(this.workspace)}), so a file there would belong to both. Set the workspace to a folder outside it first, such as ${tilde(dirname(probe.root))} (the pencil in the sidebar, or \`workspace <dir>\`)`,
-        409,
-      );
-    this.core.m.context.push(probe);
-    // A loose image comes with its description, when one is beside it: listed
-    // too, and folded into the image's row by the surface.
-    const only = listedFile(probe);
-    const sidecar = only?.kind === "image" ? this.sidecars.sidecarFileOf(only.abs) : null;
-    if (sidecar && !this.places.itemAt(sidecar))
-      this.core.m.context.push(entryForPath(sidecar, `c-${randHex(3)}`));
-    this.relink();
-    this.persist();
-    return { entry: probe, added: true };
+    return this.contextPart.addContext(rawPath);
   }
 
   /**
@@ -928,20 +860,7 @@ export class WorkspaceSession {
    * entry and where it stood, which `restoreContext` takes to put it back.
    */
   removeContext(id: string): { entry: ContextEntry; index: number } {
-    const i = this.core.m.context.findIndex((e) => e.id === id);
-    if (i < 0)
-      throw new SessionError(
-        `no context entry ${id}`,
-        404,
-        this.core.m.context.map((e) => e.id),
-      );
-    const [entry] = this.core.m.context.splice(i, 1) as [ContextEntry];
-    this.relink();
-    this.viewer.closeOrphaned();
-    // An open image the context no longer shows is put away, as `closeImage` does.
-    if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
-    this.persist();
-    return { entry, index: i };
+    return this.contextPart.removeContext(id);
   }
 
   /**
@@ -956,109 +875,12 @@ export class WorkspaceSession {
    * (Scriptorium's `hide` of a whole entry).
    */
   restoreContext(entry: ContextEntry, index = this.core.m.context.length): ContextEntry {
-    if (this.core.m.context.some((e) => e.id === entry.id))
-      throw new GoneError(`${entry.label} (${entry.id}) is in the context already`, 409);
-    const only = entry.membership === "listed" ? entry.nodes[0] : undefined;
-    const path =
-      entry.membership === "mirrored" ? entry.root : only ? join(entry.root, only.rel) : null;
-    if (path === null)
-      throw new GoneError(`${entry.label} (${entry.id}) shows nothing to put back`, 409);
-    // Checked now, where the disk really leads: a folder swapped for a link to
-    // the sessions since it was hidden is never put back as a set.
-    this.places.mayBeASetOrDie(path, true);
-    let fresh: ContextEntry;
-    try {
-      fresh = entryForPath(
-        path,
-        entry.id,
-        (root) => this.scanSkip(entry.id, root),
-        this.scanGuard(),
-      );
-    } catch (e) {
-      if (e instanceof PathError)
-        throw new GoneError(`${tilde(path)} cannot come back: ${e.message}`, 409);
-      throw e;
-    }
-    if (fresh.membership !== entry.membership || fresh.root !== entry.root)
-      throw new GoneError(`${tilde(path)} is no longer what ${entry.label} was`, 409);
-    if (
-      this.core.m.context.some(
-        (e) =>
-          e.root === fresh.root &&
-          e.membership === fresh.membership &&
-          (fresh.membership === "mirrored" ||
-            JSON.stringify(e.nodes) === JSON.stringify(fresh.nodes)),
-      )
-    )
-      throw new GoneError(`${tilde(path)} is in the context already`, 409);
-    if (fresh.membership === "mirrored" && this.hasHome && overlapOf(this.workspace, [fresh]))
-      throw new SessionError(
-        `${fresh.label} cannot come back as a set: its folder holds the workspace folder (${tilde(this.workspace)})`,
-        409,
-      );
-    const back: ContextEntry = {
-      ...fresh,
-      label: entry.label,
-      ...(entry.realRoot ? { realRoot: entry.realRoot } : {}),
-    };
-    this.core.m.context.splice(Math.max(0, Math.min(index, this.core.m.context.length)), 0, back);
-    this.relink();
-    this.persist();
-    return back;
+    return this.contextPart.restoreContext(entry, index);
   }
 
   /** Re-mirror a folder entry. Returns whether its nodes changed. */
   rescan(entryId: string): boolean {
-    const e = this.core.m.context.find((x) => x.id === entryId);
-    if (e?.membership !== "mirrored") return false;
-    const { nodes, truncated } = scanTree(
-      e.root,
-      MIRROR_NODE_CAP,
-      this.scanSkip(e.id, e.root),
-      this.scanGuard(),
-    );
-    const changed =
-      JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
-    e.nodes = nodes;
-    if (truncated) e.truncated = true;
-    else delete e.truncated;
-    if (changed) this.relink();
-    return changed;
-  }
-
-  /**
-   * The kit's guard on every scan: the app's own places are never mirrored,
-   * whatever a set holds or a link inside one leads to (`ownPlaceGuard`).
-   */
-  private scanGuard(): ScanGuard {
-    return ownPlaceGuard(this.places.ownPlaces);
-  }
-
-  /** The app's filter for a set's scan (`AppDeclaration.scan`), as the slot is now. */
-  private scanSkip(entryId: string, root: string): ScanSkip | undefined {
-    return this.app.scan?.({ entryId, root, slot: this.appSlot })?.skip;
-  }
-
-  /**
-   * Whether the app's filter leaves `abs` out of a set whose folder holds it:
-   * the path itself, or a folder above it, skipped (`ScanRule.skip`). A path no
-   * set holds is not filtered.
-   */
-  private filteredOut(): (abs: string) => boolean {
-    const rules: { root: string; skip: ScanSkip }[] = [];
-    if (this.app.scan)
-      for (const e of this.core.m.context) {
-        if (e.membership !== "mirrored") continue;
-        const skip = this.scanSkip(e.id, e.root);
-        if (skip) rules.push({ root: e.root, skip });
-      }
-    return (abs) =>
-      rules.some(({ root, skip }) => {
-        const rel = toPosix(relative(root, abs));
-        if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return false;
-        const parts = rel.split("/");
-        return parts.some((_, i) => skip(parts.slice(0, i + 1).join("/"), i < parts.length - 1));
-      });
+    return this.contextPart.rescan(entryId);
   }
 
   /**
@@ -1069,20 +891,7 @@ export class WorkspaceSession {
    * tree changed.
    */
   refilter(entryId?: string): boolean {
-    if (entryId !== undefined && !this.core.m.context.some((e) => e.id === entryId))
-      throw new SessionError(
-        `no context entry ${entryId}`,
-        404,
-        this.core.m.context.map((e) => e.id),
-      );
-    let changed = false;
-    for (const e of this.core.m.context)
-      if ((entryId === undefined || e.id === entryId) && this.rescan(e.id)) changed = true;
-    this.relink();
-    this.viewer.closeOrphaned();
-    if (this.core.m.openImage && !this.media.imageNodeAt(this.core.m.openImage)) this.closeImage();
-    this.persist();
-    return changed;
+    return this.contextPart.refilter(entryId);
   }
 
   /**
@@ -1092,21 +901,7 @@ export class WorkspaceSession {
    * (Scriptorium's `hide`).
    */
   shownAt(rawPath: string): { abs: string; entryId: string; rel: string; whole: boolean } {
-    const item = this.places.itemOrDie(rawPath);
-    return {
-      abs: item.abs,
-      entryId: item.entry.id,
-      rel: toPosix(relative(item.entry.root, item.abs)),
-      whole: item.whole,
-    };
-  }
-
-  private relink(): void {
-    for (const d of this.core.m.docs) {
-      const at = locate(this.core.m.context, d.original);
-      d.entryId = at?.entryId ?? null;
-      d.rel = at?.rel ?? null;
-    }
+    return this.contextPart.shownAt(rawPath);
   }
 
   // ── documents and versions ─────────────────────────────────────────────
@@ -1442,7 +1237,7 @@ export class WorkspaceSession {
     };
     this.core.m.docs = this.core.m.docs.filter((x) => x.slug !== d.slug);
     this.viewer.docForgotten(d.slug);
-    this.relink();
+    this.contextPart.relink();
     this.viewer.closeOrphaned();
     this.persist();
     return forgotten;
@@ -1990,7 +1785,7 @@ export class WorkspaceSession {
     const abs = join(dir, file);
     this.places.world.writeFile(abs, bytes, { flag: "wx" });
     const set = this.places.coveringEntry(abs);
-    if (set) this.rescan(set.id);
+    if (set) this.contextPart.rescan(set.id);
     else this.placing.adoptNew(abs);
     this.persist();
     return { path: abs, doc, href: relativeHref(doc, abs) };
@@ -2033,7 +1828,7 @@ export class WorkspaceSession {
     if (st === null) {
       this.places.world.mkdir(dir);
       made = true;
-      if (set) this.rescan(set.id);
+      if (set) this.contextPart.rescan(set.id);
     } else if (!st.isDirectory() && !(set && st.isSymbolicLink()))
       throw new SessionError(
         `${this.display(dir)} is already there and is not a folder: rename it to bring images in beside ${basename(doc)}`,
@@ -2047,7 +1842,7 @@ export class WorkspaceSession {
       try {
         return this.imageDestinationOrDie(dir);
       } catch {
-        this.rescan(set.id);
+        this.contextPart.rescan(set.id);
         return this.imageDestinationOrDie(dir);
       }
     } catch (e) {
@@ -2057,7 +1852,7 @@ export class WorkspaceSession {
         } catch {
           /* not empty, or gone: leave it */
         }
-        this.rescan(set.id);
+        this.contextPart.rescan(set.id);
       }
       throw e;
     }
@@ -2124,7 +1919,7 @@ export class WorkspaceSession {
     this.places.world.rename(staged, target);
     // A loose image's entry is still there (only the file went to the Trash); one
     // the context no longer showed is given an entry again, as a new drop would be.
-    if (this.places.itemAt(target)) this.rescanAround(target);
+    if (this.places.itemAt(target)) this.contextPart.rescanAround(target);
     else this.placing.adoptNew(target);
     this.persist();
     return { path: target };
@@ -2294,10 +2089,10 @@ export class WorkspaceSession {
     this.viewer.closeImageInside(inside);
     for (const e of [...this.core.m.context]) {
       const only = listedFile(e);
-      if (only && inside(only.abs)) this.removeContext(e.id);
+      if (only && inside(only.abs)) this.contextPart.removeContext(e.id);
     }
-    this.rescanAround(path);
-    this.relink();
+    this.contextPart.rescanAround(path);
+    this.contextPart.relink();
     this.persist();
     return { docs, closed };
   }
@@ -2309,27 +2104,19 @@ export class WorkspaceSession {
    * so a document just copied in opens by its path straight away.
    */
   refreshBundle(abs: string): void {
-    this.rescanAround(abs);
+    this.contextPart.rescanAround(abs);
     // A bundle listed on its own (made in the workspace) is its entry's one
     // row: read that row again, whether `abs` is the bundle or inside it.
     const b = bundleOf(abs);
-    if (b) this.refreshListed(b.root);
-    this.relink();
-  }
-
-  /** Re-mirror the sets that hold `abs`, after a file there came or went. */
-  private rescanAround(abs: string): void {
-    for (const e of this.core.m.context)
-      if (e.membership === "mirrored" && abs.startsWith(e.root + sep)) this.rescan(e.id);
-    const listed = this.listedBundleHolding(abs);
-    if (listed) this.refreshListed(listed);
+    if (b) this.contextPart.refreshListed(b.root);
+    this.contextPart.relink();
   }
 
   /** Mark a document's original missing; the event to announce, or null when it already was. */
   private markMissing(d: Doc): FileEvent | null {
     if (d.missing) return null;
     d.missing = true;
-    this.rescanAround(d.original);
+    this.contextPart.rescanAround(d.original);
     this.persist();
     return {
       kind: "original.missing",
@@ -2478,8 +2265,8 @@ export class WorkspaceSession {
         // to ask. With other text: asked, as any outside change with edits is,
         // never reloaded over the session's text.
         delete d.missing;
-        this.rescanAround(d.original);
-        this.relink();
+        this.contextPart.rescanAround(d.original);
+        this.contextPart.relink();
         if (h !== d.originalHash) {
           d.outsideChanged = true;
           d.outsideHash = h;
@@ -2519,8 +2306,8 @@ export class WorkspaceSession {
     // One gone from disk is a change to the tree, below.
     const bundle = this.shownBundleOf(abs);
     if (bundle && existsSync(bundle)) {
-      this.rescanAround(bundle);
-      this.refreshListed(bundle);
+      this.contextPart.rescanAround(bundle);
+      this.contextPart.refreshListed(bundle);
       // The echo of the session's own act: the tree is read again, and that is all.
       if (this.writes.isOwnBundleEcho(bundle)) return null;
       return { kind: "bundle", path: bundle, file: abs };
@@ -2529,7 +2316,7 @@ export class WorkspaceSession {
     // Something under a mirrored root: the tree may have changed.
     for (const e of this.core.m.context) {
       if (e.membership === "mirrored" && (abs === e.root || abs.startsWith(e.root + sep))) {
-        return this.rescan(e.id) ? { kind: "tree", entryId: e.id } : null;
+        return this.contextPart.rescan(e.id) ? { kind: "tree", entryId: e.id } : null;
       }
     }
     return null;
@@ -2558,25 +2345,6 @@ export class WorkspaceSession {
   // - Nothing is overwritten. A destination that exists is refused (an explicit
   //   name) or given a free name (a default one, a drop); files are created with
   //   the exclusive flag, so a race cannot clobber either.
-
-  /** The folder of a bundle listed on its own (no set shows it) that `abs` is inside, else null. */
-  private listedBundleHolding(abs: string): string | null {
-    const b = bundleOf(abs);
-    if (!b || b.inner === "") return null;
-    for (const e of this.core.m.context) {
-      const only = listedFile(e);
-      if (only?.kind === "bundle" && only.abs === b.root) return b.root;
-    }
-    return null;
-  }
-
-  /** Read every listed bundle of an expandable type again: its contents follow what moved. */
-  private refreshListedContents(): void {
-    for (const e of this.core.m.context) {
-      const only = listedFile(e);
-      if (only?.kind === "bundle" && bundleTypeOf(only.abs)?.expand) this.refreshListed(only.abs);
-    }
-  }
 
   /**
    * A new document in `rawDir` (a set, a folder in one, or the workspace; never
@@ -3185,8 +2953,8 @@ export class WorkspaceSession {
         join(to, BUNDLE_INFO),
         writeBundleInfo(before, type, { title: titleTo }),
       );
-      this.rescanAround(to);
-      this.refreshListed(to);
+      this.contextPart.rescanAround(to);
+      this.contextPart.refreshListed(to);
     }
     this.persist();
     const links = pins ? this.planRelink(pins, [[from, to]]) : null;
@@ -3217,21 +2985,6 @@ export class WorkspaceSession {
         `"${name}" would make ${what} a ${type.label}: make a new ${type.label} instead`,
         400,
       );
-  }
-
-  /** Read a listed bundle's node again (its title changed), as a set's rescan does for one inside it. */
-  private refreshListed(abs: string): void {
-    for (const e of this.core.m.context) {
-      const only = listedFile(e);
-      if (only?.kind !== "bundle" || only.abs !== abs) continue;
-      const type = bundleTypeOf(abs);
-      if (!type) continue;
-      const nodes = [bundleNode(basename(abs), abs, type)];
-      const changed = JSON.stringify(nodes) !== JSON.stringify(e.nodes);
-      e.nodes = nodes;
-      // Its member documents are documents of the context: they follow.
-      if (changed && type.expand) this.relink();
-    }
   }
 
   /**
@@ -3672,7 +3425,7 @@ export class WorkspaceSession {
     const inside = (p: string) => p === abs || p.startsWith(abs + sep);
     for (const e of [...this.core.m.context]) {
       if (e.membership === "mirrored" && !inside(e.root)) {
-        this.rescan(e.id);
+        this.contextPart.rescan(e.id);
         continue;
       }
       // A `listed` entry (or a mirrored one that was the deleted folder): prune
@@ -3682,12 +3435,12 @@ export class WorkspaceSession {
           .filter((n) => !inside(join(e.root, n.rel)))
           .map((n) => (n.kind === "group" ? { ...n, children: prune(n.children) } : n));
       e.nodes = prune(e.nodes);
-      if (e.nodes.length === 0 || inside(e.root)) this.removeContext(e.id);
+      if (e.nodes.length === 0 || inside(e.root)) this.contextPart.removeContext(e.id);
     }
     this.core.m.docs = this.core.m.docs.filter((d) => !inside(d.original));
     this.viewer.closeImageInside(inside);
     this.viewer.docsForgotten();
-    this.relink();
+    this.contextPart.relink();
     this.viewer.closeOrphaned();
     this.persist();
   }
