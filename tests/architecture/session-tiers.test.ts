@@ -457,6 +457,7 @@ const daemonPartOf = (file: string, dir: string = DAEMON_DIR) =>
 export const DAEMON_TIERS: Record<string, number> = {
   // Tier 0: pure, no daemon state (D1).
   types: 0,
+  rules: 0,
 };
 
 /** The kernel: it imports no part, only tier 0. */
