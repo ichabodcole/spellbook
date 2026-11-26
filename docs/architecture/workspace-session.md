@@ -43,8 +43,10 @@ chat and the tasks"). **S5 built the read side**: `readIndex`, `linkResolve`,
 `sidecars`, `placing` and `viewer` (below, "What is on screen, and the images").
 **S7 built the documents**: `documents` and `follow` (tier 3), `compare`,
 `saving` and `notes` (tier 4) (below, "The documents, and what saves, compares
-and notes them"). The other parts are still planned. When a step builds a part,
-it adds the part's row here and in the tier test, in the same change.
+and notes them"). **S8 built the tree**: `workspace` and `context` (tier 2)
+(below, "The tree: the context and the workspace"). The other parts are still
+planned. When a step builds a part, it adds the part's row here and in the tier
+test, in the same change.
 
 ## Why parts, and why tiers
 
@@ -69,14 +71,14 @@ folder says which is which.
 The planned parts. A name in _italics_ is ours and not Story Studio's; their
 parts we don't have are in the last column.
 
-| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6, `documents`, `follow`, `compare`, `saving` and `notes` at S7; the rest planned) | Story Studio's, not ours                 |
-| ---- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                                                                                  |                                          |
-| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                                                                               |                                          |
-| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                                                                                        | `bundleStamps`, `top`, `copyIn`          |
-| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                                                                                    | `unseen`, `audio`, `orders`              |
-| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                                                                              | `markers`, `copyRecords`, `libraryLinks` |
-| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                                                                                     | `copySource`, `projectMeta`              |
+| Tier | Holds                                          | Parts (tier 0 built at S2, tier 1 at S3, `chats` and `tasks` at S4, the read side at S5, `media`, `sidecars`, `placing` and `viewer` at S6, `documents`, `follow`, `compare`, `saving` and `notes` at S7, `workspace` and `context` at S8; the rest planned) | Story Studio's, not ours                 |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| 0    | Pure code, no session state                    | `errors`, `names`, `paths`, `facts`, `types`, _`manifest`_                                                                                                                                                                                                   |                                          |
+| 1    | The core, which every part takes               | `state` (the manifest `m`, `persist`), `places` (display, the path guards, _our own-places guards_), `writes`                                                                                                                                                |                                          |
+| 2    | The tree, what is on screen, the conversation  | `context` (with _the scan filter_), `placing`, `viewer`, `media`, `sidecars`, `chats`, _`workspace`_                                                                                                                                                         | `bundleStamps`, `top`, `copyIn`          |
+| 3    | Documents                                      | `documents`, `follow`, `tasks`, `images`                                                                                                                                                                                                                     | `unseen`, `audio`, `orders`              |
+| 4    | What reacts, saves and reads across documents  | `reconcile`, `saving`, `compare`, `notes`, `readIndex` (with _the app's link slot_), `linkResolve`, `profiles`, `relations`, `search`, `trash`                                                                                                               | `markers`, `copyRecords`, `libraryLinks` |
+| 5    | Changes that span the tree, and the whole view | `linkCheck`, `linkReports`, `relinkOnMove`, `structure`, `imageImport`, _`movePlan`_, _`sets`_, `views`                                                                                                                                                      | `copySource`, `projectMeta`              |
 
 What each part owns, member by member, is in the write-up's
 [module map](../items/kit-split-oversized-modules/write-up.md#the-proposed-module-map-sessionts).
@@ -444,6 +446,109 @@ Where S7 left the write-up's map, by dependency direction:
   over the daemon's own tasks stays with `restore` (see "The chat and the
   tasks").
 
+### The tree: the context and the workspace (tier 2, built at S8)
+
+The facade builds `workspace` after the chat, and `context` after the other tier
+2 parts it takes, before `placing` and everything that now takes it:
+
+```ts
+this.chats = new Chats(this.core, { persist });
+this.workspacePart = new Workspace(this.core, this.places, { persist });
+this.viewer = new Viewer(this.core);
+this.media = new Media(this.core, this.places);
+this.sidecars = new Sidecars(this.core, this.places, { activeText });
+this.contextPart = new Context(
+  this.core,
+  this.places,
+  this.viewer,
+  this.media,
+  this.sidecars,
+  this.workspacePart,
+  { persist, closeImage }
+);
+this.placing = new Placing(this.core, this.places, this.contextPart);
+this.documents = new Documents(/* … */);
+this.follow = new Follow(
+  this.core,
+  this.places,
+  this.viewer,
+  this.contextPart,
+  {
+    resolveFrom,
+  }
+);
+// …
+this.saving = new Saving(
+  this.core,
+  this.places,
+  this.writes,
+  this.viewer,
+  this.documents,
+  this.contextPart,
+  { persist, onFileEvent }
+);
+// …
+this.readIndex = new ReadIndex(
+  this.core,
+  this.places,
+  this.documents,
+  this.contextPart
+);
+```
+
+| Part           | Tier | Owns                                                                                                                                                                                                                                                      |
+| -------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context.ts`   | 2    | `addContext`, `removeContext`, `restoreContext`, `rescan`, `rescanAround`, `relink`, `refreshListed`, `refreshListedContents`, `listedBundleHolding`, `shownAt`, `watchRoots`; the scan filter, ours: `scanGuard`, `scanSkip`, `filteredOut`, `refilter`. |
+| `workspace.ts` | 2    | Ours (Story Studio keeps these in `projectMeta`): `setWorkspace` (refused for an app with no home workspace), `workspaceOverlap`, `overlapToSay` (`m.overlapSaid`), `setAppHome`, `appSlot`, `updateApp`.                                                 |
+
+Both moved verbatim: the only changes are `this.` to the part, the hook or the
+core (`this.hasHome`, `this.workspace`, `this.app` and `this.docsDir` became the
+core's, which the facade's getters read), and dropping `private` from the
+members the facade or another part still calls. Their public members keep
+one-line delegates with their comments; the facade's own calls, `restore`'s
+included, go to the parts. The facade fields are `contextPart` and
+`workspacePart`, since `context` and `workspace` are public getters. Both write
+the record through the facade's `persist` hook, and the context puts away an
+image it no longer shows through the facade's `closeImage` (the viewer's
+transition, then `persist`), as `removeContext` and `refilter` did.
+
+**`relink` and the rescans keep their order.** Every call of `relink`, `rescan`,
+`rescanAround`, `refreshListed` and `refreshListedContents` is the same call in
+the same place: 23 methods call them, and each one's sequence of those calls
+(with `persist` and `closeImage` between them) is the same before and after, in
+the facade and in the parts.
+
+Where S8 left the write-up's map, by dependency direction:
+
+- **Within tier 2, one way.** `context` takes `viewer` (`closeOrphaned`),
+  `media` (`imageNodeAt`), `sidecars` (`sidecarFileOf`, for the description that
+  comes with a loose image) and `workspace` (the app's slot, which `scanSkip`
+  hands the app's filter). `placing` takes `context`. Nothing in tier 2 takes
+  `placing`, and `workspace` takes no other tier 2 part.
+- **Hooks from S6 and S7, now the part.** `placing` took `listedBundleHolding`,
+  `rescan`, `refreshListed`, the scan filter and `relink`, `follow` took
+  `rescan`, `refreshListedContents` and `relink`, `saving` took `rescanAround`
+  and `relink`, and `readIndex` took `filteredOut`, all as hooks on the facade;
+  each now takes `context`, and the hooks objects of `placing` and `readIndex`
+  went. Nothing in `src`, the tests or the plugins replaces any of these on a
+  session (all but `rescan` were private), so no interception was lost. `follow`
+  keeps its `resolveFrom` hook (tier 4), `saving` its `persist` and
+  `onFileEvent` (`reconcile`, not built).
+- **Rehomed with `context`**: `refreshListedContents` and `listedBundleHolding`,
+  unlisted, which sat under structure and which `followMove`, `rescanAround` and
+  `adoptNew` call.
+- **Left with `restore` in the facade**: `settleOwnPlaceSets` (the restore's
+  pass that drops or narrows a set among the app's own places) and
+  `keepDroppedWorkspace` (a no-home restore's old workspace folder, added as a
+  set unpersisted), as `restore`'s pass over the daemon's tasks stayed with it.
+  `keepDroppedWorkspace` calls the context's scan filter and `relink`. So does
+  `writeShown`, which waits in the facade (above) and asks `shownAt`.
+- **Not yet the only writer of `m.context`.** Entries are still added, dropped
+  or re-rooted outside `context`: by `placing.adoptNew`, `follow.followMove`,
+  the two restore passes above, and the structure and set verbs still in the
+  facade (`forgetPath`, `makeSet`, `unmakeSet`). They move at S10, where the
+  write-up puts them.
+
 ```text
 tier 5  linkCheck  linkReports  relinkOnMove  structure  imageImport  movePlan  sets  views
           │
@@ -465,8 +570,9 @@ tier 0  errors  names  paths  facts  types  manifest   (and the existing pure si
   call graph already goes one way (within tier 1, `writes` and `places` take
   `state`, and `writes` takes `places`; within tier 4, `linkResolve`, `profiles`
   and `search` take `readIndex`, and `relations` takes `readIndex`,
-  `linkResolve` and `profiles`; the other one-way edges within a tier are
-  recorded here as each step finds them).
+  `linkResolve` and `profiles`; within tier 2, `context` takes `viewer`,
+  `media`, `sidecars` and `workspace`, and `placing` takes `context`; the other
+  one-way edges within a tier are recorded here as each step finds them).
 - **Tiers 0 and 1 import no part above them.** Tier 0 imports no part outside
   tier 0.
 - **Nothing in `session/` imports the facade (`session.ts`) or `server.ts`**, or
@@ -700,6 +806,11 @@ that finds the same in our code records our instance under it.
   the viewer's nine transitions for the 17 writes, the S5 hooks that became
   parts, and where S6 left the write-up's map; the tier test lists them, and
   `session.ts`'s override went from 4,649 to 4,462.
+- **2026-11-25**: S8 built `workspace` and `context` (tier 2): what each owns,
+  how the facade builds them, `relink` and the rescans in their order, the hooks
+  from S6 and S7 that became the part (`placing`, `follow`, `saving`,
+  `readIndex`), and where S8 left the write-up's map; the tier test lists them,
+  and `session.ts`'s override went from 3,671 to 3,386.
 - **2026-11-25**: D1 built the daemon's tier 0 (`types`, `rules`, `landings`)
   and where it left the write-up's map; `DAEMON_TIERS` lists them, and
   `server.ts`'s override went from 4,876 to 4,367.
