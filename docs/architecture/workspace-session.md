@@ -425,7 +425,9 @@ Where S7 left the write-up's map, by dependency direction:
   as a hook, since `documents` is above it.
 - **Rehomed with `documents`**: `activeText` (filed under notes), `isDirty`
   (under trash), `jsonProblemOf` and `refuseInvalidJson` (under save), as the
-  map says; and the unlisted `adoptActive`, `writeActive`, `preserveOutside`,
+  map says; `adoptActive`, `writeActive` and `preserveOutside`, which the map
+  lists under `writes` and S3 left waiting on `documents` (they write
+  `activeHash` and `lastActiveText` and call `takeVersion`); and the unlisted
   `itemName` and `bundleTitleAt`, which sat beside them.
 - **Reached as hooks**: `follow.movedTarget` asks `linkResolve.resolveFrom`
   (tier 4) whether a moved target lands, and `followMove` calls the context's
