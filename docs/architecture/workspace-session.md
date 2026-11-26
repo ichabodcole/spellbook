@@ -397,8 +397,8 @@ The playbook that applies these when adding behaviour or splitting a file is
   over. The 15 files over it on 2026-11-24 each have their own override at their
   Biome count, which the step splitting the file lowers, and removes once the
   file is under 1,200. `session.ts` was frozen at 7,848, S2 lowered it to 7,210,
-  S3 to 6,768, S4 to 6,700, S5 to 4,649 and S6 to 4,462; `server.ts` is at
-  4,876.
+  S3 to 6,768, S4 to 6,700, S5 to 4,649 and S6 to 4,462; `server.ts` was frozen
+  at 4,876, and D1 lowered it to 4,367.
 - **The start path** (`src/kit/workspace/noteGuard.lazy.test.ts`, ours): the CLI
   entry loads neither `session.ts` nor `server.ts`, nor micromark or mdast; the
   daemon entry loads no `document/projection` or mdast until `loadNoteGuard`
@@ -423,7 +423,7 @@ one built after it is handed as an arrow
 (`pageState: (fresh) => views.pageState(fresh)`), which is read only when
 called.
 
-| Tier | Modules, planned (none built yet)                                                               | Story Studio's, not ours                                   |
+| Tier | Modules (tier 0 built at D1; the rest planned)                                                  | Story Studio's, not ours                                   |
 | ---- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | 0    | `types`, `rules`, `landings`                                                                    | `askStudio`, `navFacts`, `vocabularyVersions`, `verbChain` |
 | 1    | `core` (the kernel), `views`                                                                    |                                                            |
@@ -436,6 +436,24 @@ What each module owns is in the write-up's
 [module map for server.ts](../items/kit-split-oversized-modules/write-up.md#the-proposed-module-map-serverts).
 `server.ts` keeps the shell: building the parts, `ctx`, `close`,
 `runWorkspaceDaemon`.
+
+**D1 built tier 0**: `types.ts`, `rules.ts` and `landings.ts`, the module-level
+code of `server.ts` moved as it was. They hold no daemon state and import no
+other daemon module; `rules.ts` and `landings.ts` take `SessionError` (and
+`GoneError`) from `session/errors.ts`. `server.ts` imports them and re-exports
+every name it exported before, so no import outside the file changed. Where D1
+left the write-up's map:
+
+- **`rules.ts` also holds what the map did not name**: `ImageTakenError` (beside
+  `SessionLockedError`), `PartialUndo` and `QUIET`. The "refusal sentences" are
+  `messageOf`, `findingsKey` and `historyRefusal`.
+- **`SURFACE_OPS` and `CLIENT_OPS` were consts inside `boot()`**, with the
+  typecheck that every client op is listed. They are literals only, so they
+  moved to module level in `rules.ts`, as the map has them.
+- **`anchorSurfacePaths` is in `landings.ts`**, beside `surfacePath`, the one
+  function it calls.
+- `MessageAboutOnTail`'s re-export (a type from `protocol.ts`) stays in
+  `server.ts`, where callers import it.
 
 The rules. The import rules and strictness are checked by the second half of
 `tests/architecture/session-tiers.test.ts` (`DAEMON_TIERS`, `daemonBreaks`); the
@@ -572,3 +590,6 @@ that finds the same in our code records our instance under it.
   the viewer's nine transitions for the 17 writes, the S5 hooks that became
   parts, and where S6 left the write-up's map; the tier test lists them, and
   `session.ts`'s override went from 4,649 to 4,462.
+- **2026-11-25**: D1 built the daemon's tier 0 (`types`, `rules`, `landings`)
+  and where it left the write-up's map; `DAEMON_TIERS` lists them, and
+  `server.ts`'s override went from 4,876 to 4,367.
