@@ -442,8 +442,9 @@ Where S7 left the write-up's map, by dependency direction:
 - **Reached as hooks**: `follow.movedTarget` asks `linkResolve.resolveFrom`
   (tier 4) whether a moved target lands, and `followMove` calls the context's
   `rescan`, `refreshListedContents` and `relink`, still on the facade. `saving`
-  calls the watcher's `onFileEvent` (`reconcile`, tier 4, not built) and the
-  context's `rescanAround` and `relink`.
+  calls the watcher's `onFileEvent` (`reconcile`, tier 4, not built; S9 built
+  it, and `saving` takes it directly) and the context's `rescanAround` and
+  `relink`.
 - **Taken directly**: `notes.replyToNote` called the facade's `addMessage`, a
   delegate to the chat; it now calls `chats.addMessage` (tier 2).
 - **Nothing task-related was left**: the verbs moved at S4, and `restore`'s pass
@@ -537,7 +538,7 @@ Where S8 left the write-up's map, by dependency direction:
   went. Nothing in `src`, the tests or the plugins replaces any of these on a
   session (all but `rescan` were private), so no interception was lost. `follow`
   keeps its `resolveFrom` hook (tier 4), `saving` its `persist` and
-  `onFileEvent` (`reconcile`, not built).
+  `onFileEvent` (`reconcile`, not built; since S9 `saving` takes it directly).
 - **Rehomed with `context`**: `refreshListedContents` and `listedBundleHolding`,
   unlisted, which sat under structure and which `followMove`, `rescanAround` and
   `adoptNew` call.
@@ -604,9 +605,8 @@ own when its hash is the one recorded (`originalHash`), as before. Every
 `persist`, `rescanAround`, `refreshListed`, `rescan`, `relink`, `own`,
 `isOwnWrite`, `writeActive` and `preserveOutside` call of the eight members is
 the same call in the same place and order, and nothing in them branches on the
-platform: the realpath match for a symlinked original (FSEvents reports real
-paths) and the quiet `null` for an original that is unreadable for a moment are
-the same lines.
+platform: the realpath match for a symlinked original and the quiet `null` for
+an original that is unreadable for a moment are the same lines.
 
 Where S9 left the write-up's map, by dependency direction:
 

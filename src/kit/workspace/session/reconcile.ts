@@ -2,7 +2,8 @@
  * Reconcile: the watcher's question, whose write was that? One filesystem
  * event classified (`onFileEvent`, `onFileEvents`), an original marked gone
  * (`markMissing`) or asked after under a path (`originalsUnder`), a bundle's
- * row read again (`refreshBundle`, `shownBundleOf`), the original's text back
+ * row read again (`refreshBundle`) and the shown bundle found
+ * (`shownBundleOf`), the original's text back
  * over the active version (`revert`), and a gone document's record forgotten
  * (`forgetDoc`). Tier 4 of the session parts
  * (docs/architecture/workspace-session.md); it takes the core, `places`,
