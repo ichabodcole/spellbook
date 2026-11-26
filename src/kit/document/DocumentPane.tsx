@@ -64,7 +64,6 @@ import { onMac } from "../lib/platform.ts";
 import { safeStorage } from "../lib/storage.ts";
 import {
   Button,
-  contentStats,
   DisabledReason,
   disabledReasonProps,
   Empty,
@@ -160,6 +159,7 @@ import {
   textToShow,
   type ViewMode,
 } from "./pane.ts";
+import { useDebouncedStats, useNow, usePaneWidth } from "./paneHooks.ts";
 import { createPlace } from "./place.ts";
 import { profileFor } from "./profileHeader.ts";
 import { lineAt } from "./projection.ts";
@@ -218,46 +218,6 @@ const SPLIT_PANEL_IDS: string[] = [...SPLIT_PANES];
 
 /** The disabled split button's tooltip: why it cannot be pressed, not only that it cannot. */
 export const SPLIT_TOO_NARROW = `Raw and rendered side by side: the pane is too narrow (split needs ${SPLIT_MIN_PX} px)`;
-
-/**
- * The pane's own width, watched: a container query can restyle a layout but cannot
- * change a MODE. Measured once before the first paint, so a saved split in a narrow
- * pane is drawn as raw from the start rather than flashing split and then falling
- * back; 0 until then (and where nothing lays out, as in a test DOM) reads as fitting.
- */
-function usePaneWidth(ref: { current: HTMLElement | null }): number {
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    setWidth(el.getBoundingClientRect().width);
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(([entry]) => setWidth(entry?.contentRect.width ?? 0));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref]);
-  return width;
-}
-
-/** Recount after typing pauses: counting a long document on every key would be the slowest thing here. */
-function useDebouncedStats(text: string | undefined, ms = 300) {
-  const [stats, setStats] = useState(() => contentStats(text ?? ""));
-  useEffect(() => {
-    const t = setTimeout(() => setStats(contentStats(text ?? "")), ms);
-    return () => clearTimeout(t);
-  }, [text, ms]);
-  return stats;
-}
-
-/** Re-render on a slow clock so "5 min ago" stays true. */
-function useNow(everyMs = 30_000) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), everyMs);
-    return () => clearInterval(t);
-  }, [everyMs]);
-  return now;
-}
 
 /** What an app adds to the pane. Every part is optional; the pane is complete without them. */
 export type DocumentPaneSlots = {
