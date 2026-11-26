@@ -2,7 +2,8 @@
 // ⛔ NO IMPORTS HERE. The workspace daemon and every CLI spawn load the session,
 // which needs these words on every start; the check (`showsSelection` in
 // `projection.ts`) pulls in the markdown parser, 31 modules, and is loaded only
-// when a note to check arrives (`loadNoteGuard` in `workspace/session.ts`).
+// when a note to check arrives (`loadNoteGuard` in `workspace/session/notes.ts`,
+// re-exported by `workspace/session.ts`).
 
 /**
  * Why a note cannot be added over a selection `showsSelection` refuses, with the

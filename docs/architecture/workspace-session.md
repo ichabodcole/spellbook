@@ -422,7 +422,11 @@ Where S7 left the write-up's map, by dependency direction:
   `documents` (tier 3) directly, and `linkReports`' hooks object went. The link
   check took `movedFrom` and `movedTarget` as hooks; it now takes `follow` (tier
   3), and its hooks object went. `sidecars` (tier 2) still reaches `activeText`
-  as a hook, since `documents` is above it.
+  as a hook, since `documents` is above it. So the facade's members are no
+  longer points of interception for these parts: replacing `findDoc` on a
+  session no longer redirects the link reads. Nothing in the repo did so; the
+  only members tests replace are `addNote` and `persist`, both still reached
+  through the facade.
 - **Rehomed with `documents`**: `activeText` (filed under notes), `isDirty`
   (under trash), `jsonProblemOf` and `refuseInvalidJson` (under save), as the
   map says; `adoptActive`, `writeActive` and `preserveOutside`, which the map
