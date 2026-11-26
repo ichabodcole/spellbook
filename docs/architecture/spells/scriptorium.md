@@ -198,6 +198,14 @@ the surface can import it without dragging the daemon into its bundle:
 - **`ServerMsg`** — daemon → surface. State snapshots, version text, answers.
 - **`AgentCmd`** — CLI → daemon over HTTP. What an agent can ask for.
 
+`protocol.ts` is the front door, not the home: the types live by topic under
+`protocol/` — `context.ts`, `documents.ts`, `chat.ts`, `project.ts`,
+`reading.ts` and `frames.ts`, Story Studio's names, so a port from it is a diff
+between files of the same name. `protocol.ts` re-exports them with
+`export type *`, and its two runtime values, `resolveAppState` (in `project.ts`)
+and `PICK_WANTS` (in `frames.ts`), by name. Callers import from `protocol.ts`;
+the topic files `import type` from each other and never from it.
+
 **Why three and not one:** the two parties have the same capabilities but not
 the same affordances (E24). The agent may name a document by absolute path and
 have it opened implicitly; the human names what is already in their sidebar. The
