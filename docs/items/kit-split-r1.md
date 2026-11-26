@@ -5,8 +5,8 @@ description:
   protocol.ts's types move to protocol/context.ts, documents.ts, chat.ts,
   project.ts, reading.ts and frames.ts, and protocol.ts re-exports them, so none
   of its 67 importers changes.
-status: draft
-lifecycle: ready
+status: stable
+lifecycle: active
 id: 01a20f86-963f-72f6-9865-d50569fd5f78
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
