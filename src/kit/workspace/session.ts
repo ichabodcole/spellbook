@@ -68,7 +68,7 @@ import {
   SVG_REFUSED,
   sniffImage,
 } from "../lib/docFormat.ts";
-import { describeJsonProblem, type JsonProblem, jsonProblem } from "../lib/json.ts";
+import type { JsonProblem } from "../lib/json.ts";
 import {
   type ImageDescription,
   type ImageSource,
@@ -77,7 +77,6 @@ import {
   sidecarSkeleton,
 } from "../lib/sidecar.ts";
 import { type Anchor, anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
-import { applyHunks, diffText } from "./diff";
 import type { Disk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
@@ -148,6 +147,7 @@ import type {
   WikiBreak,
 } from "./protocol";
 import { Chats } from "./session/chats.ts";
+import { Compare } from "./session/compare.ts";
 import { Documents } from "./session/documents.ts";
 import { GoneError, SessionError, UnseenChangeError } from "./session/errors.ts";
 import { IMAGES_DIR, IMPORT_NAMES_MAX, IMPORTED_DIR, MANIFEST_FORMAT } from "./session/facts.ts";
@@ -166,7 +166,6 @@ import {
   newSessionId,
   nowIso,
   randHex,
-  sideName,
   tilde,
   uncopied,
 } from "./session/names.ts";
@@ -316,6 +315,8 @@ export class WorkspaceSession {
   private readonly follow: Follow;
   /** Tier 3: the task list (`taskList`, since `tasks()` is a public verb). */
   private readonly taskList: Tasks;
+  /** Tier 4: comparing and merging (`comparePart`, since `compare()` is a public verb). */
+  private readonly comparePart: Compare;
   /** Tier 4: the read side (S5): the read index, resolving, profiles, relations, search. */
   private readonly readIndex: ReadIndex;
   private readonly linkResolve: LinkResolve;
@@ -363,6 +364,7 @@ export class WorkspaceSession {
         this.linkResolve.resolveFrom(target, src, entry, origin, index, kind),
     });
     this.taskList = new Tasks(this.core, { persist: () => this.persist() });
+    this.comparePart = new Compare(this.core, this.documents);
     this.readIndex = new ReadIndex(this.core, this.places, this.documents, {
       filteredOut: () => this.filteredOut(),
     });
@@ -1307,18 +1309,6 @@ export class WorkspaceSession {
   // ── comparing and merging ──────────────────────────────────────────────
 
   /**
-   * The text of one side of a comparison. `"original"` is read from disk, not
-   * from a cache: the point of comparing against it is to see what the file of
-   * record says right now, including a change someone else made while this
-   * session was open.
-   */
-  private sideText(d: Doc, side: DiffSide): string {
-    if (side === "original") return readFileSync(d.original, "utf8");
-    this.documents.versionOrDie(d, side);
-    return readFileSync(this.core.versionPath(d, side), "utf8");
-  }
-
-  /**
    * Compare the active version (left) against another side (right).
    *
    * With `pick`, the side is the first whose text differs from the active
@@ -1328,45 +1318,7 @@ export class WorkspaceSession {
    * differs it is `against`, and the payload says `everyMatches`.
    */
   compare(opts: { doc?: string; against: DiffSide; pick?: boolean }): DiffPayload {
-    const d = this.documents.docOrDie(opts.doc);
-    const left = readFileSync(this.core.versionPath(d, d.active), "utf8");
-    if (opts.pick) {
-      const sides: DiffSide[] = [
-        "original",
-        ...d.versions
-          .map((v) => v.n)
-          .filter((n) => n !== d.active)
-          .sort((a, b) => b - a),
-      ];
-      for (const side of sides) {
-        let right: string;
-        try {
-          right = this.sideText(d, side);
-        } catch {
-          continue; // a file gone from disk is no side to open on
-        }
-        if (right !== left)
-          return {
-            doc: d.slug,
-            active: d.active,
-            against: side,
-            diff: diffText(left, right),
-            picked: true,
-          };
-      }
-    }
-    if (opts.against === d.active)
-      throw new SessionError(
-        `v${d.active} is the active version of ${d.slug}: comparing it with itself says nothing`,
-        400,
-      );
-    return {
-      doc: d.slug,
-      active: d.active,
-      against: opts.against,
-      diff: diffText(left, this.sideText(d, opts.against)),
-      ...(opts.pick ? { picked: true as const, everyMatches: true as const } : {}),
-    };
+    return this.comparePart.compare(opts);
   }
 
   /**
@@ -1385,39 +1337,7 @@ export class WorkspaceSession {
     applied: number;
     preserved: (Version & { path: string }) | null;
   } {
-    const d = this.documents.docOrDie(opts.doc);
-    const payload = this.compare({ doc: d.slug, against: opts.against });
-    const known = new Set(payload.diff.hunks.map((h) => h.id));
-    const missing = opts.hunks.filter((id) => !known.has(id));
-    if (missing.length)
-      throw new SessionError(
-        `${d.slug} has no hunk ${missing.join(", ")} against ${sideName(opts.against, d.name)}: ` +
-          `it has ${known.size === 0 ? "none" : `1..${Math.max(...known)}`}. Run diff again: ` +
-          `the text changed under the numbers.`,
-        409,
-      );
-    const before = readFileSync(this.core.versionPath(d, d.active), "utf8");
-    const text = applyHunks(before, payload.diff.hunks, opts.hunks);
-    // The agent's merge must leave a JSON document parsing; the human's may not,
-    // since they can see the text and fix it.
-    if (opts.json === "refuse" && docFormat(d.original) === "json") {
-      const p = jsonProblem(text);
-      if (p) {
-        const from = sideName(opts.against, d.name);
-        throw new SessionError(
-          `taking change${opts.hunks.length === 1 ? "" : "s"} ${opts.hunks.join(", ")} from ${from} into v${d.active} of ${d.name} would leave invalid JSON (${describeJsonProblem(p)}, in the merged text): fix ${from}, or take fewer changes. Nothing was merged.`,
-          409,
-        );
-      }
-    }
-    const { preserved } = this.documents.edit(d.slug, d.active, text);
-    return {
-      slug: d.slug,
-      version: d.active,
-      text,
-      applied: opts.hunks.filter((id) => known.has(id)).length,
-      preserved,
-    };
+    return this.comparePart.merge(opts);
   }
 
   // ── notes ──────────────────────────────────────────────────────────────
