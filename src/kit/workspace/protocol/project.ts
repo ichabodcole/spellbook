@@ -1,14 +1,15 @@
 /**
  * The project: its manifest and session, the views of images and embeds,
- * links that follow a rename, and the snapshot. Part of the wire vocabulary
- * (`../protocol.ts`): types, and `resolveAppState`, which reads a state frame.
+ * links that follow a rename, the context's undo history, and the snapshot.
+ * Part of the wire vocabulary (`../protocol.ts`): types, and `resolveAppState`,
+ * which reads a state frame.
  */
 
 import type { ImageDescription } from "../../lib/sidecar.ts";
 import type { ClosedBy } from "../events";
 import type { Message, NoteWaiting, Selection, Task, TaskView, Waiting } from "./chat";
 import type { ContextEntry } from "./context";
-import type { Doc, DocView, HistoryView } from "./documents";
+import type { Doc, DocView } from "./documents";
 
 // ── the manifest ──────────────────────────────────────────────────────────
 
@@ -148,6 +149,25 @@ export type RelinkOffer = {
   docs: { path: string; shown: string; fixes: LinkFix[]; noun?: string }[];
   /** Wiki links it broke too, which cannot be updated. */
   wiki: (WikiBreak & { shown: string })[];
+};
+
+// ── history ───────────────────────────────────────────────────────────────
+
+/**
+ * What the context's undo arrows show. A hand-written mirror of
+ * `history.ts`'s `HistoryView`, because this file imports nothing but types; `history.test.ts`
+ * holds the two equal.
+ */
+export type HistoryView = {
+  canUndo: boolean;
+  canRedo: boolean;
+  undoLabel?: string;
+  redoLabel?: string;
+  /**
+   * Present when the next undo would delete: the surface confirms first.
+   * `also`: further paths the same undo removes (an app's act that made several).
+   */
+  undoDeletes?: { path: string; dir: boolean; also?: string[] };
 };
 
 // ── the snapshot ──────────────────────────────────────────────────────────

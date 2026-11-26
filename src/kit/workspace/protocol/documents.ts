@@ -1,7 +1,7 @@
 /**
  * Documents: comparing and merging, authors and speakers, versions, notes and
- * the document views, and the context's undo history. Part of the wire
- * vocabulary (`../protocol.ts`); types only.
+ * the document views. Part of the wire vocabulary (`../protocol.ts`); types
+ * only.
  */
 
 // ── comparing and merging ─────────────────────────────────────────────────
@@ -243,23 +243,4 @@ export type DocView = {
   missing?: "file" | "folder";
   /** Notes, placed against the active version's text on every snapshot. */
   notes: PlacedNote[];
-};
-
-// ── history ───────────────────────────────────────────────────────────────
-
-/**
- * What the context's undo arrows show. A hand-written mirror of
- * `history.ts`'s `HistoryView`, because this file imports nothing but types; `history.test.ts`
- * holds the two equal.
- */
-export type HistoryView = {
-  canUndo: boolean;
-  canRedo: boolean;
-  undoLabel?: string;
-  redoLabel?: string;
-  /**
-   * Present when the next undo would delete: the surface confirms first.
-   * `also`: further paths the same undo removes (an app's act that made several).
-   */
-  undoDeletes?: { path: string; dir: boolean; also?: string[] };
 };

@@ -1,8 +1,10 @@
 /**
  * The workspace's wire vocabulary: the types the daemon, the CLI and the
- * surface all speak. Type-only: it imports nothing but types, so a surface can `import type`
- * it without pulling any of the daemon into its bundle, and the CLI can read
- * the same shapes without pulling in the server.
+ * surface all speak. Types, plus two small runtime values (`resolveAppState`,
+ * `PICK_WANTS`) that import nothing that runs, so a surface can import it
+ * without pulling any of the daemon into its bundle, and the CLI can read the
+ * same shapes without pulling in the server. The types live by topic under
+ * `protocol/`; this file re-exports them.
  *
  * Naming rules, settled once for every workspace:
  *

@@ -191,11 +191,12 @@ invariants 1 and 3 rather than re-implementing them.
 
 ## 6 · The wire
 
-Three vocabularies in `protocol.ts`, which is **type-only and import-free** so
-the surface can import it without dragging the daemon into its bundle:
+Three vocabularies in `protocol.ts`, which is **types plus two small runtime
+values, and imports nothing that runs**, so the surface can import it without
+dragging the daemon into its bundle:
 
-- **`ClientMsg`** — surface → daemon. What a human can ask for.
-- **`ServerMsg`** — daemon → surface. State snapshots, version text, answers.
+- **`ClientOp`** — surface → daemon. What a human can ask for.
+- **`ServerOp`** — daemon → surface. State snapshots, version text, answers.
 - **`AgentCmd`** — CLI → daemon over HTTP. What an agent can ask for.
 
 `protocol.ts` is the front door, not the home: the types live by topic under
@@ -219,10 +220,10 @@ different reasons. Two things are asked for and ANSWERED rather than broadcast �
 a comparison and a search — because each is one viewer's question, and pushing
 the answer to everyone would put someone else's query in your pane.
 
-**⚠ Being import-free has a price, and it is paid in mirrors.** `protocol.ts`
-cannot import the modules that compute its payloads, so `GraphPayload`,
-`SearchReport` and `HistoryView` are hand-written copies of types that live in
-`links.ts`, `search.ts` and `history.ts`. Each pair is **guarded by a
+**⚠ Importing nothing that runs has a price, and it is paid in mirrors.**
+`protocol.ts` cannot import the modules that compute its payloads, so some of
+them (`HistoryView`, for one, a copy of `history.ts`'s) are hand-written copies
+of types that live in the modules that compute them. Each pair is **guarded by a
 key-equality assertion in the computing module's test** — and that guard is
 itself the result of a miss: two-way assignability alone is blind to an OPTIONAL
 field added to one side, which is exactly how E54's `raw?`/`line?` drifted past
