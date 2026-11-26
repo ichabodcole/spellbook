@@ -5,7 +5,7 @@ description:
   The file-event handling moves to session/reconcile.ts, with
   whose-write-was-that behaving exactly as today on macOS and Linux.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a20f86-9015-7264-8ac2-4ba13e886670
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-11-24 }
